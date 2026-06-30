@@ -197,7 +197,7 @@
                     "apikey": SUPABASE_KEY, 
                     "Authorization": `Bearer ${SUPABASE_KEY}`, 
                     "Content-Type": "application/json",
-                    "Prefer": "resolution=merge-duplicates" // ✨ ඩේටාබේස් එකේ ඩුප්ලිකේට් බ්ලොක් කරලා මෙර්ජ් කරන්න දාපු හෙඩර් එක
+                    "Prefer": "resolution=merge-duplicates"
                 }
             };
             if (body) options.body = JSON.stringify(body);
@@ -209,8 +209,6 @@
         }
 
         async function saveCategoriesToCloud() {
-            // 🛠️ CRITICAL FIX: Company ඇතුළු හැම බටන් එකක්ම ඔන්ලයින් ක්ලවුඩ් එකටම සේව් වෙන්න 'POST' + 'id' එකත් එක්කම යවනවා.
-            // Supabase එකේ "Prefer: resolution=merge-duplicates" හින්දා පරණ ඒවා මැකෙන්නේ නැතුව, අලුත් බටන් එක එකතු වෙනවා!
             const payload = { id: "main_structure", structure_data: appData };
             await fetchSupabase('/app_categories', 'POST', payload);
         }
@@ -219,6 +217,11 @@
             const res = await fetchSupabase('/app_categories?id=eq.main_structure');
             if (res && res.length > 0 && res[0].structure_data) {
                 appData = res[0].structure_data;
+                // වැරදිලා හරි පරණ කේතයෙන් 'companys' කියා හැදුනොත් ඒක නිවැරදි කරගන්න දාපු සේෆ්ටි ලයින් එකක්
+                if(appData.companys && !appData.companies) {
+                    appData.companies = appData.companys;
+                    delete appData.companys;
+                }
             } else {
                 appData = {
                     companies: [{ id: 'c1', name: 'Damro' }, { id: 'c2', name: 'Singer' }],
@@ -226,8 +229,7 @@
                     items: [{ id: 'i1', name: 'Television' }, { id: 'i2', name: 'Refrigerator' }],
                     models: [{ id: 'm1', name: 'DDR 182' }, { id: 'm2', name: 'DDR 195' }]
                 };
-                const initPayload = { id: "main_structure", structure_data: appData };
-                await fetchSupabase('/app_categories', 'POST', initPayload);
+                await saveCategoriesToCloud();
             }
         }
 
@@ -304,20 +306,17 @@
 
         function navigateTo(pageId) {
             document.getElementById('custom-context-menu').classList.add('hidden');
-
-            if(pageId === 'page-model') {
-                document.getElementById('model-search').value = ''; 
-            }
+            if(pageId === 'page-model') document.getElementById('model-search').value = ''; 
 
             ['page-login', 'page-home', 'page-company', 'page-brand', 'page-item', 'page-model', 'page-detail'].forEach(p => document.getElementById(p).classList.add('hidden'));
             document.getElementById(pageId).classList.remove('hidden');
 
             setupAdminUI();
 
-            if(pageId === 'page-company') renderButtons('company', appData.companies, 'company-container', 'bg-orange-600');
-            if(pageId === 'page-brand') renderButtons('brand', appData.brands, 'brand-container', 'bg-blue-600');
-            if(pageId === 'page-item') renderButtons('item', appData.items, 'item-container', 'bg-gray-700');
-            if(pageId === 'page-model') renderButtons('model', appData.models, 'model-container', 'bg-emerald-600');
+            if(pageId === 'page-company') renderButtons('company', appData.companies || [], 'company-container', 'bg-orange-600');
+            if(pageId === 'page-brand') renderButtons('brand', appData.brands || [], 'brand-container', 'bg-blue-600');
+            if(pageId === 'page-item') renderButtons('item', appData.items || [], 'item-container', 'bg-gray-700');
+            if(pageId === 'page-model') renderButtons('model', appData.models || [], 'model-container', 'bg-emerald-600');
         }
 
         function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
@@ -407,9 +406,12 @@
             const target = activeMenuTarget;
             closeInputModal();
 
+            // 🛠️ CRITICAL FIX: 'company' එකක් ඇඩ් කරද්දී නිවැරදිව 'companies' array එකට වැටෙන්න හදපු ලොජික් එක
+            let arrayKey = target.type === 'company' ? 'companies' : `${target.type}s`;
+
             if (currentModalMode === 'add') {
                 let newItem = { id: 'id_' + Date.now(), name: inputValue };
-                appData[`${target.type}s`].push(newItem);
+                appData[arrayKey].push(newItem);
                 await saveCategoriesToCloud();
                 navigateTo(`page-${target.type}`);
             } else if (currentModalMode === 'rename' && target.item) {
@@ -427,7 +429,8 @@
             if(target.item) {
                 const confirmation = confirm(`⚠️ Are you sure?\nඔබට සැබෑවටම "${target.item.name}" මකා දැමීමට අවශ්‍යද?`);
                 if (confirmation) {
-                    appData[`${target.type}s`] = appData[`${target.type}s`].filter(i => i.id !== target.item.id);
+                    let arrayKey = target.type === 'company' ? 'companies' : `${target.type}s`;
+                    appData[arrayKey] = appData[arrayKey].filter(i => i.id !== target.item.id);
                     await saveCategoriesToCloud();
                     alert("සාර්ථකව මකා දැමුවා! ❌");
                     navigateTo(`page-${target.type}`);
