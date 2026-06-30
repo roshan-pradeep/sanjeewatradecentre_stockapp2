@@ -123,7 +123,7 @@
                 <h3 class="font-bold text-blue-800 border-b pb-1">Admin Controls (Live Database Sync)</h3>
                 <div>
                     <label class="block text-xs font-semibold text-gray-600">Image URL / Path</label>
-                    <input type="text" id="input-img-url" class="w-full p-2 border rounded-lg text-sm" onchange="syncProductToDatabase()">
+                    <input type="text" id="input-img-url" class="w-full p-2 border rounded-lg text-sm">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-600">Retail Price (රු)</label>
@@ -133,14 +133,19 @@
                     <label class="block text-xs font-semibold text-gray-600">Discount (%)</label>
                     <input type="number" id="input-discount" class="w-full p-2 border rounded-lg text-sm" oninput="calculateCostPriceLive()">
                 </div>
+                
                 <div class="border-t pt-2 bg-white p-3 rounded-xl border border-blue-100">
-                    <span class="block text-xs font-bold text-gray-700 mb-2">Add Stock (Qty & Colour)</span>
+                    <span class="block text-xs font-bold text-gray-700 mb-2">Add/Update Color Stock</span>
                     <div class="grid grid-cols-2 gap-2 mb-2">
-                        <input type="text" id="input-colour" placeholder="Red" class="p-2 border rounded-lg text-sm">
-                        <input type="number" id="input-qty" placeholder="5" class="p-2 border rounded-lg text-sm">
+                        <input type="text" id="input-colour" placeholder="e.g. Red" class="p-2 border rounded-lg text-sm">
+                        <input type="number" id="input-qty" placeholder="Qty" class="p-2 border rounded-lg text-sm">
                     </div>
-                    <button onclick="addColourStockLive()" class="w-full bg-blue-600 text-white py-1.5 rounded-lg text-xs font-bold">Update Stock</button>
+                    <button onclick="addColourStockToArray()" class="w-full bg-blue-600 text-white py-1.5 rounded-lg text-xs font-bold mb-2">Add Color to List</button>
                 </div>
+
+                <button onclick="syncProductToDatabase()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold shadow transition">
+                    💾 Save Product Profile & Stock
+                </button>
             </div>
         </div>
     </div>
@@ -151,18 +156,18 @@
 
         let currentRole = 'staff';       
         let currentLoginMode = 'admin';  
-        let currentDataLevel = {};       
+        let currentModelId = '';       
         let liveDatabaseStock = {}; 
 
-        // මූලික කැටගරි ඩේටා
+        // මූලික කැටගරි ඩේටා ව්‍යුහය
         let appData = {
             companies: [{ id: 'c1', name: 'Damro', color: 'bg-red-500' }, { id: 'c2', name: 'Singer', color: 'bg-blue-500' }, { id: 'c3', name: 'Arpico', color: 'bg-green-500' }],
             brands: [{ id: 'b1', name: 'Innovex', color: 'bg-indigo-500' }, { id: 'b2', name: 'Piyestra', color: 'bg-orange-500' }],
             items: [{ id: 'i1', name: 'Television' }, { id: 'i2', name: 'Refrigerator' }],
-            models: [{ id: 'm1', name: 'DDR 182' }, { id: 'm2', name: 'DDR 195' }]
+            models: [{ id: 'm1', name: 'DDR 182' }, { id: 'm2', name: 'DDR 195' }, { id: 'm3', name: 'DDN 240' }, { id: 'm4', name: 'INR 240' }]
         };
 
-        // Supabase එකට දත්ත යවන/ගන්න ප්‍රධාන Logic එක (Fixed JSON Error)
+        // Supabase API Fetch handler
         async function fetchSupabase(endpoint, method = 'GET', body = null) {
             const options = {
                 method: method,
@@ -174,10 +179,15 @@
                 }
             };
             if (body) options.body = JSON.stringify(body);
-            const response = await fetch(`${SUPABASE_URL}/rest/v1${endpoint}`, options);
-            if (response.status === 201 || response.status === 204) return { success: true };
-            if (!response.ok) return null;
-            return await response.json();
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1${endpoint}`, options);
+                if (response.status === 201 || response.status === 204) return { success: true };
+                if (!response.ok) return null;
+                return await response.json();
+            } catch (err) {
+                console.error("Fetch error:", err);
+                return null;
+            }
         }
 
         function switchLoginMode(mode) {
@@ -187,13 +197,12 @@
             document.getElementById('admin-password-field').classList.toggle('hidden', mode === 'staff');
         }
 
-        // 🎯 ස්ථාවර කරන ලද සුපිරි සෙකියුලර් ලොගින් එක
         async function handleSecureLogin() {
             const phone = document.getElementById('login-phone').value.trim();
             const pass = document.getElementById('login-pass').value.trim();
 
             if (currentLoginMode === 'admin') {
-                if (phone === '0712345678' && pass === 'Admin@123') { // ඔයාට ඕන ඇඩ්මින් අංකයක් දාන්න මචං
+                if (phone === '0712345678' && pass === 'Admin@123') { 
                     currentRole = 'admin'; setupAdminUI(); navigateTo('page-home');
                 } else { alert('ඇඩ්මින් දත්ත වැරදියි!'); }
             } else {
@@ -242,10 +251,10 @@
                 btn.className = `${item.color || defaultColor || 'bg-blue-500'} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none`;
                 
                 btn.addEventListener('click', () => {
-                    if(type === 'company') { currentDataLevel.company = item.id; navigateTo('page-brand'); }
-                    else if(type === 'brand') { currentDataLevel.brand = item.id; navigateTo('page-item'); }
-                    else if(type === 'item') { currentDataLevel.item = item.id; navigateTo('page-model'); }
-                    else if(type === 'model') { openProductDetailLive(item); }
+                    if(type === 'company') navigateTo('page-brand');
+                    else if(type === 'brand') navigateTo('page-item');
+                    else if(type === 'item') navigateTo('page-model');
+                    else if(type === 'model') openProductDetailLive(item);
                 });
                 container.appendChild(btn);
             });
@@ -257,71 +266,122 @@
             appData[`${type}s`].push(newItem); navigateTo(`page-${type}`);
         }
 
-        // --- LIVE STOCK SYNC LOGIC ---
+        function searchModels() {
+            const query = document.getElementById('model-search').value.toLowerCase();
+            const filtered = appData.models.filter(m => m.name.toLowerCase().includes(query));
+            renderButtons('model', filtered, 'model-container', 'bg-emerald-600');
+        }
+
+        // --- 🎯 REAL LIVE STOCK MANAGEMENT LOGIC ---
         async function loadAllStockFromCloud() {
             const cloudData = await fetchSupabase('/items_stock');
             if (cloudData) {
                 liveDatabaseStock = {};
                 cloudData.forEach(row => {
                     liveDatabaseStock[row.model_id] = {
-                        img: row.img_url, retail: row.retail_price, discount: row.discount, cost: row.cost_price, stock: row.stock_data
+                        img: row.img_url, 
+                        retail: parseFloat(row.retail_price) || 0, 
+                        discount: parseFloat(row.discount) || 0, 
+                        cost: parseFloat(row.cost_price) || 0, 
+                        stock: row.stock_data || {}
                     };
                 });
             }
         }
 
         async function openProductDetailLive(modelItem) {
-            currentDataLevel.model = modelItem.id;
+            currentModelId = modelItem.id;
             document.getElementById('detail-model-title').innerText = modelItem.name;
-            await loadAllStockFromCloud(); 
-            if(!liveDatabaseStock[modelItem.id]) liveDatabaseStock[modelItem.id] = { img: '', retail: 0, discount: 0, cost: 0, stock: {} };
             
-            const p = liveDatabaseStock[modelItem.id];
+            await loadAllStockFromCloud(); 
+            
+            // ඩේටාබේස් එකේ නැති අලුත් මොඩල් එකක් නම් හිස් Object එකක් හදනවා
+            if(!liveDatabaseStock[currentModelId]) {
+                liveDatabaseStock[currentModelId] = { img: '', retail: 0, discount: 0, cost: 0, stock: {} };
+            }
+            
+            const p = liveDatabaseStock[currentModelId];
             document.getElementById('input-img-url').value = p.img || '';
-            document.getElementById('input-retail').value = p.retail || '';
-            document.getElementById('input-discount').value = p.discount || '';
-            updateDetailViewUI(); navigateTo('page-detail');
+            document.getElementById('input-retail').value = p.retail || 0;
+            document.getElementById('input-discount').value = p.discount || 0;
+            document.getElementById('input-colour').value = '';
+            document.getElementById('input-qty').value = '';
+            
+            updateDetailViewUI(); 
+            navigateTo('page-detail');
         }
 
-        async function syncProductToDatabase() {
-            const mid = currentDataLevel.model;
-            const p = liveDatabaseStock[mid];
-            p.img = document.getElementById('input-img-url').value;
-            const payload = { model_id: mid, model_name: appData.models.find(m=>m.id===mid)?.name, img_url: p.img, retail_price: p.retail, discount: p.discount, cost_price: p.cost, stock_data: p.stock };
-            await fetchSupabase('/items_stock', 'POST', payload);
+        // Cost Price එක එසැනින් ගණනය කිරීම
+        function calculateCostPriceLive() {
+            const retail = parseFloat(document.getElementById('input-retail').value) || 0;
+            const discount = parseFloat(document.getElementById('input-discount').value) || 0;
+            const cost = retail - (retail * (discount / 100));
+            
+            liveDatabaseStock[currentModelId].retail = retail;
+            liveDatabaseStock[currentModelId].discount = discount;
+            liveDatabaseStock[currentModelId].cost = cost;
+            
+            // UI එකට විතරක් ලයිව් පෙන්වයි, ඩේටාබේස් යන්නෙ Save එබුවාමයි
+            document.getElementById('view-retail').innerText = retail.toLocaleString();
+            document.getElementById('view-discount').innerText = discount;
+            document.getElementById('view-cost').innerText = cost.toLocaleString();
+        }
+
+        // තාවකාලිකව Array එකට ස්ටොක් ඇඩ් කර UI එක අප්ඩේට් කිරීම
+        function addColourStockToArray() {
+            const colour = document.getElementById('input-colour').value.trim();
+            const qty = parseInt(document.getElementById('input-qty').value) || 0;
+            if(!colour) { alert('කරුණාකර පාටක් ඇතුළත් කරන්න.'); return; }
+            
+            liveDatabaseStock[currentModelId].stock[colour] = qty;
+            document.getElementById('input-colour').value = '';
+            document.getElementById('input-qty').value = '';
             updateDetailViewUI();
         }
 
-        function calculateCostPriceLive() {
-            const mid = currentDataLevel.model;
-            const retail = parseFloat(document.getElementById('input-retail').value) || 0;
-            const discount = parseFloat(document.getElementById('input-discount').value) || 0;
-            liveDatabaseStock[mid].retail = retail;
-            liveDatabaseStock[mid].discount = discount;
-            liveDatabaseStock[mid].cost = retail - (retail * (discount / 100));
-            syncProductToDatabase();
-        }
-
-        function addColourStockLive() {
-            const mid = currentDataLevel.model;
-            const colour = document.getElementById('input-colour').value.trim();
-            const qty = parseInt(document.getElementById('input-qty').value) || 0;
-            if(!colour) return;
-            liveDatabaseStock[mid].stock[colour] = qty;
-            syncProductToDatabase();
+        // 💾 අවසාන වශයෙන් ඔක්කොම දත්ත ටික එකපාර Supabase එකට ලයිව් සින්ක් කිරීම
+        async function syncProductToDatabase() {
+            const p = liveDatabaseStock[currentModelId];
+            p.img = document.getElementById('input-img-url').value.trim();
+            const mName = appData.models.find(m => m.id === currentModelId)?.name || "Unknown Model";
+            
+            const payload = { 
+                model_id: currentModelId, 
+                model_name: mName, 
+                img_url: p.img, 
+                retail_price: p.retail, 
+                discount: p.discount, 
+                cost_price: p.cost, 
+                stock_data: p.stock 
+            };
+            
+            const res = await fetchSupabase('/items_stock', 'POST', payload);
+            if(res) {
+                alert('නියමයි! නිෂ්පාදන විස්තර සහ ස්ටොක් එක සාර්ථකව ඩේටාබේස් එකට සේව් වුණා. 🎉');
+                updateDetailViewUI();
+            } else {
+                alert('Error: ඩේටාබේස් එකට සේව් කිරීමට නොහැකි වුණා.');
+            }
         }
 
         function updateDetailViewUI() {
-            const mid = currentDataLevel.model;
-            const p = liveDatabaseStock[mid];
+            const p = liveDatabaseStock[currentModelId];
             document.getElementById('product-img').src = p.img || 'https://via.placeholder.com/300?text=No+Image';
             document.getElementById('view-retail').innerText = (p.retail || 0).toLocaleString();
             document.getElementById('view-discount').innerText = p.discount || 0;
             document.getElementById('view-cost').innerText = (p.cost || 0).toLocaleString();
-            const sc = document.getElementById('view-qty-colors'); sc.innerHTML = '';
-            Object.keys(p.stock || {}).forEach(c => {
-                sc.innerHTML += `<p class="flex justify-between border-b py-1"><span>🎨 ${c}:</span> <strong>${p.stock[c]} Pcs</strong></p>`;
-            });
+            
+            const sc = document.getElementById('view-qty-colors'); 
+            sc.innerHTML = '';
+            
+            const colors = Object.keys(p.stock || {});
+            if(colors.length === 0) {
+                sc.innerHTML = 'No stock added yet.';
+            } else {
+                colors.forEach(c => {
+                    sc.innerHTML += `<p class="flex justify-between border-b py-1"><span>🎨 ${c}:</span> <strong>${p.stock[c]} Pcs</strong></p>`;
+                });
+            }
         }
 
         window.onload = async () => { await loadAllStockFromCloud(); }
