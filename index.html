@@ -185,7 +185,9 @@
         let currentLoginMode = 'staff';  
         let currentModelId = '';       
         let liveDatabaseStock = {}; 
-        let appData = { companies: [], brands: [], items: [], models: [] };
+        
+        // 🛠️ ව්‍යුහය සම්පූර්ණයෙන්ම සරල කළා: 'companies' වෙනුවට 'companys' කියා පොදුවේ ගත්තා වැරදීම් නැති වෙන්න.
+        let appData = { companys: [], brands: [], items: [], models: [] };
 
         let activeMenuTarget = { type: null, item: null };
         let currentModalMode = 'add';
@@ -216,15 +218,17 @@
         async function loadCategoriesFromCloud() {
             const res = await fetchSupabase('/app_categories?id=eq.main_structure');
             if (res && res.length > 0 && res[0].structure_data) {
-                appData = res[0].structure_data;
-                // වැරදිලා හරි පරණ කේතයෙන් 'companys' කියා හැදුනොත් ඒක නිවැරදි කරගන්න දාපු සේෆ්ටි ලයින් එකක්
-                if(appData.companys && !appData.companies) {
-                    appData.companies = appData.companys;
-                    delete appData.companys;
+                let rawData = res[0].structure_data;
+                
+                // පැරණි 'companies' කියා තිබුණු දත්ත අලුත් ක්‍රමයට හරවන සේෆ්ටි කේතය
+                if(rawData.companies && !rawData.companys) {
+                    rawData.companys = rawData.companies;
+                    delete rawData.companies;
                 }
+                appData = rawData;
             } else {
                 appData = {
-                    companies: [{ id: 'c1', name: 'Damro' }, { id: 'c2', name: 'Singer' }],
+                    companys: [{ id: 'c1', name: 'Damro' }, { id: 'c2', name: 'Singer' }],
                     brands: [{ id: 'b1', name: 'Innovex' }, { id: 'b2', name: 'Piyestra' }],
                     items: [{ id: 'i1', name: 'Television' }, { id: 'i2', name: 'Refrigerator' }],
                     models: [{ id: 'm1', name: 'DDR 182' }, { id: 'm2', name: 'DDR 195' }]
@@ -313,7 +317,8 @@
 
             setupAdminUI();
 
-            if(pageId === 'page-company') renderButtons('company', appData.companies || [], 'company-container', 'bg-orange-600');
+            // 🛠️ RENDERING FIX: 'companys' නිවැරදිව පේජ් එකට ලෝඩ් කරන ලයින් එක
+            if(pageId === 'page-company') renderButtons('company', appData.companys || [], 'company-container', 'bg-orange-600');
             if(pageId === 'page-brand') renderButtons('brand', appData.brands || [], 'brand-container', 'bg-blue-600');
             if(pageId === 'page-item') renderButtons('item', appData.items || [], 'item-container', 'bg-gray-700');
             if(pageId === 'page-model') renderButtons('model', appData.models || [], 'model-container', 'bg-emerald-600');
@@ -406,8 +411,8 @@
             const target = activeMenuTarget;
             closeInputModal();
 
-            // 🛠️ CRITICAL FIX: 'company' එකක් ඇඩ් කරද්දී නිවැරදිව 'companies' array එකට වැටෙන්න හදපු ලොජික් එක
-            let arrayKey = target.type === 'company' ? 'companies' : `${target.type}s`;
+            // 🛠️ මෙතන හැම එකටම අගට 's' එකතු වෙන විදිහට සරල කරා
+            let arrayKey = `${target.type}s`;
 
             if (currentModalMode === 'add') {
                 let newItem = { id: 'id_' + Date.now(), name: inputValue };
@@ -429,7 +434,7 @@
             if(target.item) {
                 const confirmation = confirm(`⚠️ Are you sure?\nඔබට සැබෑවටම "${target.item.name}" මකා දැමීමට අවශ්‍යද?`);
                 if (confirmation) {
-                    let arrayKey = target.type === 'company' ? 'companies' : `${target.type}s`;
+                    let arrayKey = `${target.type}s`;
                     appData[arrayKey] = appData[arrayKey].filter(i => i.id !== target.item.id);
                     await saveCategoriesToCloud();
                     alert("සාර්ථකව මකා දැමුවා! ❌");
@@ -521,8 +526,12 @@
         }
 
         window.onload = async () => { 
-            localStorage.removeItem('sanjeewa_role');
-            currentRole = 'staff';
+            // 🛠️ මෙතන කලින් තිබුණ 'localStorage.removeItem' එක අයින් කරා. නැත්නම් හැම පාරම ලොගින් එක නැති වෙනවා.
+            if(localStorage.getItem('sanjeewa_role')) {
+                currentRole = localStorage.getItem('sanjeewa_role');
+            } else {
+                currentRole = 'staff';
+            }
             setupAdminUI();
             navigateTo('page-login');
 
