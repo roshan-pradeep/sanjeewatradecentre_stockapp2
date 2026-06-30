@@ -197,7 +197,7 @@
                     "apikey": SUPABASE_KEY, 
                     "Authorization": `Bearer ${SUPABASE_KEY}`, 
                     "Content-Type": "application/json",
-                    "Prefer": "resolution=merge-duplicates"
+                    "Prefer": "resolution=merge-duplicates" // ✨ ඩේටාබේස් එකේ ඩුප්ලිකේට් බ්ලොක් කරලා මෙර්ජ් කරන්න දාපු හෙඩර් එක
                 }
             };
             if (body) options.body = JSON.stringify(body);
@@ -209,9 +209,10 @@
         }
 
         async function saveCategoriesToCloud() {
-            // 🛠️ FIX: පරණ දත්ත මැකෙන්නේ නැති වෙන්න දැන් කෙලින්ම PATCH මෙතඩ් එකෙන් main_structure එක විතරක් අප්ඩේට් කරනවා.
-            const payload = { structure_data: appData };
-            await fetchSupabase('/app_categories?id=eq.main_structure', 'PATCH', payload);
+            // 🛠️ CRITICAL FIX: Company ඇතුළු හැම බටන් එකක්ම ඔන්ලයින් ක්ලවුඩ් එකටම සේව් වෙන්න 'POST' + 'id' එකත් එක්කම යවනවා.
+            // Supabase එකේ "Prefer: resolution=merge-duplicates" හින්දා පරණ ඒවා මැකෙන්නේ නැතුව, අලුත් බටන් එක එකතු වෙනවා!
+            const payload = { id: "main_structure", structure_data: appData };
+            await fetchSupabase('/app_categories', 'POST', payload);
         }
 
         async function loadCategoriesFromCloud() {
@@ -225,7 +226,6 @@
                     items: [{ id: 'i1', name: 'Television' }, { id: 'i2', name: 'Refrigerator' }],
                     models: [{ id: 'm1', name: 'DDR 182' }, { id: 'm2', name: 'DDR 195' }]
                 };
-                // මුල්ම පාර ලෝඩ් වෙද්දී රෝ එකක් නැත්නම් POST එකෙන් ක්‍රියේට් කරනවා
                 const initPayload = { id: "main_structure", structure_data: appData };
                 await fetchSupabase('/app_categories', 'POST', initPayload);
             }
@@ -280,7 +280,7 @@
             document.getElementById('login-mode-container').classList.add('hidden');
             switchLoginMode('staff');
             document.getElementById('login-phone').value = ''; document.getElementById('login-pass').value = '';
-            setupAdminUI(); // Logout වෙද්දීම Admin UI බටන් හංගනවා
+            setupAdminUI();
             navigateTo('page-login');
         }
 
@@ -312,7 +312,6 @@
             ['page-login', 'page-home', 'page-company', 'page-brand', 'page-item', 'page-model', 'page-detail'].forEach(p => document.getElementById(p).classList.add('hidden'));
             document.getElementById(pageId).classList.remove('hidden');
 
-            // 🛠️ FIX: පේජ් මාරු වෙන හැම වෙලාවකම Admin UI එක නිවැරදිද කියා නැවත චෙක් කරනවා
             setupAdminUI();
 
             if(pageId === 'page-company') renderButtons('company', appData.companies, 'company-container', 'bg-orange-600');
@@ -494,7 +493,6 @@
             const mName = appData.models.find(m => m.id === currentModelId)?.name || "Unknown Model";
             const payload = { model_id: currentModelId, model_name: mName, img_url: p.img, retail_price: p.retail, discount: p.discount, cost_price: p.cost, stock_data: p.stock };
             
-            // 🛠️ UPSERT FIX: මෙතනත් duplicate වීම් සේරම නවත්තලා හරියටම රෝ එක අප්ඩේට් වෙන්න හැදුවා මචං
             const options = {
                 method: 'POST',
                 headers: { 
@@ -520,14 +518,11 @@
         }
 
         window.onload = async () => { 
-            // 🛠️ CRITICAL SECURITY FIX: ඇප් එක ලෝඩ් වෙද්දීම localStorage එකයි, Roles ටිකයි සම්පූර්ණයෙන්ම සුද්ද කරනවා.
-            // ඒක නිසා දැන් කිසිම වෙලාවක ඔටෝ ඇඩ්මින් ලොග් වෙන්නේ නැහැ.
             localStorage.removeItem('sanjeewa_role');
             currentRole = 'staff';
             setupAdminUI();
             navigateTo('page-login');
 
-            // ක්ලවුඩ් එකේ තියෙන ඩේටා ටික කියවා ගැනීම
             await loadCategoriesFromCloud(); 
             await loadAllStockFromCloud(); 
         }
