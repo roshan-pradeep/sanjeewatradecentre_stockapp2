@@ -21,6 +21,17 @@
         </button>
     </div>
 
+    <div id="custom-input-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-100">
+            <h3 id="modal-title" class="text-lg font-bold text-gray-800 mb-4">Add New Item</h3>
+            <input type="text" id="modal-input-field" placeholder="Enter name here..." class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4">
+            <div class="flex gap-3 justify-end">
+                <button onclick="closeInputModal()" class="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-xl text-sm">Cancel</button>
+                <button id="modal-save-btn" class="px-5 py-2 bg-blue-600 text-white font-bold rounded-xl text-sm hover:bg-blue-700 transition">Save 💾</button>
+            </div>
+        </div>
+    </div>
+
     <div id="page-login" class="flex flex-col items-center justify-center min-h-screen p-4">
         <div class="bg-white p-6 rounded-2xl shadow-lg w-full max-w-sm">
             <h2 class="text-2xl font-bold text-center text-blue-600 mb-2">Sanjeewa Trade Centre</h2>
@@ -74,7 +85,7 @@
         <div class="flex justify-between items-center mb-4">
             <button onclick="navigateTo('page-home')" class="text-blue-600 font-bold">⬅ Back</button>
             <h2 class="text-xl font-bold text-center flex-1">Select Company</h2>
-            <button id="admin-add-company" onclick="addNewItem('company')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
+            <button id="admin-add-company" onclick="openAddModal('company')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
         </div>
         <p class="admin-tip text-center text-xs text-red-500 font-semibold mb-4 hidden">💡 PC: Right-Click | Mobile: Long Press to Edit/Delete</p>
         <div id="company-container" class="grid grid-cols-2 gap-4"></div>
@@ -84,7 +95,7 @@
         <div class="flex justify-between items-center mb-4">
             <button onclick="navigateTo('page-company')" class="text-blue-600 font-bold">⬅ Back</button>
             <h2 class="text-xl font-bold text-center flex-1">Select Brand</h2>
-            <button id="admin-add-brand" onclick="addNewItem('brand')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
+            <button id="admin-add-brand" onclick="openAddModal('brand')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
         </div>
         <p class="admin-tip text-center text-xs text-red-500 font-semibold mb-4 hidden">💡 PC: Right-Click | Mobile: Long Press to Edit/Delete</p>
         <div id="brand-container" class="grid grid-cols-2 gap-4"></div>
@@ -94,7 +105,7 @@
         <div class="flex justify-between items-center mb-4">
             <button onclick="navigateTo('page-brand')" class="text-blue-600 font-bold">⬅ Back</button>
             <h2 class="text-xl font-bold text-center flex-1">Select Item</h2>
-            <button id="admin-add-item" onclick="addNewItem('item')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
+            <button id="admin-add-item" onclick="openAddModal('item')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
         </div>
         <p class="admin-tip text-center text-xs text-red-500 font-semibold mb-4 hidden">💡 PC: Right-Click | Mobile: Long Press to Edit/Delete</p>
         <div id="item-container" class="grid grid-cols-2 gap-4"></div>
@@ -104,7 +115,7 @@
         <div class="flex justify-between items-center mb-4">
             <button onclick="navigateTo('page-item')" class="text-blue-600 font-bold">⬅ Back</button>
             <h2 class="text-xl font-bold text-center flex-1">Select Model</h2>
-            <button id="admin-add-model" onclick="addNewItem('model')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
+            <button id="admin-add-model" onclick="openAddModal('model')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
         </div>
         <p class="admin-tip text-center text-xs text-red-500 font-semibold mb-4 hidden">💡 PC: Right-Click | Mobile: Long Press to Edit/Delete</p>
         <div class="mb-4">
@@ -176,8 +187,8 @@
         let liveDatabaseStock = {}; 
         let appData = { companies: [], brands: [], items: [], models: [] };
 
-        // දැනට සිලෙක්ට් කරලා තියෙන අයිටම් එකේ විස්තර (Context Menu එකට ඕන වෙනවා)
         let activeMenuTarget = { type: null, item: null };
+        let currentModalMode = 'add'; // 'add' හෝ 'rename'
 
         async function fetchSupabase(endpoint, method = 'GET', body = null) {
             const options = {
@@ -203,7 +214,7 @@
                 appData = res[0].structure_data;
             } else {
                 appData = {
-                    companies: [{ id: 'c1', name: 'Damro', color: 'bg-red-500' }, { id: 'c2', name: 'Singer', color: 'bg-blue-500' }],
+                    companies: [{ id: 'c1', name: 'Damro' }, { id: 'c2', name: 'Singer' }],
                     brands: [{ id: 'b1', name: 'Innovex' }, { id: 'b2', name: 'Piyestra' }],
                     items: [{ id: 'i1', name: 'Television' }, { id: 'i2', name: 'Refrigerator' }],
                     models: [{ id: 'm1', name: 'DDR 182' }, { id: 'm2', name: 'DDR 195' }]
@@ -243,13 +254,13 @@
                 }
                 if (phone === '0712345678' && pass === 'Admin@123') { 
                     currentRole = 'admin';
-                    localStorage.setItem('sanjeewa_role', 'admin'); // 💾 Save to memory
+                    localStorage.setItem('sanjeewa_role', 'admin');
                     setupAdminUI(); navigateTo('page-home');
                 } else { alert('ඇඩ්මින් දත්ත වැරදියි!'); }
             } else {
                 if (isRegisteredStaff) {
                     currentRole = 'staff';
-                    localStorage.setItem('sanjeewa_role', 'staff'); // 💾 Save to memory
+                    localStorage.setItem('sanjeewa_role', 'staff');
                     setupAdminUI(); navigateTo('page-home');
                 } else { alert('මෙම අංකය ඩේටාබේස් එකේ ලියාපදිංචි කර නොමැත!'); }
             }
@@ -257,7 +268,7 @@
 
         function handleLogout() {
             currentRole = 'staff'; currentLoginMode = 'staff';
-            localStorage.removeItem('sanjeewa_role'); // 🚪 Clear memory
+            localStorage.removeItem('sanjeewa_role');
             document.getElementById('login-mode-container').classList.add('hidden');
             switchLoginMode('staff');
             document.getElementById('login-phone').value = ''; document.getElementById('login-pass').value = '';
@@ -283,49 +294,44 @@
         }
 
         function navigateTo(pageId) {
-            // ඕනෑම තැනක Context Menu එකක් ඇරිලා තිබ්බොත් වහනවා
             document.getElementById('custom-context-menu').classList.add('hidden');
+
+            // ✨ සර්ච් බාර් එක ක්ලියර් කිරීමේ නව ලොජික් එක
+            if(pageId === 'page-model') {
+                document.getElementById('model-search').value = ''; 
+            }
 
             ['page-login', 'page-home', 'page-company', 'page-brand', 'page-item', 'page-model', 'page-detail'].forEach(p => document.getElementById(p).classList.add('hidden'));
             document.getElementById(pageId).classList.remove('hidden');
 
-            if(pageId === 'page-company') renderButtons('company', appData.companies, 'company-container');
-            if(pageId === 'page-brand') renderButtons('brand', appData.brands, 'brand-container');
+            if(pageId === 'page-company') renderButtons('company', appData.companies, 'company-container', 'bg-orange-600');
+            if(pageId === 'page-brand') renderButtons('brand', appData.brands, 'brand-container', 'bg-blue-600');
             if(pageId === 'page-item') renderButtons('item', appData.items, 'item-container', 'bg-gray-700');
             if(pageId === 'page-model') renderButtons('model', appData.models, 'model-container', 'bg-emerald-600');
         }
 
-        function renderButtons(type, dataArray, containerId, defaultColor = '') {
+        function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
             const container = document.getElementById(containerId); container.innerHTML = ''; 
             
             dataArray.forEach(item => {
                 const btn = document.createElement('button');
                 btn.innerText = item.name;
-                btn.className = `${item.color || defaultColor || 'bg-blue-500'} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none no-select transition-all`;
+                // Company ඇතුළු හැම එකකටම කලර්ස් හරියටම වැටෙන්න හැදුවා මචං
+                btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none no-select transition-all shadow-md`;
                 
                 let pressTimer = null;
                 let isLongPress = false;
 
-                // 💻 PC Right-Click Custom Menu Box
                 btn.addEventListener('contextmenu', (e) => {
-                    if (currentRole === 'admin') { 
-                        e.preventDefault(); 
-                        showCustomContextMenu(e.clientX, e.clientY, type, item);
-                    }
+                    if (currentRole === 'admin') { e.preventDefault(); showCustomContextMenu(e.clientX, e.clientY, type, item); }
                 });
 
-                // 📱 Mobile Long Press Custom Menu Box
                 const startPress = (e) => {
                     if (currentRole !== 'admin') return;
                     isLongPress = false; btn.classList.add('long-press-active');
-                    
                     let x = e.clientX || (e.touches && e.touches[0].clientX);
                     let y = e.clientY || (e.touches && e.touches[0].clientY);
-
-                    pressTimer = setTimeout(() => { 
-                        isLongPress = true; 
-                        showCustomContextMenu(x, y, type, item);
-                    }, 700);
+                    pressTimer = setTimeout(() => { isLongPress = true; showCustomContextMenu(x, y, type, item); }, 700);
                 };
                 const endPress = () => { clearTimeout(pressTimer); btn.classList.remove('long-press-active'); };
 
@@ -346,7 +352,6 @@
             });
         }
 
-        // --- 📋 CUSTOM CONTEXT MENU SHOW LOGIC ---
         function showCustomContextMenu(x, y, type, item) {
             activeMenuTarget = { type: type, item: item };
             const menu = document.getElementById('custom-context-menu');
@@ -355,58 +360,79 @@
             menu.classList.remove('hidden');
         }
 
-        // පිටත ක්ලික් කරොත් මෙනු එක වහන්න
         document.addEventListener('click', (e) => {
             const menu = document.getElementById('custom-context-menu');
             if(!menu.contains(e.target)) menu.classList.add('hidden');
         });
 
-        // ✏️ RENAME ACTION FROM CUSTOM MENU
-        document.getElementById('menu-rename-btn').addEventListener('click', async () => {
+        // ======================================================= -->
+        // NEW: MODAL CONTROLS (මැදින් එන කොටුවේ ක්‍රියාකාරීත්වය) -->
+        // ======================================================= -->
+        function openAddModal(type) {
+            currentModalMode = 'add';
+            activeMenuTarget = { type: type, item: null };
+            document.getElementById('modal-title').innerText = `➕ Add New ${type.toUpperCase()}`;
+            document.getElementById('modal-input-field').value = '';
+            document.getElementById('custom-input-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('modal-input-field').focus(), 50);
+        }
+
+        // Context Menu එකෙන් Rename එබුවම මෝඩල් එක ඕපන් වීම
+        document.getElementById('menu-rename-btn').addEventListener('click', () => {
+            currentModalMode = 'rename';
             const target = activeMenuTarget;
             document.getElementById('custom-context-menu').classList.add('hidden');
             
             if(target.item) {
-                const newName = prompt(`"${target.item.name}" සඳහා අලුත් නම ලබාදී Save කරන්න:`, target.item.name);
-                if (newName && newName.trim() !== "") {
-                    target.item.name = newName.trim();
-                    await saveCategoriesToCloud();
-                    alert("සාර්ථකව Rename කර සේව් කළා! 🎉");
-                    navigateTo(`page-${target.type}`);
-                }
+                document.getElementById('modal-title').innerText = `✏️ Rename "${target.item.name}"`;
+                document.getElementById('modal-input-field').value = target.item.name;
+                document.getElementById('custom-input-modal').classList.remove('hidden');
+                setTimeout(() => document.getElementById('modal-input-field').focus(), 50);
             }
         });
 
-        // 🗑️ DELETE ACTION FROM CUSTOM MENU (Are you sure check)
+        function closeInputModal() {
+            document.getElementById('custom-input-modal').classList.add('hidden');
+        }
+
+        // SAVE BUTTON LOGIC FOR MODAL (Add සහ Rename දෙකටම වැඩ)
+        document.getElementById('modal-save-btn').addEventListener('click', async () => {
+            const inputValue = document.getElementById('modal-input-field').value.trim();
+            if(!inputValue) { alert('කරුණාකර නමක් ඇතුළත් කරන්න!'); return; }
+
+            const target = activeMenuTarget;
+            closeInputModal();
+
+            if (currentModalMode === 'add') {
+                // අලුත් එකක් ඇඩ් කිරීම
+                let newItem = { id: 'id_' + Date.now(), name: inputValue };
+                appData[`${target.type}s`].push(newItem);
+                await saveCategoriesToCloud();
+                navigateTo(`page-${target.type}`);
+            } else if (currentModalMode === 'rename' && target.item) {
+                // Rename කිරීම
+                target.item.name = inputValue;
+                await saveCategoriesToCloud();
+                alert("සාර්ථකව Rename කර සේව් කළා! 🎉");
+                navigateTo(`page-${target.type}`);
+            }
+        });
+
+        // 🗑️ DELETE WITH ARE YOU SURE CHECK
         document.getElementById('menu-delete-btn').addEventListener('click', async () => {
             const target = activeMenuTarget;
             document.getElementById('custom-context-menu').classList.add('hidden');
             
             if(target.item) {
-                // "Are you sure?" කන්ෆර්මේෂන් එක
                 const confirmation = confirm(`⚠️ Are you sure?\nඔබට සැබෑවටම "${target.item.name}" මකා දැමීමට අවශ්‍යද?`);
                 if (confirmation) {
                     appData[`${target.type}s`] = appData[`${target.type}s`].filter(i => i.id !== target.item.id);
                     await saveCategoriesToCloud();
                     alert("සාර්ථකව මකා දැමුවා! ❌");
                     navigateTo(`page-${target.type}`);
-                } else {
-                    alert("මකා දැමීම අවලංගු කළා. 🛡️");
                 }
             }
         });
-
-        // ➕ NEW ITEM ADD & AUTO RE-RENDER
-        async function addNewItem(type) {
-            const name = prompt(`අලුත් බටන් එකේ නම:`); 
-            if(!name || name.trim() === "") return;
-            
-            let newItem = { id: 'id_' + Date.now(), name: name.trim() };
-            appData[`${type}s`].push(newItem);
-            
-            await saveCategoriesToCloud(); // Cloud Save
-            navigateTo(`page-${type}`); // Auto Refresh UI!
-        }
 
         function searchModels() {
             const query = document.getElementById('model-search').value.toLowerCase();
@@ -481,17 +507,15 @@
             });
         }
 
-        // --- 🔄 REFRESH MANAGEMENT (සයිට් එක මුලින්ම ලෝඩ් වෙද්දී) ---
         window.onload = async () => { 
             await loadCategoriesFromCloud(); 
             await loadAllStockFromCloud(); 
 
-            // බ්‍රවුසර් මෙමරියේ කලින් ලොග් වුණු කෙනෙක් ඉන්නවද බලනවා
             const savedRole = localStorage.getItem('sanjeewa_role');
             if (savedRole === 'admin' || savedRole === 'staff') {
                 currentRole = savedRole;
                 setupAdminUI();
-                navigateTo('page-home'); // කෙලින්ම හෝම් පේජ් එකට යනවා!
+                navigateTo('page-home');
             } else {
                 navigateTo('page-login');
             }
