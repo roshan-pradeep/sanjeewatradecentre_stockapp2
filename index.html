@@ -3,44 +3,328 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sanjeewa Trade Centre</title>
+    <title>Sanjeewa Trade Centre - Full Stock App</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .long-press-active { transform: scale(0.95); opacity: 0.8; transition: 0.2s; }
+    </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 font-sans text-gray-800">
 
     <div id="page-login" class="flex flex-col items-center justify-center min-h-screen p-4">
-        <div class="bg-white p-6 rounded-2xl shadow-lg w-full max-w-sm text-center">
-            <h2 class="text-2xl font-bold text-blue-600 mb-6">Login</h2>
-            <input type="tel" id="phone" placeholder="07xxxxxxxx" class="w-full p-3 border rounded-xl mb-4">
-            <button onclick="login()" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold">Login</button>
+        <div class="bg-white p-6 rounded-2xl shadow-lg w-full max-w-sm">
+            <h2 class="text-2xl font-bold text-center text-blue-600 mb-2">Sanjeewa Trade Centre</h2>
+            <p id="login-sub-title" class="text-xs text-center text-gray-500 mb-6">Portal Login</p>
+            
+            <div class="mb-4 bg-gray-200 p-1 rounded-lg flex">
+                <button onclick="switchLoginMode('admin')" id="btn-mode-admin" class="w-1/2 py-2 text-center rounded-md font-semibold bg-blue-600 text-white transition">Admin</button>
+                <button onclick="switchLoginMode('staff')" id="btn-mode-staff" class="w-1/2 py-2 text-center rounded-md font-semibold text-gray-700 transition">Staff</button>
+            </div>
+
+            <div class="mb-4">
+                <label id="lbl-phone" class="block text-sm font-medium mb-1">Admin Phone Number</label>
+                <input type="tel" id="login-phone" placeholder="07xxxxxxxx" class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div id="admin-password-field" class="mb-4">
+                <label class="block text-sm font-medium mb-1">Password</label>
+                <input type="password" id="login-pass" placeholder="******" class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <button onclick="handleSecureLogin()" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 transition">Login</button>
         </div>
     </div>
 
-    <div id="page-home" class="hidden min-h-screen p-4">
-        <h1 class="text-2xl font-bold text-center my-10">Welcome Sanjeewa Trade Centre</h1>
-        <div class="grid grid-cols-2 gap-4 max-w-sm mx-auto">
-            <button onclick="alert('Trade Centre Section')" class="bg-orange-500 text-white py-10 rounded-2xl font-bold">Trade Centre</button>
-            <button onclick="alert('Furniture Section')" class="bg-teal-600 text-white py-10 rounded-2xl font-bold">Furniture</button>
+    <div id="page-home" class="hidden min-h-screen flex flex-col items-center justify-center p-4 relative">
+        <button onclick="handleLogout()" class="absolute top-4 right-4 bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow">Logout 🚪</button>
+
+        <h1 class="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-8 mt-12">
+            Welcome Sanjeewa Furniture & Trade Centre
+        </h1>
+        
+        <div class="w-full max-w-md space-y-4">
+            <button onclick="navigateTo('page-company')" class="w-full bg-orange-500 text-white py-6 rounded-2xl text-xl font-bold shadow-md hover:bg-orange-600 transition">
+                Trade Centre
+            </button>
+            <button onclick="alert('Furniture Section එක ළඟදීම...')" class="w-full bg-teal-600 text-white py-6 rounded-2xl text-xl font-bold shadow-md hover:bg-teal-700 transition">
+                Furniture
+            </button>
         </div>
-        <button onclick="location.reload()" class="mt-10 w-full text-red-600 font-bold">Logout</button>
+
+        <div id="admin-staff-manager" class="hidden w-full max-w-md mt-8 p-4 bg-white rounded-2xl shadow border">
+            <h3 class="font-bold text-gray-700 mb-1 text-sm">Invite Staff Members</h3>
+            <input type="tel" id="new-staff-phone" placeholder="Staff Phone Number (077xxxxxxx)" class="w-full p-2.5 border rounded-xl text-sm mb-2 focus:outline-none">
+            <button onclick="generateStaffLink()" class="w-full bg-blue-600 text-white py-2.5 rounded-xl text-xs font-bold">Register Staff Member</button>
+        </div>
+    </div>
+
+    <div id="page-company" class="hidden p-4 min-h-screen">
+        <div class="flex justify-between items-center mb-6">
+            <button onclick="navigateTo('page-home')" class="text-blue-600 font-bold">⬅ Back</button>
+            <h2 class="text-xl font-bold text-center flex-1">Select Company</h2>
+            <button id="admin-add-company" onclick="addNewItem('company')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
+        </div>
+        <div id="company-container" class="grid grid-cols-2 gap-4"></div>
+    </div>
+
+    <div id="page-brand" class="hidden p-4 min-h-screen">
+        <div class="flex justify-between items-center mb-6">
+            <button onclick="navigateTo('page-company')" class="text-blue-600 font-bold">⬅ Back</button>
+            <h2 class="text-xl font-bold text-center flex-1">Select Brand</h2>
+            <button id="admin-add-brand" onclick="addNewItem('brand')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
+        </div>
+        <div id="brand-container" class="grid grid-cols-2 gap-4"></div>
+    </div>
+
+    <div id="page-item" class="hidden p-4 min-h-screen">
+        <div class="flex justify-between items-center mb-6">
+            <button onclick="navigateTo('page-brand')" class="text-blue-600 font-bold">⬅ Back</button>
+            <h2 class="text-xl font-bold text-center flex-1">Select Item</h2>
+            <button id="admin-add-item" onclick="addNewItem('item')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
+        </div>
+        <div id="item-container" class="grid grid-cols-2 gap-4"></div>
+    </div>
+
+    <div id="page-model" class="hidden p-4 min-h-screen">
+        <div class="flex justify-between items-center mb-4">
+            <button onclick="navigateTo('page-item')" class="text-blue-600 font-bold">⬅ Back</button>
+            <h2 class="text-xl font-bold text-center flex-1">Select Model</h2>
+            <button id="admin-add-model" onclick="addNewItem('model')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
+        </div>
+        <div class="mb-4">
+            <input type="text" id="model-search" oninput="searchModels()" placeholder="Search Model..." class="w-full p-3 border rounded-xl shadow-sm">
+        </div>
+        <div id="model-container" class="grid grid-cols-2 gap-4"></div>
+    </div>
+
+    <div id="page-detail" class="hidden p-4 min-h-screen bg-white">
+        <div class="flex justify-between items-center mb-4 border-b pb-2">
+            <button onclick="navigateTo('page-model')" class="text-blue-600 font-bold">⬅ Back</button>
+            <h2 id="detail-model-title" class="text-xl font-bold text-center flex-1">Model Name</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+                <div class="w-full h-64 bg-gray-200 rounded-2xl flex items-center justify-center overflow-hidden border">
+                    <img id="product-img" src="https://via.placeholder.com/300?text=No+Image" alt="Product Image" class="object-contain h-full w-full">
+                </div>
+                <div class="p-4 bg-gray-50 rounded-xl space-y-2 border">
+                    <p class="text-lg"><strong>Retail Price:</strong> රු. <span id="view-retail">0.00</span></p>
+                    <p class="text-lg text-red-600"><strong>Discount:</strong> <span id="view-discount">0</span>%</p>
+                    <p class="text-lg text-green-700"><strong>Cost Price (Net):</strong> රු. <span id="view-cost">0.00</span></p>
+                    <div class="border-t pt-2 mt-2">
+                        <strong class="text-gray-700 block mb-1">Available Qty (by Colour):</strong>
+                        <div id="view-qty-colors" class="space-y-1 text-sm text-gray-600">No stock added yet.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="admin-detail-controls" class="hidden bg-blue-50 p-4 rounded-2xl border border-blue-200 space-y-3">
+                <h3 class="font-bold text-blue-800 border-b pb-1">Admin Controls (Live Database Sync)</h3>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600">Image URL / Path</label>
+                    <input type="text" id="input-img-url" class="w-full p-2 border rounded-lg text-sm" onchange="syncProductToDatabase()">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600">Retail Price (රු)</label>
+                    <input type="number" id="input-retail" class="w-full p-2 border rounded-lg text-sm" oninput="calculateCostPriceLive()">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600">Discount (%)</label>
+                    <input type="number" id="input-discount" class="w-full p-2 border rounded-lg text-sm" oninput="calculateCostPriceLive()">
+                </div>
+                <div class="border-t pt-2 bg-white p-3 rounded-xl border border-blue-100">
+                    <span class="block text-xs font-bold text-gray-700 mb-2">Add Stock (Qty & Colour)</span>
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <input type="text" id="input-colour" placeholder="Red" class="p-2 border rounded-lg text-sm">
+                        <input type="number" id="input-qty" placeholder="5" class="p-2 border rounded-lg text-sm">
+                    </div>
+                    <button onclick="addColourStockLive()" class="w-full bg-blue-600 text-white py-1.5 rounded-lg text-xs font-bold">Update Stock</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        async function login() {
-            let phone = document.getElementById('phone').value;
-            let res = await fetch("https://ttviyfggsmiaemtbawvg.supabase.co/rest/v1/allowed_staff?phone_number=eq." + phone, {
-                headers: { "apikey": "sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz", "Authorization": "Bearer sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz" }
-            });
-            let data = await res.json();
-            
-            if (data.length > 0) {
-                // ලොගින් සාර්ථක නම් පේජ් එක මාරු කරනවා
-                document.getElementById('page-login').classList.add('hidden');
-                document.getElementById('page-home').classList.remove('hidden');
+        const SUPABASE_URL = "https://ttviyfggsmiaemtbawvg.supabase.co"; 
+        const SUPABASE_KEY = "sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz";
+
+        let currentRole = 'staff';       
+        let currentLoginMode = 'admin';  
+        let currentDataLevel = {};       
+        let liveDatabaseStock = {}; 
+
+        // මූලික කැටගරි ඩේටා
+        let appData = {
+            companies: [{ id: 'c1', name: 'Damro', color: 'bg-red-500' }, { id: 'c2', name: 'Singer', color: 'bg-blue-500' }, { id: 'c3', name: 'Arpico', color: 'bg-green-500' }],
+            brands: [{ id: 'b1', name: 'Innovex', color: 'bg-indigo-500' }, { id: 'b2', name: 'Piyestra', color: 'bg-orange-500' }],
+            items: [{ id: 'i1', name: 'Television' }, { id: 'i2', name: 'Refrigerator' }],
+            models: [{ id: 'm1', name: 'DDR 182' }, { id: 'm2', name: 'DDR 195' }]
+        };
+
+        // Supabase එකට දත්ත යවන/ගන්න ප්‍රධාන Logic එක (Fixed JSON Error)
+        async function fetchSupabase(endpoint, method = 'GET', body = null) {
+            const options = {
+                method: method,
+                headers: {
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": `Bearer ${SUPABASE_KEY}`,
+                    "Content-Type": "application/json",
+                    "Prefer": method === 'POST' ? "resolution=merge-duplicates" : "" 
+                }
+            };
+            if (body) options.body = JSON.stringify(body);
+            const response = await fetch(`${SUPABASE_URL}/rest/v1${endpoint}`, options);
+            if (response.status === 201 || response.status === 204) return { success: true };
+            if (!response.ok) return null;
+            return await response.json();
+        }
+
+        function switchLoginMode(mode) {
+            currentLoginMode = mode;
+            document.getElementById('btn-mode-admin').className = mode === 'admin' ? "w-1/2 py-2 text-center rounded-md font-semibold bg-blue-600 text-white" : "w-1/2 py-2 text-center rounded-md font-semibold text-gray-700";
+            document.getElementById('btn-mode-staff').className = mode === 'staff' ? "w-1/2 py-2 text-center rounded-md font-semibold bg-blue-600 text-white" : "w-1/2 py-2 text-center rounded-md font-semibold text-gray-700";
+            document.getElementById('admin-password-field').classList.toggle('hidden', mode === 'staff');
+        }
+
+        // 🎯 ස්ථාවර කරන ලද සුපිරි සෙකියුලර් ලොගින් එක
+        async function handleSecureLogin() {
+            const phone = document.getElementById('login-phone').value.trim();
+            const pass = document.getElementById('login-pass').value.trim();
+
+            if (currentLoginMode === 'admin') {
+                if (phone === '0712345678' && pass === 'Admin@123') { // ඔයාට ඕන ඇඩ්මින් අංකයක් දාන්න මචං
+                    currentRole = 'admin'; setupAdminUI(); navigateTo('page-home');
+                } else { alert('ඇඩ්මින් දත්ත වැරදියි!'); }
             } else {
-                alert("Login Failed: Number not found!");
+                const staffData = await fetchSupabase(`/allowed_staff?phone_number=eq.${phone}`);
+                if (staffData && staffData.length > 0) {
+                    currentRole = 'staff'; setupAdminUI(); navigateTo('page-home');
+                } else { alert('මෙම අංකය ඩේටාබේස් එකේ ලියාපදිංචි කර නොමැත!'); }
             }
         }
+
+        function handleLogout() {
+            currentRole = 'staff'; navigateTo('page-login');
+        }
+
+        function setupAdminUI() {
+            const adminElements = ['admin-add-company', 'admin-add-brand', 'admin-add-item', 'admin-add-model', 'admin-detail-controls', 'admin-staff-manager'];
+            adminElements.forEach(id => {
+                const el = document.getElementById(id); if(el) el.classList.toggle('hidden', currentRole !== 'admin');
+            });
+        }
+
+        async function generateStaffLink() {
+            const staffPhone = document.getElementById('new-staff-phone').value.trim();
+            if(!staffPhone) return;
+            await fetchSupabase('/allowed_staff', 'POST', { phone_number: staffPhone });
+            let currentUrl = window.location.href.split('?')[0];
+            const message = `Hi, ඔයාව Stock App එකට ඇතුළත් කළා. ลින්ක් එක: ${currentUrl}\nඅංකය: ${staffPhone}`;
+            window.location.href = `https://wa.me/${staffPhone.startsWith('0') ? '94'+staffPhone.substring(1) : staffPhone}?text=${encodeURIComponent(message)}`;
+        }
+
+        function navigateTo(pageId) {
+            ['page-login', 'page-home', 'page-company', 'page-brand', 'page-item', 'page-model', 'page-detail'].forEach(p => document.getElementById(p).classList.add('hidden'));
+            document.getElementById(pageId).classList.remove('hidden');
+
+            if(pageId === 'page-company') renderButtons('company', appData.companies, 'company-container');
+            if(pageId === 'page-brand') renderButtons('brand', appData.brands, 'brand-container');
+            if(pageId === 'page-item') renderButtons('item', appData.items, 'item-container', 'bg-gray-700');
+            if(pageId === 'page-model') renderButtons('model', appData.models, 'model-container', 'bg-emerald-600');
+        }
+
+        function renderButtons(type, dataArray, containerId, defaultColor = '') {
+            const container = document.getElementById(containerId); container.innerHTML = ''; 
+            dataArray.forEach(item => {
+                const btn = document.createElement('button');
+                btn.innerText = item.name;
+                btn.className = `${item.color || defaultColor || 'bg-blue-500'} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none`;
+                
+                btn.addEventListener('click', () => {
+                    if(type === 'company') { currentDataLevel.company = item.id; navigateTo('page-brand'); }
+                    else if(type === 'brand') { currentDataLevel.brand = item.id; navigateTo('page-item'); }
+                    else if(type === 'item') { currentDataLevel.item = item.id; navigateTo('page-model'); }
+                    else if(type === 'model') { openProductDetailLive(item); }
+                });
+                container.appendChild(btn);
+            });
+        }
+
+        function addNewItem(type) {
+            const name = prompt(`අලුත් නම:`); if(!name) return;
+            let newItem = { id: 'id_' + Date.now(), name: name };
+            appData[`${type}s`].push(newItem); navigateTo(`page-${type}`);
+        }
+
+        // --- LIVE STOCK SYNC LOGIC ---
+        async function loadAllStockFromCloud() {
+            const cloudData = await fetchSupabase('/items_stock');
+            if (cloudData) {
+                liveDatabaseStock = {};
+                cloudData.forEach(row => {
+                    liveDatabaseStock[row.model_id] = {
+                        img: row.img_url, retail: row.retail_price, discount: row.discount, cost: row.cost_price, stock: row.stock_data
+                    };
+                });
+            }
+        }
+
+        async function openProductDetailLive(modelItem) {
+            currentDataLevel.model = modelItem.id;
+            document.getElementById('detail-model-title').innerText = modelItem.name;
+            await loadAllStockFromCloud(); 
+            if(!liveDatabaseStock[modelItem.id]) liveDatabaseStock[modelItem.id] = { img: '', retail: 0, discount: 0, cost: 0, stock: {} };
+            
+            const p = liveDatabaseStock[modelItem.id];
+            document.getElementById('input-img-url').value = p.img || '';
+            document.getElementById('input-retail').value = p.retail || '';
+            document.getElementById('input-discount').value = p.discount || '';
+            updateDetailViewUI(); navigateTo('page-detail');
+        }
+
+        async function syncProductToDatabase() {
+            const mid = currentDataLevel.model;
+            const p = liveDatabaseStock[mid];
+            p.img = document.getElementById('input-img-url').value;
+            const payload = { model_id: mid, model_name: appData.models.find(m=>m.id===mid)?.name, img_url: p.img, retail_price: p.retail, discount: p.discount, cost_price: p.cost, stock_data: p.stock };
+            await fetchSupabase('/items_stock', 'POST', payload);
+            updateDetailViewUI();
+        }
+
+        function calculateCostPriceLive() {
+            const mid = currentDataLevel.model;
+            const retail = parseFloat(document.getElementById('input-retail').value) || 0;
+            const discount = parseFloat(document.getElementById('input-discount').value) || 0;
+            liveDatabaseStock[mid].retail = retail;
+            liveDatabaseStock[mid].discount = discount;
+            liveDatabaseStock[mid].cost = retail - (retail * (discount / 100));
+            syncProductToDatabase();
+        }
+
+        function addColourStockLive() {
+            const mid = currentDataLevel.model;
+            const colour = document.getElementById('input-colour').value.trim();
+            const qty = parseInt(document.getElementById('input-qty').value) || 0;
+            if(!colour) return;
+            liveDatabaseStock[mid].stock[colour] = qty;
+            syncProductToDatabase();
+        }
+
+        function updateDetailViewUI() {
+            const mid = currentDataLevel.model;
+            const p = liveDatabaseStock[mid];
+            document.getElementById('product-img').src = p.img || 'https://via.placeholder.com/300?text=No+Image';
+            document.getElementById('view-retail').innerText = (p.retail || 0).toLocaleString();
+            document.getElementById('view-discount').innerText = p.discount || 0;
+            document.getElementById('view-cost').innerText = (p.cost || 0).toLocaleString();
+            const sc = document.getElementById('view-qty-colors'); sc.innerHTML = '';
+            Object.keys(p.stock || {}).forEach(c => {
+                sc.innerHTML += `<p class="flex justify-between border-b py-1"><span>🎨 ${c}:</span> <strong>${p.stock[c]} Pcs</strong></p>`;
+            });
+        }
+
+        window.onload = async () => { await loadAllStockFromCloud(); }
     </script>
 </body>
 </html>
