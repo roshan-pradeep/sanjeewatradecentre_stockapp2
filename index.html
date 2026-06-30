@@ -204,7 +204,14 @@
         }
 
         async function saveCategoriesToCloud() {
-            const payload = { id: "main_structure", structure_data: appData };
+            // 🛠️ REPAIR: සේව් වෙන්න කලින් structure එක සම්පූර්ණයෙන්ම පිරිසිදු කරලා ගැලපෙන විදිහට හදනවා
+            const cleanStructure = {
+                companies: (appData.companies || []).map(c => ({ id: c.id, name: c.name })),
+                brands: (appData.brands || []).map(b => ({ id: b.id, name: b.name })),
+                items: (appData.items || []).map(i => ({ id: i.id, name: i.name })),
+                models: (appData.models || []).map(m => ({ id: m.id, name: m.name }))
+            };
+            const payload = { id: "main_structure", structure_data: cleanStructure };
             await fetchSupabase('/app_categories', 'POST', payload);
         }
 
@@ -212,19 +219,12 @@
             const res = await fetchSupabase('/app_categories?id=eq.main_structure');
             if (res && res.length > 0 && res[0].structure_data) {
                 let rawData = res[0].structure_data;
-                
-                // 🛠️ FIX: පරණ structure එකේ තිබ්බ හැම කැත කුණු color tags මකා දාලා පිරිසිදු කරගන්නවා
                 appData.companies = (rawData.companies || []).map(c => ({ id: c.id, name: c.name }));
                 appData.brands = (rawData.brands || []).map(b => ({ id: b.id, name: b.name }));
                 appData.items = (rawData.items || []).map(i => ({ id: i.id, name: i.name }));
                 appData.models = (rawData.models || []).map(m => ({ id: m.id, name: m.name }));
             } else {
-                appData = {
-                    companies: [{ id: 'c1', name: 'Damro' }, { id: 'c2', name: 'Singer' }],
-                    brands: [{ id: 'b1', name: 'Innovex' }, { id: 'b2', name: 'Piyestra' }],
-                    items: [{ id: 'i1', name: 'Television' }, { id: 'i2', name: 'Refrigerator' }],
-                    models: [{ id: 'm1', name: 'DDR 182' }, { id: 'm2', name: 'DDR 195' }]
-                };
+                appData = { companies: [], brands: [], items: [], models: [] };
                 await saveCategoriesToCloud();
             }
         }
@@ -274,7 +274,7 @@
 
         function handleLogout() {
             currentRole = 'staff'; currentLoginMode = 'staff';
-            localStorage.removeItem('sanjeewa_role');
+            localStorage.clear();
             document.getElementById('login-mode-container').classList.add('hidden');
             switchLoginMode('staff');
             document.getElementById('login-phone').value = ''; document.getElementById('login-pass').value = '';
@@ -309,7 +309,6 @@
             ['page-login', 'page-home', 'page-company', 'page-brand', 'page-item', 'page-model', 'page-detail'].forEach(p => document.getElementById(p).classList.add('hidden'));
             document.getElementById(pageId).classList.remove('hidden');
 
-            // 🛠️ FIX: බටන් රෙන්ඩර් වෙද්දී කිසිම ඩේටා පැටලීමක් නැතුව පාටවල් හරියටම Force කරා
             if(pageId === 'page-company') renderButtons('company', appData.companies, 'company-container', 'bg-orange-500');
             if(pageId === 'page-brand') renderButtons('brand', appData.brands, 'brand-container', 'bg-blue-600');
             if(pageId === 'page-item') renderButtons('item', appData.items, 'item-container', 'bg-gray-700');
@@ -324,8 +323,6 @@
             dataArray.forEach(item => {
                 const btn = document.createElement('button');
                 btn.innerText = item.name;
-                
-                // 🛠️ FIX: පරණ ලිස්ට් එකේ කලර්ස් සම්පූර්ණයෙන්ම ඉග්නෝර් කරලා පිරිසිදු Tailwind කලර්ස් දෙනවා
                 btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none no-select transition-all shadow-md w-full`;
                 
                 let pressTimer = null;
@@ -408,14 +405,13 @@
             closeInputModal();
 
             if (currentModalMode === 'add') {
-                // 🛠 Rhine-Clean සේව් ක්‍රමවේදය: කිසිම පැටලීමක් නැති ක්ලීන් ID සහ නම විතරයි සේව් වෙන්නේ
                 let newItem = { id: 'id_' + Date.now(), name: inputValue };
-                
                 if(!appData[`${target.type}s`]) appData[`${target.type}s`] = [];
+                
                 appData[`${target.type}s`].push(newItem);
                 
+                // 🛠️ REPAIR: ඩේටාබේස් සේව් එක සහ රී-ලෝඩ් එක නිවැරදි පිළිවෙලට සිද්ධ කරනවා
                 await saveCategoriesToCloud();
-                // 🛠️ FIX: සේව් වුණාට පස්සේ Cloud එකෙන් ආයේ ලෝඩ් කරලාම පේජ් එකට රෙන්ඩර් කරනවා
                 await loadCategoriesFromCloud();
                 navigateTo(`page-${target.type}`);
             } else if (currentModalMode === 'rename' && target.item) {
@@ -516,12 +512,17 @@
             });
         }
 
-        // 🛠️ FIX: ඔටෝ හොරෙන් ඇඩ්මින් යන එක නැවැත්තුවා. හැමතිස්සෙම කෙලින්ම ලොගින් පේජ් එක විතරක්ම එනවා!
+        // 🛠️ REPAIR: ඕපන් කරපු ගමන් අනිවාර්යයෙන්ම ලොගින් පේජ් එක විතරක් එන විදිහට හැදුවා
         window.onload = async () => { 
-            // 1. කෙලින්ම ලොගින් පේජ් එක පෙන්වන්න සෙට් කරා
+            // 1. පරණ ලොගින් මෙමරි සේරම ක්ලියර් කරලා දානවා (Auto Admin Lock)
+            localStorage.clear();
+            currentRole = 'staff';
+            setupAdminUI();
+
+            // 2. කෙලින්ම ලොගින් ස්ක්‍රීන් එකට ලෝඩ් කරනවා
             navigateTo('page-login');
 
-            // 2. බැග්‍රවුන්ඩ් එකෙන් සුපිරියට ඩේටා ඇදලා ලෑස්ති කරගන්නවා
+            // 3. බැග්‍රවුන්ඩ් එකෙන් ක්ලවුඩ් ඩේටා ලෝඩ් කරගන්නවා
             await loadCategoriesFromCloud(); 
             await loadAllStockFromCloud(); 
         }
