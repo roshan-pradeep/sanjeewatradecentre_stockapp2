@@ -85,9 +85,9 @@
         <div class="flex justify-between items-center mb-4">
             <button onclick="navigateTo('page-home')" class="text-blue-600 font-bold">⬅ Back</button>
             <h2 class="text-xl font-bold text-center flex-1">Select Company</h2>
-            <button id="admin-add-company" onclick="openAddModal('company')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
+            <button id="admin-add-company" onclick="openAddModal('company')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
         </div>
-        <p class="admin-tip text-center text-xs text-red-500 font-semibold mb-4">💡 PC: Right-Click | Mobile: Long Press to Edit/Delete</p>
+        <p class="admin-tip text-center text-xs text-red-500 font-semibold mb-4 hidden">💡 PC: Right-Click | Mobile: Long Press to Edit/Delete</p>
         <div id="company-container" class="grid grid-cols-2 gap-4"></div>
     </div>
 
@@ -95,9 +95,9 @@
         <div class="flex justify-between items-center mb-4">
             <button onclick="navigateTo('page-company')" class="text-blue-600 font-bold">⬅ Back</button>
             <h2 class="text-xl font-bold text-center flex-1">Select Brand</h2>
-            <button id="admin-add-brand" onclick="openAddModal('brand')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
+            <button id="admin-add-brand" onclick="openAddModal('brand')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
         </div>
-        <p class="admin-tip text-center text-xs text-red-500 font-semibold mb-4">💡 PC: Right-Click | Mobile: Long Press to Edit/Delete</p>
+        <p class="admin-tip text-center text-xs text-red-500 font-semibold mb-4 hidden">💡 PC: Right-Click | Mobile: Long Press to Edit/Delete</p>
         <div id="brand-container" class="grid grid-cols-2 gap-4"></div>
     </div>
 
@@ -105,9 +105,9 @@
         <div class="flex justify-between items-center mb-4">
             <button onclick="navigateTo('page-brand')" class="text-blue-600 font-bold">⬅ Back</button>
             <h2 class="text-xl font-bold text-center flex-1">Select Item</h2>
-            <button id="admin-add-item" onclick="openAddModal('item')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
+            <button id="admin-add-item" onclick="openAddModal('item')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
         </div>
-        <p class="admin-tip text-center text-xs text-red-500 font-semibold mb-4">💡 PC: Right-Click | Mobile: Long Press to Edit/Delete</p>
+        <p class="admin-tip text-center text-xs text-red-500 font-semibold mb-4 hidden">💡 PC: Right-Click | Mobile: Long Press to Edit/Delete</p>
         <div id="item-container" class="grid grid-cols-2 gap-4"></div>
     </div>
 
@@ -115,9 +115,9 @@
         <div class="flex justify-between items-center mb-4">
             <button onclick="navigateTo('page-item')" class="text-blue-600 font-bold">⬅ Back</button>
             <h2 class="text-xl font-bold text-center flex-1">Select Model</h2>
-            <button id="admin-add-model" onclick="openAddModal('model')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
+            <button id="admin-add-model" onclick="openAddModal('model')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
         </div>
-        <p class="admin-tip text-center text-xs text-red-500 font-semibold mb-4">💡 PC: Right-Click | Mobile: Long Press to Edit/Delete</p>
+        <p class="admin-tip text-center text-xs text-red-500 font-semibold mb-4 hidden">💡 PC: Right-Click | Mobile: Long Press to Edit/Delete</p>
         <div class="mb-4">
             <input type="text" id="model-search" oninput="searchModels()" placeholder="Search Model..." class="w-full p-3 border rounded-xl shadow-sm">
         </div>
@@ -188,17 +188,12 @@
         let appData = { companies: [], brands: [], items: [], models: [] };
 
         let activeMenuTarget = { type: null, item: null };
-        let currentModalMode = 'add'; 
+        let currentModalMode = 'add'; // 'add' හෝ 'rename'
 
         async function fetchSupabase(endpoint, method = 'GET', body = null) {
             const options = {
                 method: method,
-                headers: { 
-                    "apikey": SUPABASE_KEY, 
-                    "Authorization": `Bearer ${SUPABASE_KEY}`, 
-                    "Content-Type": "application/json",
-                    "Prefer": "resolution=merge-duplicates" // 🛠️ FIX: Duplicate නොවී merge වෙන්න දාපු header එක
-                }
+                headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" }
             };
             if (body) options.body = JSON.stringify(body);
             try {
@@ -209,31 +204,22 @@
         }
 
         async function saveCategoriesToCloud() {
-            const cleanStructure = {
-                companies: (appData.companies || []).map(c => ({ id: c.id, name: c.name })),
-                brands: (appData.brands || []).map(b => ({ id: b.id, name: b.name })),
-                items: (appData.items || []).map(i => ({ id: i.id, name: i.name })),
-                models: (appData.models || []).map(m => ({ id: m.id, name: m.name }))
-            };
-            
-            // 🛠️ CRITICAL FIX: POST වෙනුවට PATCH පාවිච්චි කරලා main_structure එකේ තියෙන රෝ එක විතරක් අප්ඩේට් කරනවා
-            const payload = { structure_data: cleanStructure };
-            await fetchSupabase('/app_categories?id=eq.main_structure', 'PATCH', payload);
+            const payload = { id: "main_structure", structure_data: appData };
+            await fetchSupabase('/app_categories', 'POST', payload);
         }
 
         async function loadCategoriesFromCloud() {
             const res = await fetchSupabase('/app_categories?id=eq.main_structure');
             if (res && res.length > 0 && res[0].structure_data) {
-                let rawData = res[0].structure_data;
-                appData.companies = rawData.companies || [];
-                appData.brands = rawData.brands || [];
-                appData.items = rawData.items || [];
-                appData.models = rawData.models || [];
+                appData = res[0].structure_data;
             } else {
-                // 🛠️ FIRST TIME REPAIR: ඩේටාබේස් එක හිස් නම් මුලින්ම රෝ එක ක්‍රියේට් කරගන්නවා
-                appData = { companies: [{ id: 'id_init', name: 'Sanjeewa Trade Centre' }], brands: [], items: [], models: [] };
-                const payload = { id: "main_structure", structure_data: appData };
-                await fetchSupabase('/app_categories', 'POST', payload);
+                appData = {
+                    companies: [{ id: 'c1', name: 'Damro' }, { id: 'c2', name: 'Singer' }],
+                    brands: [{ id: 'b1', name: 'Innovex' }, { id: 'b2', name: 'Piyestra' }],
+                    items: [{ id: 'i1', name: 'Television' }, { id: 'i2', name: 'Refrigerator' }],
+                    models: [{ id: 'm1', name: 'DDR 182' }, { id: 'm2', name: 'DDR 195' }]
+                };
+                await saveCategoriesToCloud();
             }
         }
 
@@ -262,22 +248,20 @@
 
             if (currentLoginMode === 'admin') {
                 if (isRegisteredStaff) {
-                    alert("🚫 ඔබ Staff සාමාජിക്കයෙකු ලෙස හඳුනාගෙන ඇත! කරුණාකර Staff Portal එක හරහා ලොග් වන්න.");
+                    alert("🚫 ඔබ Staff සාමාජිකයෙකු ලෙස හඳුනාගෙන ඇත! කරුණාකර Staff Portal එක හරහා ලොග් වන්න.");
                     switchLoginMode('staff');
                     return;
                 }
                 if (phone === '0712345678' && pass === 'Admin@123') { 
                     currentRole = 'admin';
                     localStorage.setItem('sanjeewa_role', 'admin');
-                    setupAdminUI(); 
-                    navigateTo('page-home');
+                    setupAdminUI(); navigateTo('page-home');
                 } else { alert('ඇඩ්මින් දත්ත වැරදියි!'); }
             } else {
                 if (isRegisteredStaff) {
                     currentRole = 'staff';
                     localStorage.setItem('sanjeewa_role', 'staff');
-                    setupAdminUI(); 
-                    navigateTo('page-home');
+                    setupAdminUI(); navigateTo('page-home');
                 } else { alert('මෙම අංකය ඩේටාබේස් එකේ ලියාපදිංචි කර නොමැත!'); }
             }
         }
@@ -288,33 +272,15 @@
             document.getElementById('login-mode-container').classList.add('hidden');
             switchLoginMode('staff');
             document.getElementById('login-phone').value = ''; document.getElementById('login-pass').value = '';
-            setupAdminUI();
             navigateTo('page-login');
         }
 
         function setupAdminUI() {
-            // 🛠️ CRITICAL FIX: හැම තිස්සෙම localStorage එකෙන් රෝල් එක අරන් Force කරනවා.
-            const currentSavedRole = localStorage.getItem('sanjeewa_role') || 'staff';
-            const isAdmin = (currentSavedRole === 'admin');
-
-            const adminIds = ['admin-add-company', 'admin-add-brand', 'admin-add-item', 'admin-add-model', 'admin-detail-controls', 'admin-staff-manager'];
-            adminIds.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    if (isAdmin) {
-                        el.style.display = 'block'; // force display
-                        el.classList.remove('hidden');
-                    } else {
-                        el.style.display = 'none';
-                        el.classList.add('hidden');
-                    }
-                }
+            const adminElements = ['admin-add-company', 'admin-add-brand', 'admin-add-item', 'admin-add-model', 'admin-detail-controls', 'admin-staff-manager'];
+            adminElements.forEach(id => {
+                const el = document.getElementById(id); if(el) el.classList.toggle('hidden', currentRole !== 'admin');
             });
-
-            document.querySelectorAll('.admin-tip').forEach(el => {
-                if (isAdmin) el.classList.remove('hidden');
-                else el.classList.add('hidden');
-            });
+            document.querySelectorAll('.admin-tip').forEach(el => el.classList.toggle('hidden', currentRole !== 'admin'));
         }
 
         async function generateStaffLink() {
@@ -330,6 +296,7 @@
         function navigateTo(pageId) {
             document.getElementById('custom-context-menu').classList.add('hidden');
 
+            // ✨ සර්ච් බාර් එක ක්ලියර් කිරීමේ නව ලොජික් එක
             if(pageId === 'page-model') {
                 document.getElementById('model-search').value = ''; 
             }
@@ -337,39 +304,30 @@
             ['page-login', 'page-home', 'page-company', 'page-brand', 'page-item', 'page-model', 'page-detail'].forEach(p => document.getElementById(p).classList.add('hidden'));
             document.getElementById(pageId).classList.remove('hidden');
 
-            // 🛠️ FIX: පේජ් එක මාරු වෙන හැම තප්පරයකදීම බටන් UI එක චෙක් කරනවා
-            setupAdminUI();
-
-            if(pageId === 'page-company') renderButtons('company', appData.companies, 'company-container', 'bg-orange-500');
+            if(pageId === 'page-company') renderButtons('company', appData.companies, 'company-container', 'bg-orange-600');
             if(pageId === 'page-brand') renderButtons('brand', appData.brands, 'brand-container', 'bg-blue-600');
             if(pageId === 'page-item') renderButtons('item', appData.items, 'item-container', 'bg-gray-700');
             if(pageId === 'page-model') renderButtons('model', appData.models, 'model-container', 'bg-emerald-600');
         }
 
-        function renderButtons(type, dataArray, containerId, defaultColor) {
+        function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
             const container = document.getElementById(containerId); container.innerHTML = ''; 
             
-            if (!dataArray || dataArray.length === 0) {
-                container.innerHTML = `<p class="col-span-2 text-center text-gray-400 text-sm py-8">No ${type}s added yet. Click +Add above.</p>`;
-                return;
-            }
-
-            const currentSavedRole = localStorage.getItem('sanjeewa_role') || 'staff';
-
             dataArray.forEach(item => {
                 const btn = document.createElement('button');
                 btn.innerText = item.name;
-                btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none no-select transition-all shadow-md w-full`;
+                // Company ඇතුළු හැම එකකටම කලර්ස් හරියටම වැටෙන්න හැදුවා මචං
+                btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none no-select transition-all shadow-md`;
                 
                 let pressTimer = null;
                 let isLongPress = false;
 
                 btn.addEventListener('contextmenu', (e) => {
-                    if (currentSavedRole === 'admin') { e.preventDefault(); showCustomContextMenu(e.clientX, e.clientY, type, item); }
+                    if (currentRole === 'admin') { e.preventDefault(); showCustomContextMenu(e.clientX, e.clientY, type, item); }
                 });
 
                 const startPress = (e) => {
-                    if (currentSavedRole !== 'admin') return;
+                    if (currentRole !== 'admin') return;
                     isLongPress = false; btn.classList.add('long-press-active');
                     let x = e.clientX || (e.touches && e.touches[0].clientX);
                     let y = e.clientY || (e.touches && e.touches[0].clientY);
@@ -407,6 +365,9 @@
             if(!menu.contains(e.target)) menu.classList.add('hidden');
         });
 
+        // ======================================================= -->
+        // NEW: MODAL CONTROLS (මැදින් එන කොටුවේ ක්‍රියාකාරීත්වය) -->
+        // ======================================================= -->
         function openAddModal(type) {
             currentModalMode = 'add';
             activeMenuTarget = { type: type, item: null };
@@ -416,6 +377,7 @@
             setTimeout(() => document.getElementById('modal-input-field').focus(), 50);
         }
 
+        // Context Menu එකෙන් Rename එබුවම මෝඩල් එක ඕපන් වීම
         document.getElementById('menu-rename-btn').addEventListener('click', () => {
             currentModalMode = 'rename';
             const target = activeMenuTarget;
@@ -433,6 +395,7 @@
             document.getElementById('custom-input-modal').classList.add('hidden');
         }
 
+        // SAVE BUTTON LOGIC FOR MODAL (Add සහ Rename දෙකටම වැඩ)
         document.getElementById('modal-save-btn').addEventListener('click', async () => {
             const inputValue = document.getElementById('modal-input-field').value.trim();
             if(!inputValue) { alert('කරුණාකර නමක් ඇතුළත් කරන්න!'); return; }
@@ -441,23 +404,21 @@
             closeInputModal();
 
             if (currentModalMode === 'add') {
+                // අලුත් එකක් ඇඩ් කිරීම
                 let newItem = { id: 'id_' + Date.now(), name: inputValue };
-                if(!appData[`${target.type}s`]) appData[`${target.type}s`] = [];
-                
                 appData[`${target.type}s`].push(newItem);
-                
                 await saveCategoriesToCloud();
-                await loadCategoriesFromCloud();
                 navigateTo(`page-${target.type}`);
             } else if (currentModalMode === 'rename' && target.item) {
+                // Rename කිරීම
                 target.item.name = inputValue;
                 await saveCategoriesToCloud();
-                await loadCategoriesFromCloud();
                 alert("සාර්ථකව Rename කර සේව් කළා! 🎉");
                 navigateTo(`page-${target.type}`);
             }
         });
 
+        // 🗑️ DELETE WITH ARE YOU SURE CHECK
         document.getElementById('menu-delete-btn').addEventListener('click', async () => {
             const target = activeMenuTarget;
             document.getElementById('custom-context-menu').classList.add('hidden');
@@ -467,7 +428,6 @@
                 if (confirmation) {
                     appData[`${target.type}s`] = appData[`${target.type}s`].filter(i => i.id !== target.item.id);
                     await saveCategoriesToCloud();
-                    await loadCategoriesFromCloud();
                     alert("සාර්ථකව මකා දැමුවා! ❌");
                     navigateTo(`page-${target.type}`);
                 }
@@ -531,18 +491,8 @@
             p.img = document.getElementById('input-img-url').value.trim();
             const mName = appData.models.find(m => m.id === currentModelId)?.name || "Unknown Model";
             const payload = { model_id: currentModelId, model_name: mName, img_url: p.img, retail_price: p.retail, discount: p.discount, cost_price: p.cost, stock_data: p.stock };
-            
-            // 🛠️ UPSERT FIX FOR LIVE STOCK
-            const options = {
-                method: 'POST',
-                headers: { 
-                    "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json",
-                    "Prefer": "resolution=merge-duplicates"
-                },
-                body: JSON.stringify(payload)
-            };
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/items_stock`, options);
-            if(response.ok) { alert('නිෂ්පාදන විස්තර සාර්ථකව ඩේටාබේස් එකට සේව් වුණා! 🎉'); updateDetailViewUI(); }
+            const res = await fetchSupabase('/items_stock', 'POST', payload);
+            if(res) { alert('නිෂ්පාදන විස්තර සාර්ථකව ඩේටාබේස් එකට සේව් වුණා! 🎉'); updateDetailViewUI(); }
         }
 
         function updateDetailViewUI() {
@@ -558,16 +508,17 @@
         }
 
         window.onload = async () => { 
-            const savedRole = localStorage.getItem('sanjeewa_role');
-            
-            if (!savedRole) {
-                navigateTo('page-login');
-            } else {
-                navigateTo('page-home');
-            }
-
             await loadCategoriesFromCloud(); 
             await loadAllStockFromCloud(); 
+
+            const savedRole = localStorage.getItem('sanjeewa_role');
+            if (savedRole === 'admin' || savedRole === 'staff') {
+                currentRole = savedRole;
+                setupAdminUI();
+                navigateTo('page-home');
+            } else {
+                navigateTo('page-login');
+            }
         }
     </script>
 </body>
