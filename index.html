@@ -211,12 +211,13 @@
         async function loadCategoriesFromCloud() {
             const res = await fetchSupabase('/app_categories?id=eq.main_structure');
             if (res && res.length > 0 && res[0].structure_data) {
-                appData = res[0].structure_data;
+                let rawData = res[0].structure_data;
                 
-                // 🛠️ FIX: පරණ structure එකේ තිබ්බ අනවශ්‍ය color tags සේරම අයින් කරනවා ගැටළු නැති වෙන්න
-                if(appData.companies) {
-                    appData.companies = appData.companies.map(c => { return { id: c.id, name: c.name }; });
-                }
+                // 🛠️ FIX: පරණ structure එකේ තිබ්බ හැම කැත කුණු color tags මකා දාලා පිරිසිදු කරගන්නවා
+                appData.companies = (rawData.companies || []).map(c => ({ id: c.id, name: c.name }));
+                appData.brands = (rawData.brands || []).map(b => ({ id: b.id, name: b.name }));
+                appData.items = (rawData.items || []).map(i => ({ id: i.id, name: i.name }));
+                appData.models = (rawData.models || []).map(m => ({ id: m.id, name: m.name }));
             } else {
                 appData = {
                     companies: [{ id: 'c1', name: 'Damro' }, { id: 'c2', name: 'Singer' }],
@@ -308,7 +309,7 @@
             ['page-login', 'page-home', 'page-company', 'page-brand', 'page-item', 'page-model', 'page-detail'].forEach(p => document.getElementById(p).classList.add('hidden'));
             document.getElementById(pageId).classList.remove('hidden');
 
-            // 🛠️ FIX: බටන් රෙන්ඩර් වෙද්දී හැම එකකටම අදාළ පාට කෙලින්ම මෙතනින් Force කරනවා
+            // 🛠️ FIX: බටන් රෙන්ඩර් වෙද්දී කිසිම ඩේටා පැටලීමක් නැතුව පාටවල් හරියටම Force කරා
             if(pageId === 'page-company') renderButtons('company', appData.companies, 'company-container', 'bg-orange-500');
             if(pageId === 'page-brand') renderButtons('brand', appData.brands, 'brand-container', 'bg-blue-600');
             if(pageId === 'page-item') renderButtons('item', appData.items, 'item-container', 'bg-gray-700');
@@ -324,7 +325,7 @@
                 const btn = document.createElement('button');
                 btn.innerText = item.name;
                 
-                // 🛠️ FIX: පරණ structure එකේ මොනවා තිබ්බත් defaultColor එක විතරක්ම මෙතනට වැටෙන්න සැලැස්සුවා
+                // 🛠️ FIX: පරණ ලිස්ට් එකේ කලර්ස් සම්පූර්ණයෙන්ම ඉග්නෝර් කරලා පිරිසිදු Tailwind කලර්ස් දෙනවා
                 btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none no-select transition-all shadow-md w-full`;
                 
                 let pressTimer = null;
@@ -407,15 +408,20 @@
             closeInputModal();
 
             if (currentModalMode === 'add') {
-                // 🛠️ FIX: කිසිම කලර් ටැග් එකක් නැතුව පිරිසිදුවට අයිටම් එක සේව් කරනවා
+                // 🛠 Rhine-Clean සේව් ක්‍රමවේදය: කිසිම පැටලීමක් නැති ක්ලීන් ID සහ නම විතරයි සේව් වෙන්නේ
                 let newItem = { id: 'id_' + Date.now(), name: inputValue };
+                
                 if(!appData[`${target.type}s`]) appData[`${target.type}s`] = [];
                 appData[`${target.type}s`].push(newItem);
+                
                 await saveCategoriesToCloud();
+                // 🛠️ FIX: සේව් වුණාට පස්සේ Cloud එකෙන් ආයේ ලෝඩ් කරලාම පේජ් එකට රෙන්ඩර් කරනවා
+                await loadCategoriesFromCloud();
                 navigateTo(`page-${target.type}`);
             } else if (currentModalMode === 'rename' && target.item) {
                 target.item.name = inputValue;
                 await saveCategoriesToCloud();
+                await loadCategoriesFromCloud();
                 alert("සාර්ථකව Rename කර සේව් කළා! 🎉");
                 navigateTo(`page-${target.type}`);
             }
@@ -430,6 +436,7 @@
                 if (confirmation) {
                     appData[`${target.type}s`] = appData[`${target.type}s`].filter(i => i.id !== target.item.id);
                     await saveCategoriesToCloud();
+                    await loadCategoriesFromCloud();
                     alert("සාර්ථකව මකා දැමුවා! ❌");
                     navigateTo(`page-${target.type}`);
                 }
@@ -494,7 +501,7 @@
             const mName = appData.models.find(m => m.id === currentModelId)?.name || "Unknown Model";
             const payload = { model_id: currentModelId, model_name: mName, img_url: p.img, retail_price: p.retail, discount: p.discount, cost_price: p.cost, stock_data: p.stock };
             const res = await fetchSupabase('/items_stock', 'POST', payload);
-            if(res) { alert('නිෂ්පාදන විස්තර සාර්ථකව ඩේටාබේස් එකට සේဝ် වුණා! 🎉'); updateDetailViewUI(); }
+            if(res) { alert('නිෂ්පාදන විස්තර සාර්ථකව ඩේටාබේස් එකට සේව් වුණා! 🎉'); updateDetailViewUI(); }
         }
 
         function updateDetailViewUI() {
@@ -509,21 +516,14 @@
             });
         }
 
-        // 🛠️ FIX: සයිට් එක ලෝඩ් වෙද්දීම ලොගින් පේජ් එක මුලින්ම පෙන්වලා, බැග්‍රවුන්ඩ් එකෙන් ඩේටා ලෝඩ් කරනවා
+        // 🛠️ FIX: ඔටෝ හොරෙන් ඇඩ්මින් යන එක නැවැත්තුවා. හැමතිස්සෙම කෙලින්ම ලොගින් පේජ් එක විතරක්ම එනවා!
         window.onload = async () => { 
-            // මුලින්ම ලොගින් පේජ් එක පෙන්වනවා (බ්ලෑන්ක් ස්ක්‍රීන් ප්‍රශ්නය වැලැක්වීමට)
+            // 1. කෙලින්ම ලොගින් පේජ් එක පෙන්වන්න සෙට් කරා
             navigateTo('page-login');
 
+            // 2. බැග්‍රවුන්ඩ් එකෙන් සුපිරියට ඩේටා ඇදලා ලෑස්ති කරගන්නවා
             await loadCategoriesFromCloud(); 
             await loadAllStockFromCloud(); 
-
-            // ඩේටා ලෝඩ් වෙලා ඉවර වුණාම මෙමරියේ ලොග් වුණු කෙනෙක් ඉන්නවද බලනවා
-            const savedRole = localStorage.getItem('sanjeewa_role');
-            if (savedRole === 'admin' || savedRole === 'staff') {
-                currentRole = savedRole;
-                setupAdminUI();
-                navigateTo('page-home');
-            }
         }
     </script>
 </body>
