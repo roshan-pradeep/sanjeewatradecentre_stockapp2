@@ -204,7 +204,7 @@
         }
 
         async function saveCategoriesToCloud() {
-            // 🛠️ REPAIR: සේව් වෙන්න කලින් structure එක සම්පූර්ණයෙන්ම පිරිසිදු කරලා ගැලපෙන විදිහට හදනවා
+            // 🛠️ FIX: සේව් වෙන්න කලින් කිසිම විදිහකින් appData එක හිස් හෝ කුඩු වෙන්න දෙන්නේ නැහැ
             const cleanStructure = {
                 companies: (appData.companies || []).map(c => ({ id: c.id, name: c.name })),
                 brands: (appData.brands || []).map(b => ({ id: b.id, name: b.name })),
@@ -219,10 +219,10 @@
             const res = await fetchSupabase('/app_categories?id=eq.main_structure');
             if (res && res.length > 0 && res[0].structure_data) {
                 let rawData = res[0].structure_data;
-                appData.companies = (rawData.companies || []).map(c => ({ id: c.id, name: c.name }));
-                appData.brands = (rawData.brands || []).map(b => ({ id: b.id, name: b.name }));
-                appData.items = (rawData.items || []).map(i => ({ id: i.id, name: i.name }));
-                appData.models = (rawData.models || []).map(m => ({ id: m.id, name: m.name }));
+                appData.companies = rawData.companies || [];
+                appData.brands = rawData.brands || [];
+                appData.items = rawData.items || [];
+                appData.models = rawData.models || [];
             } else {
                 appData = { companies: [], brands: [], items: [], models: [] };
                 await saveCategoriesToCloud();
@@ -260,33 +260,41 @@
                 }
                 if (phone === '0712345678' && pass === 'Admin@123') { 
                     currentRole = 'admin';
-                    localStorage.setItem('sanjeewa_role', 'admin');
-                    setupAdminUI(); navigateTo('page-home');
+                    localStorage.setItem('sanjeewa_role', 'admin'); // 🛠️ FIX: Role එක නිවැරදිව මතක තියාගන්නවා
+                    setupAdminUI(); 
+                    navigateTo('page-home');
                 } else { alert('ඇඩ්මින් දත්ත වැරදියි!'); }
             } else {
                 if (isRegisteredStaff) {
                     currentRole = 'staff';
                     localStorage.setItem('sanjeewa_role', 'staff');
-                    setupAdminUI(); navigateTo('page-home');
+                    setupAdminUI(); 
+                    navigateTo('page-home');
                 } else { alert('මෙම අංකය ඩේටාබේස් එකේ ලියාපදිංචි කර නොමැත!'); }
             }
         }
 
         function handleLogout() {
             currentRole = 'staff'; currentLoginMode = 'staff';
-            localStorage.clear();
+            localStorage.removeItem('sanjeewa_role');
             document.getElementById('login-mode-container').classList.add('hidden');
             switchLoginMode('staff');
             document.getElementById('login-phone').value = ''; document.getElementById('login-pass').value = '';
+            setupAdminUI();
             navigateTo('page-login');
         }
 
         function setupAdminUI() {
+            // 🛠️ CRITICAL FIX: හැමතිස්සෙම ලයිව් රෝල් එක චෙක් කරලා UI එක අප්ඩේට් කරනවා
+            const currentSavedRole = localStorage.getItem('sanjeewa_role') || 'staff';
+            const isAdmin = (currentSavedRole === 'admin');
+
             const adminElements = ['admin-add-company', 'admin-add-brand', 'admin-add-item', 'admin-add-model', 'admin-detail-controls', 'admin-staff-manager'];
             adminElements.forEach(id => {
-                const el = document.getElementById(id); if(el) el.classList.toggle('hidden', currentRole !== 'admin');
+                const el = document.getElementById(id); 
+                if(el) el.classList.toggle('hidden', !isAdmin);
             });
-            document.querySelectorAll('.admin-tip').forEach(el => el.classList.toggle('hidden', currentRole !== 'admin'));
+            document.querySelectorAll('.admin-tip').forEach(el => el.classList.toggle('hidden', !isAdmin));
         }
 
         async function generateStaffLink() {
@@ -306,6 +314,9 @@
                 document.getElementById('model-search').value = ''; 
             }
 
+            // 🛠️ FIX: පේජ් එකක් මාරු වෙන හැම වතාවකම ඇඩ්මින් ද අයිතිවාසිකම් ඔටෝ චෙක් කරලා බටන් දෙනවා
+            setupAdminUI();
+
             ['page-login', 'page-home', 'page-company', 'page-brand', 'page-item', 'page-model', 'page-detail'].forEach(p => document.getElementById(p).classList.add('hidden'));
             document.getElementById(pageId).classList.remove('hidden');
 
@@ -318,7 +329,12 @@
         function renderButtons(type, dataArray, containerId, defaultColor) {
             const container = document.getElementById(containerId); container.innerHTML = ''; 
             
-            if (!dataArray || dataArray.length === 0) return;
+            if (!dataArray || dataArray.length === 0) {
+                container.innerHTML = `<p class="col-span-2 text-center text-gray-400 text-sm py-8">No ${type}s added yet.</p>`;
+                return;
+            }
+
+            const currentSavedRole = localStorage.getItem('sanjeewa_role') || 'staff';
 
             dataArray.forEach(item => {
                 const btn = document.createElement('button');
@@ -329,11 +345,11 @@
                 let isLongPress = false;
 
                 btn.addEventListener('contextmenu', (e) => {
-                    if (currentRole === 'admin') { e.preventDefault(); showCustomContextMenu(e.clientX, e.clientY, type, item); }
+                    if (currentSavedRole === 'admin') { e.preventDefault(); showCustomContextMenu(e.clientX, e.clientY, type, item); }
                 });
 
                 const startPress = (e) => {
-                    if (currentRole !== 'admin') return;
+                    if (currentSavedRole !== 'admin') return;
                     isLongPress = false; btn.classList.add('long-press-active');
                     let x = e.clientX || (e.touches && e.touches[0].clientX);
                     let y = e.clientY || (e.touches && e.touches[0].clientY);
@@ -410,7 +426,6 @@
                 
                 appData[`${target.type}s`].push(newItem);
                 
-                // 🛠️ REPAIR: ඩේටාබේස් සේව් එක සහ රී-ලෝඩ් එක නිවැරදි පිළිවෙලට සිද්ධ කරනවා
                 await saveCategoriesToCloud();
                 await loadCategoriesFromCloud();
                 navigateTo(`page-${target.type}`);
@@ -512,17 +527,19 @@
             });
         }
 
-        // 🛠️ REPAIR: ඕපන් කරපු ගමන් අනිවාර්යයෙන්ම ලොගින් පේජ් එක විතරක් එන විදිහට හැදුවා
+        // 🛠️ FIX: ඇප් එක මුලින්ම ඕපන් කරද්දී විතරක්ම සේරම ක්ලියර් කරලා ලොගින් පේජ් එක දෙනවා
         window.onload = async () => { 
-            // 1. පරණ ලොගින් මෙමරි සේරම ක්ලියර් කරලා දානවා (Auto Admin Lock)
-            localStorage.clear();
-            currentRole = 'staff';
-            setupAdminUI();
+            const savedRole = localStorage.getItem('sanjeewa_role');
+            
+            // මුලින්ම ලොගින් පේජ් එක පෙන්වනවා
+            if (!savedRole) {
+                navigateTo('page-login');
+            } else {
+                setupAdminUI();
+                navigateTo('page-home');
+            }
 
-            // 2. කෙලින්ම ලොගින් ස්ක්‍රීන් එකට ලෝඩ් කරනවා
-            navigateTo('page-login');
-
-            // 3. බැග්‍රවුන්ඩ් එකෙන් ක්ලවුඩ් ඩේටා ලෝඩ් කරගන්නවා
+            // ක්ලවුඩ් ඩේටා පසුබිමෙන් ලෝඩ් කරගන්නවා
             await loadCategoriesFromCloud(); 
             await loadAllStockFromCloud(); 
         }
