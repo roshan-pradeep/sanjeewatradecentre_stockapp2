@@ -12,6 +12,15 @@
 </head>
 <body class="bg-gray-100 font-sans text-gray-800 no-select">
 
+    <div id="custom-context-menu" class="hidden absolute bg-white shadow-2xl border rounded-xl py-2 w-40 z-50 transition-all">
+        <button id="menu-rename-btn" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 font-semibold flex items-center gap-2 text-blue-600">
+            ✏️ Rename
+        </button>
+        <button id="menu-delete-btn" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 font-semibold flex items-center gap-2 text-red-600">
+            🗑️ Delete
+        </button>
+    </div>
+
     <div id="page-login" class="flex flex-col items-center justify-center min-h-screen p-4">
         <div class="bg-white p-6 rounded-2xl shadow-lg w-full max-w-sm">
             <h2 class="text-2xl font-bold text-center text-blue-600 mb-2">Sanjeewa Trade Centre</h2>
@@ -165,9 +174,10 @@
         let currentLoginMode = 'staff';  
         let currentModelId = '';       
         let liveDatabaseStock = {}; 
-
-        // ඩේටාබේස් එකෙන් එනකම් Default තියෙන කැටගරි දත්ත ව්‍යුහය
         let appData = { companies: [], brands: [], items: [], models: [] };
+
+        // දැනට සිලෙක්ට් කරලා තියෙන අයිටම් එකේ විස්තර (Context Menu එකට ඕන වෙනවා)
+        let activeMenuTarget = { type: null, item: null };
 
         async function fetchSupabase(endpoint, method = 'GET', body = null) {
             const options = {
@@ -182,19 +192,16 @@
             } catch (err) { return null; }
         }
 
-        // 💾 මුළු Category ටේබල් එකම Supabase එකට Update කරන සිස්ටම් එක
         async function saveCategoriesToCloud() {
             const payload = { id: "main_structure", structure_data: appData };
             await fetchSupabase('/app_categories', 'POST', payload);
         }
 
-        // 🔄 සයිට් එක ඕපන් වෙද්දීම ඩේටාබේස් එකෙන් කැටගරි ටික ලෝඩ් කරගැනීම
         async function loadCategoriesFromCloud() {
             const res = await fetchSupabase('/app_categories?id=eq.main_structure');
             if (res && res.length > 0 && res[0].structure_data) {
                 appData = res[0].structure_data;
             } else {
-                // පළවෙනි පාරට ඩේටාබේස් එක හිස් නම් විතරක් මේ මූලික දත්ත ටික දානවා
                 appData = {
                     companies: [{ id: 'c1', name: 'Damro', color: 'bg-red-500' }, { id: 'c2', name: 'Singer', color: 'bg-blue-500' }],
                     brands: [{ id: 'b1', name: 'Innovex' }, { id: 'b2', name: 'Piyestra' }],
@@ -219,39 +226,38 @@
             document.getElementById('login-sub-title').innerText = mode === 'admin' ? "Admin Portal" : "Staff Portal";
         }
 
-        // 🛡️ SECURE LOGIN WITH STAFF DETECTION LOGIC
         async function handleSecureLogin() {
             const phone = document.getElementById('login-phone').value.trim();
             const pass = document.getElementById('login-pass').value.trim();
 
             if (!phone) { alert('කරුණාකර අංකය ඇතුළත් කරන්න!'); return; }
 
-            // මුලින්ම මේ නම්බර් එක ස්ටාෆ් ලිස්ට් එකේ තියෙනවද කියලා ඩේටාබේස් එකෙන් චෙක් කරනවා
             const staffCheck = await fetchSupabase(`/allowed_staff?phone_number=eq.${phone}`);
             const isRegisteredStaff = staffCheck && staffCheck.length > 0;
 
             if (currentLoginMode === 'admin') {
-                // 🚨 ස්ටාෆ් අංකයකින් ඇඩ්මින් වෙන්න හැදුවොත් බ්ලොක් කිරීම!
                 if (isRegisteredStaff) {
                     alert("🚫 ඔබ Staff සාමාජිකයෙකු ලෙස හඳුනාගෙන ඇත! කරුණාකර Staff Portal එක හරහා ලොග් වන්න.");
                     switchLoginMode('staff');
                     return;
                 }
-                
-                // සාමාන්‍ය ඇඩ්මින් ලොගින් එක
                 if (phone === '0712345678' && pass === 'Admin@123') { 
-                    currentRole = 'admin'; setupAdminUI(); navigateTo('page-home');
+                    currentRole = 'admin';
+                    localStorage.setItem('sanjeewa_role', 'admin'); // 💾 Save to memory
+                    setupAdminUI(); navigateTo('page-home');
                 } else { alert('ඇඩ්මින් දත්ත වැරදියි!'); }
             } else {
-                // ස්ටාෆ් ලොගින් එක
                 if (isRegisteredStaff) {
-                    currentRole = 'staff'; setupAdminUI(); navigateTo('page-home');
+                    currentRole = 'staff';
+                    localStorage.setItem('sanjeewa_role', 'staff'); // 💾 Save to memory
+                    setupAdminUI(); navigateTo('page-home');
                 } else { alert('මෙම අංකය ඩේටාබේස් එකේ ලියාපදිංචි කර නොමැත!'); }
             }
         }
 
         function handleLogout() {
             currentRole = 'staff'; currentLoginMode = 'staff';
+            localStorage.removeItem('sanjeewa_role'); // 🚪 Clear memory
             document.getElementById('login-mode-container').classList.add('hidden');
             switchLoginMode('staff');
             document.getElementById('login-phone').value = ''; document.getElementById('login-pass').value = '';
@@ -277,6 +283,9 @@
         }
 
         function navigateTo(pageId) {
+            // ඕනෑම තැනක Context Menu එකක් ඇරිලා තිබ්බොත් වහනවා
+            document.getElementById('custom-context-menu').classList.add('hidden');
+
             ['page-login', 'page-home', 'page-company', 'page-brand', 'page-item', 'page-model', 'page-detail'].forEach(p => document.getElementById(p).classList.add('hidden'));
             document.getElementById(pageId).classList.remove('hidden');
 
@@ -297,21 +306,33 @@
                 let pressTimer = null;
                 let isLongPress = false;
 
+                // 💻 PC Right-Click Custom Menu Box
                 btn.addEventListener('contextmenu', (e) => {
-                    if (currentRole === 'admin') { e.preventDefault(); handleAdminAction(type, item); }
+                    if (currentRole === 'admin') { 
+                        e.preventDefault(); 
+                        showCustomContextMenu(e.clientX, e.clientY, type, item);
+                    }
                 });
 
-                const startPress = () => {
+                // 📱 Mobile Long Press Custom Menu Box
+                const startPress = (e) => {
                     if (currentRole !== 'admin') return;
                     isLongPress = false; btn.classList.add('long-press-active');
-                    pressTimer = setTimeout(() => { isLongPress = true; handleAdminAction(type, item); }, 800);
+                    
+                    let x = e.clientX || (e.touches && e.touches[0].clientX);
+                    let y = e.clientY || (e.touches && e.touches[0].clientY);
+
+                    pressTimer = setTimeout(() => { 
+                        isLongPress = true; 
+                        showCustomContextMenu(x, y, type, item);
+                    }, 700);
                 };
                 const endPress = () => { clearTimeout(pressTimer); btn.classList.remove('long-press-active'); };
 
                 btn.addEventListener('touchstart', startPress);
                 btn.addEventListener('touchend', (e) => { endPress(); if (isLongPress) e.preventDefault(); });
                 btn.addEventListener('touchcancel', endPress);
-                btn.addEventListener('mousedown', (e) => { if(e.button === 0) startPress(); });
+                btn.addEventListener('mousedown', (e) => { if(e.button === 0) startPress(e); });
                 btn.addEventListener('mouseup', endPress); btn.addEventListener('mouseleave', endPress);
 
                 btn.addEventListener('click', () => {
@@ -325,34 +346,66 @@
             });
         }
 
-        // 🛠️ EDIT / DELETE & AUTO CLOUD SYNC
-        async function handleAdminAction(type, item) {
-            const action = prompt(`✏️ "${item.name}" වෙනස් කිරීමට '1' ටයිප් කරන්න.\n❌ සදහටම මකා දැමීමට 'delete' ටයිප් කරන්න.`);
-            
-            if (action === '1') {
-                const newName = prompt(`අලුත් නම ඇතුළත් කරන්න:`, item.name);
-                if (newName && newName.trim() !== "") {
-                    item.name = newName.trim();
-                    await saveCategoriesToCloud(); // ඩේටාබේස් එකට සේව් කිරීම
-                    alert("සාර්ථකව වෙනස් කර ඩේටාබේස් එක අප්ඩේට් කළා! 🎉");
-                    navigateTo(`page-${type}`);
-                }
-            } else if (action === 'delete') {
-                if (confirm(`ඔබට සැබෑවටම "${item.name}" මකා දැමීමට අවශ්‍යද?`)) {
-                    appData[`${type}s`] = appData[`${type}s`].filter(i => i.id !== item.id);
-                    await saveCategoriesToCloud(); // ඩේටාබේස් එකෙන් අයින් කිරීම
-                    alert("සාර්ථකව මකා දමා ඩේටාබේස් එක අප්ඩේට් කළා! ❌");
-                    navigateTo(`page-${type}`);
-                }
-            }
+        // --- 📋 CUSTOM CONTEXT MENU SHOW LOGIC ---
+        function showCustomContextMenu(x, y, type, item) {
+            activeMenuTarget = { type: type, item: item };
+            const menu = document.getElementById('custom-context-menu');
+            menu.style.left = `${x}px`;
+            menu.style.top = `${y}px`;
+            menu.classList.remove('hidden');
         }
 
+        // පිටත ක්ලික් කරොත් මෙනු එක වහන්න
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('custom-context-menu');
+            if(!menu.contains(e.target)) menu.classList.add('hidden');
+        });
+
+        // ✏️ RENAME ACTION FROM CUSTOM MENU
+        document.getElementById('menu-rename-btn').addEventListener('click', async () => {
+            const target = activeMenuTarget;
+            document.getElementById('custom-context-menu').classList.add('hidden');
+            
+            if(target.item) {
+                const newName = prompt(`"${target.item.name}" සඳහා අලුත් නම ලබාදී Save කරන්න:`, target.item.name);
+                if (newName && newName.trim() !== "") {
+                    target.item.name = newName.trim();
+                    await saveCategoriesToCloud();
+                    alert("සාර්ථකව Rename කර සේව් කළා! 🎉");
+                    navigateTo(`page-${target.type}`);
+                }
+            }
+        });
+
+        // 🗑️ DELETE ACTION FROM CUSTOM MENU (Are you sure check)
+        document.getElementById('menu-delete-btn').addEventListener('click', async () => {
+            const target = activeMenuTarget;
+            document.getElementById('custom-context-menu').classList.add('hidden');
+            
+            if(target.item) {
+                // "Are you sure?" කන්ෆර්මේෂන් එක
+                const confirmation = confirm(`⚠️ Are you sure?\nඔබට සැබෑවටම "${target.item.name}" මකා දැමීමට අවශ්‍යද?`);
+                if (confirmation) {
+                    appData[`${target.type}s`] = appData[`${target.type}s`].filter(i => i.id !== target.item.id);
+                    await saveCategoriesToCloud();
+                    alert("සාර්ථකව මකා දැමුවා! ❌");
+                    navigateTo(`page-${target.type}`);
+                } else {
+                    alert("මකා දැමීම අවලංගු කළා. 🛡️");
+                }
+            }
+        });
+
+        // ➕ NEW ITEM ADD & AUTO RE-RENDER
         async function addNewItem(type) {
-            const name = prompt(`අලුත් නම:`); if(!name) return;
-            let newItem = { id: 'id_' + Date.now(), name: name };
+            const name = prompt(`අලුත් බටන් එකේ නම:`); 
+            if(!name || name.trim() === "") return;
+            
+            let newItem = { id: 'id_' + Date.now(), name: name.trim() };
             appData[`${type}s`].push(newItem);
-            await saveCategoriesToCloud(); // ඩේටාබේස් එකට ලයිව් සේව් වීම
-            navigateTo(`page-${type}`);
+            
+            await saveCategoriesToCloud(); // Cloud Save
+            navigateTo(`page-${type}`); // Auto Refresh UI!
         }
 
         function searchModels() {
@@ -428,9 +481,20 @@
             });
         }
 
+        // --- 🔄 REFRESH MANAGEMENT (සයිට් එක මුලින්ම ලෝඩ් වෙද්දී) ---
         window.onload = async () => { 
-            await loadCategoriesFromCloud(); // මුලින්ම කැටගරි ලෝඩ් කරනවා
+            await loadCategoriesFromCloud(); 
             await loadAllStockFromCloud(); 
+
+            // බ්‍රවුසර් මෙමරියේ කලින් ලොග් වුණු කෙනෙක් ඉන්නවද බලනවා
+            const savedRole = localStorage.getItem('sanjeewa_role');
+            if (savedRole === 'admin' || savedRole === 'staff') {
+                currentRole = savedRole;
+                setupAdminUI();
+                navigateTo('page-home'); // කෙලින්ම හෝම් පේජ් එකට යනවා!
+            } else {
+                navigateTo('page-login');
+            }
         }
     </script>
 </body>
