@@ -188,7 +188,7 @@
         let appData = { companies: [], brands: [], items: [], models: [] };
 
         let activeMenuTarget = { type: null, item: null };
-        let currentModalMode = 'add'; // 'add' හෝ 'rename'
+        let currentModalMode = 'add'; 
 
         async function fetchSupabase(endpoint, method = 'GET', body = null) {
             const options = {
@@ -296,7 +296,6 @@
         function navigateTo(pageId) {
             document.getElementById('custom-context-menu').classList.add('hidden');
 
-            // ✨ සර්ච් බාර් එක ක්ලියර් කිරීමේ නව ලොජික් එක
             if(pageId === 'page-model') {
                 document.getElementById('model-search').value = ''; 
             }
@@ -304,7 +303,8 @@
             ['page-login', 'page-home', 'page-company', 'page-brand', 'page-item', 'page-model', 'page-detail'].forEach(p => document.getElementById(p).classList.add('hidden'));
             document.getElementById(pageId).classList.remove('hidden');
 
-            if(pageId === 'page-company') renderButtons('company', appData.companies, 'company-container', 'bg-orange-600');
+            // 🛠️ FIX: පරණ structure එකේ තිබ්බ වර්ණ නිසා ඇතිවුණු ලෙඩේ මෙතනින් 100%ක්ම ක්ලියර් කලා මචං
+            if(pageId === 'page-company') renderButtons('company', appData.companies, 'company-container', 'bg-orange-500');
             if(pageId === 'page-brand') renderButtons('brand', appData.brands, 'brand-container', 'bg-blue-600');
             if(pageId === 'page-item') renderButtons('item', appData.items, 'item-container', 'bg-gray-700');
             if(pageId === 'page-model') renderButtons('model', appData.models, 'model-container', 'bg-emerald-600');
@@ -316,7 +316,8 @@
             dataArray.forEach(item => {
                 const btn = document.createElement('button');
                 btn.innerText = item.name;
-                // Company ඇතුළු හැම එකකටම කලර්ස් හරියටම වැටෙන්න හැදුවා මචං
+                
+                // 🛠️ FIX: මෙතනදී කෙලින්ම පිටින් දෙන defaultColor එක Force කරනවා (පරණ වර්ණ structure එක ignore කරනවා)
                 btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none no-select transition-all shadow-md`;
                 
                 let pressTimer = null;
@@ -365,9 +366,6 @@
             if(!menu.contains(e.target)) menu.classList.add('hidden');
         });
 
-        // ======================================================= -->
-        // NEW: MODAL CONTROLS (මැදින් එන කොටුවේ ක්‍රියාකාරීත්වය) -->
-        // ======================================================= -->
         function openAddModal(type) {
             currentModalMode = 'add';
             activeMenuTarget = { type: type, item: null };
@@ -377,7 +375,6 @@
             setTimeout(() => document.getElementById('modal-input-field').focus(), 50);
         }
 
-        // Context Menu එකෙන් Rename එබුවම මෝඩල් එක ඕපන් වීම
         document.getElementById('menu-rename-btn').addEventListener('click', () => {
             currentModalMode = 'rename';
             const target = activeMenuTarget;
@@ -395,7 +392,6 @@
             document.getElementById('custom-input-modal').classList.add('hidden');
         }
 
-        // SAVE BUTTON LOGIC FOR MODAL (Add සහ Rename දෙකටම වැඩ)
         document.getElementById('modal-save-btn').addEventListener('click', async () => {
             const inputValue = document.getElementById('modal-input-field').value.trim();
             if(!inputValue) { alert('කරුණාකර නමක් ඇතුළත් කරන්න!'); return; }
@@ -404,13 +400,11 @@
             closeInputModal();
 
             if (currentModalMode === 'add') {
-                // අලුත් එකක් ඇඩ් කිරීම
                 let newItem = { id: 'id_' + Date.now(), name: inputValue };
                 appData[`${target.type}s`].push(newItem);
                 await saveCategoriesToCloud();
                 navigateTo(`page-${target.type}`);
             } else if (currentModalMode === 'rename' && target.item) {
-                // Rename කිරීම
                 target.item.name = inputValue;
                 await saveCategoriesToCloud();
                 alert("සාර්ථකව Rename කර සේව් කළා! 🎉");
@@ -418,7 +412,6 @@
             }
         });
 
-        // 🗑️ DELETE WITH ARE YOU SURE CHECK
         document.getElementById('menu-delete-btn').addEventListener('click', async () => {
             const target = activeMenuTarget;
             document.getElementById('custom-context-menu').classList.add('hidden');
