@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sanjeewa Trade Centre</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+    <div id="page-login" class="flex flex-col items-center justify-center min-h-screen p-4">
+        <div class="bg-white p-6 rounded-2xl shadow-lg w-full max-w-sm text-center">
+            <h2 class="text-2xl font-bold text-blue-600 mb-6">Login</h2>
+            <input type="tel" id="phone" placeholder="07xxxxxxxx" class="w-full p-3 border rounded-xl mb-4">
+            <button onclick="login()" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold">Login</button>
+        </div>
+    </div>
+
+    <div id="page-home" class="hidden min-h-screen p-4">
+        <h1 class="text-2xl font-bold text-center my-10">Welcome Sanjeewa Trade Centre</h1>
+        <div class="grid grid-cols-2 gap-4 max-w-sm mx-auto">
+            <button onclick="alert('Trade Centre Section')" class="bg-orange-500 text-white py-10 rounded-2xl font-bold">Trade Centre</button>
+            <button onclick="alert('Furniture Section')" class="bg-teal-600 text-white py-10 rounded-2xl font-bold">Furniture</button>
+        </div>
+        <button onclick="location.reload()" class="mt-10 w-full text-red-600 font-bold">Logout</button>
+    </div>
+
+    <script>
+        async function login() {
+            let phone = document.getElementById('phone').value;
+            let res = await fetch("https://ttviyfggsmiaemtbawvg.supabase.co/rest/v1/allowed_staff?phone_number=eq." + phone, {
+                headers: { "apikey": "sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz", "Authorization": "Bearer sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz" }
+            });
+            let data = await res.json();
+            
+            if (data.length > 0) {
+                // ලොගින් සාර්ථක නම් පේජ් එක මාරු කරනවා
+                document.getElementById('page-login').classList.add('hidden');
+                document.getElementById('page-home').classList.remove('hidden');
+            } else {
+                alert("Login Failed: Number not found!");
+            }
+        }
+    </script>
+</body>
+</html>
