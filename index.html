@@ -6,7 +6,9 @@
     <title>Sanjeewa Trade Centre - Stock App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* බටන් එකක් ලෝන්ග් ප්‍රෙස් කලාම පොඩි ඇනිමේෂන් එකක් එන්න */
         .long-press-active { transform: scale(0.95); opacity: 0.8; transition: 0.1s; }
+        /* ඇප් එක ඇතුළේ තියෙන අකුරු බොරුවට සිලෙක්ට් වීම වැළැක්වීමට (Mobile වලට පට්ට වැදගත්) */
         .no-select { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
     </style>
 </head>
@@ -178,7 +180,8 @@
     </div>
 
     <script>
-        const SUPABASE_URL = "https://ttviyfggsmiaemtbawvg.supabase.co"; 
+        // 🛠️ FIX: අලුත්ම නිවැරදි Supabase ප්‍රොජෙක්ට් ලින්ක් එක සහ anon key එක සෙට් කළා
+        const SUPABASE_URL = "https://hvglcofofyithifbjpsw.supabase.co"; 
         const SUPABASE_KEY = "sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz";
 
         let currentRole = 'staff';       
@@ -186,11 +189,13 @@
         let currentModelId = '';       
         let liveDatabaseStock = {}; 
         
+        // ඇප් එකේ Category ව්‍යුහය (Companys, Brands, Items, Models)
         let appData = { companys: [], brands: [], items: [], models: [] };
 
         let activeMenuTarget = { type: null, item: null };
         let currentModalMode = 'add';
 
+        // 🌐 SUPABASE සන්නිවේදන කේන්ද්‍රය (Fetch API හසුරුවන්නා)
         async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = false) {
             const options = {
                 method: method,
@@ -201,7 +206,7 @@
                 }
             };
             if (isUpsert) {
-                options.headers["Prefer"] = "resolution=merge-duplicates";
+                options.headers["Prefer"] = "resolution=merge-duplicates"; // තිබුණොත් Update කරන්න නියෝගයක්
             }
             if (body) options.body = JSON.stringify(body);
             try {
@@ -211,26 +216,26 @@
             } catch (err) { return null; }
         }
 
-        // 🛠️ FIX 1: සේව් වෙද්දී සුපර්බේස් එකට බලෙන්ම Upsert එකක් විදිහට සේව් කරනවා (පරණ රෝ එක උඩටම ලියවෙන්න)
+        // ☁️ ඩේටාබේස් එකට බටන් ව්‍යුහය සේව් කරන ෆන්ෂන් එක
         async function saveCategoriesToCloud() {
             const payload = { id: "main_structure", structure_data: appData };
             const res = await fetchSupabase('/app_categories', 'POST', payload, true);
             console.log("Cloud Save Result:", res);
         }
 
-        // 🛠️ FIX 2: ලෝඩ් වෙද්දී ඩේටාබේස් එකේ අලුත්ම Row එක පෙළගස්වලා අරන්, 'companies' සහ 'companys' දෙකම එකට මර්ජ් කරනවා
+        // ☁️ ඇප් එක ලෝඩ් වෙද්දී ඩේටාබේස් එකෙන් බටන් ව්‍යුහය කියවා ගන්නා ෆන්ෂන් එක
         async function loadCategoriesFromCloud() {
             const res = await fetchSupabase('/app_categories?id=eq.main_structure&order=id.desc');
             if (res && res.length > 0 && res[0].structure_data) {
                 let rawData = res[0].structure_data;
                 console.log("Cloud Loaded Data Structure:", rawData);
                 
-                // සේෆ්ටි ලොජික්: පැරණි දත්ත සහ අලුත් දත්ත දෙකම එකට එකතු කරනවා නැති වෙන්න නොදී
+                // පැරණි 'companies' සහ අලුත් 'companys' දෙකම එකට මර්ජ් කර ආරක්ෂා කරගන්නා ලොජික් එක
                 let clearCompanys = [];
                 if (rawData.companies && Array.isArray(rawData.companies)) clearCompanys = [...rawData.companies];
                 if (rawData.companys && Array.isArray(rawData.companys)) clearCompanys = [...clearCompanys, ...rawData.companys];
 
-                // ID එකෙන් ඩුප්ලිකේට් අයින් කරනවා
+                // ඩුප්ලිකේට් අයින් කිරීම
                 let uniqueCompanys = [];
                 let map = new Map();
                 for (const item of clearCompanys) {
@@ -245,6 +250,7 @@
                 appData.items = rawData.items || [{ id: 'i1', name: 'Television' }, { id: 'i2', name: 'Refrigerator' }];
                 appData.models = rawData.models || [{ id: 'm1', name: 'DDR 182' }, { id: 'm2', name: 'DDR 195' }];
             } else {
+                // ඩේටාබේස් එක හිස් නම් ඩිෆෝල්ට් බටන් සෙට් කරනවා
                 appData = {
                     companys: [{ id: 'c1', name: 'Damro' }, { id: 'c2', name: 'Singer' }],
                     brands: [{ id: 'b1', name: 'Innovex' }, { id: 'b2', name: 'Piyestra' }],
@@ -255,11 +261,13 @@
             }
         }
 
+        // ඇඩ්මින් ලොගින් ෆීල්ඩ් එක එලියට දාන එක
         function revealAdminMode() {
             document.getElementById('login-mode-container').classList.remove('hidden');
             switchLoginMode('admin');
         }
 
+        // ලොගින් මෝඩ් එක මාරු කිරීම (Admin / Staff)
         function switchLoginMode(mode) {
             currentLoginMode = mode;
             document.getElementById('btn-mode-admin').className = mode === 'admin' ? "w-1/2 py-2 text-center rounded-md font-semibold bg-blue-600 text-white" : "w-1/2 py-2 text-center rounded-md font-semibold text-gray-700";
@@ -269,12 +277,14 @@
             document.getElementById('login-sub-title').innerText = mode === 'admin' ? "Admin Portal" : "Staff Portal";
         }
 
+        // 🔒 සුරක්ෂිත ආරක්ෂක පද්ධතිය (Login Authentication)
         async function handleSecureLogin() {
             const phone = document.getElementById('login-phone').value.trim();
             const pass = document.getElementById('login-pass').value.trim();
 
             if (!phone) { alert('කරුණාකර අංකය ඇතුළත් කරන්න!'); return; }
 
+            // Staff ලියාපදිංචි වී ඇත්දැයි Supabase එකෙන් පරීක්ෂා කිරීම
             const staffCheck = await fetchSupabase(`/allowed_staff?phone_number=eq.${phone}`);
             const isRegisteredStaff = staffCheck && staffCheck.length > 0;
 
@@ -284,6 +294,7 @@
                     switchLoginMode('staff');
                     return;
                 }
+                // 🔐 ඇඩ්මින් නම්බර් සහ පාස්වර්ඩ් එක වෙනස් කිරීමට මෙන්න මේ ලයින් එක පාවිච්චි කරන්න:
                 if (phone === '0712345678' && pass === 'Admin@123') { 
                     currentRole = 'admin';
                     localStorage.setItem('sanjeewa_role', 'admin');
@@ -298,6 +309,7 @@
             }
         }
 
+        // ලොග් අවුට් වීම
         function handleLogout() {
             currentRole = 'staff'; currentLoginMode = 'staff';
             localStorage.removeItem('sanjeewa_role');
@@ -308,6 +320,7 @@
             navigateTo('page-login');
         }
 
+        // පරිශීලකයා Admin ද නැද්ද යන්න මත UI එක වෙනස් කිරීම (Add buttons හංගන්න/පෙන්නන්න)
         function setupAdminUI() {
             const adminElements = ['admin-add-company', 'admin-add-brand', 'admin-add-item', 'admin-add-model', 'admin-detail-controls', 'admin-staff-manager'];
             adminElements.forEach(id => {
@@ -316,6 +329,7 @@
             document.querySelectorAll('.admin-tip').forEach(el => el.classList.toggle('hidden', currentRole !== 'admin'));
         }
 
+        // Staff මෙම්බර්ස්ලට SMS ලින්ක් එක ජෙනරේට් කිරීම
         async function generateStaffLink() {
             const staffPhone = document.getElementById('new-staff-phone').value.trim();
             if(!staffPhone) return;
@@ -326,6 +340,7 @@
             window.location.href = `sms:${staffPhone}${isIOS ? '&' : '?'}body=${encodeURIComponent(message)}`;
         }
 
+        // පූර්ණ පේජ් මාරු කිරීමේ (Navigation) පද්ධතිය
         function navigateTo(pageId) {
             document.getElementById('custom-context-menu').classList.add('hidden');
             if(pageId === 'page-model') document.getElementById('model-search').value = ''; 
@@ -341,6 +356,7 @@
             if(pageId === 'page-model') renderButtons('model', appData.models || [], 'model-container', 'bg-emerald-600');
         }
 
+        // දත්ත අනුව ඩයිනමික් ලෙස බටන්ස් නිර්මාණය කරන මොඩියුලය
         function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
             const container = document.getElementById(containerId); container.innerHTML = ''; 
             
@@ -352,10 +368,12 @@
                 let pressTimer = null;
                 let isLongPress = false;
 
+                // PC එකේදී Right Click හසුරුවනය
                 btn.addEventListener('contextmenu', (e) => {
                     if (currentRole === 'admin') { e.preventDefault(); showCustomContextMenu(e.clientX, e.clientY, type, item); }
                 });
 
+                // Mobile එකේදී Long Press (තත්පර 0.7) හසුරුවනය
                 const startPress = (e) => {
                     if (currentRole !== 'admin') return;
                     isLongPress = false; btn.classList.add('long-press-active');
@@ -382,6 +400,7 @@
             });
         }
 
+        // Right-Click මෙනු එක පෙන්වීම
         function showCustomContextMenu(x, y, type, item) {
             activeMenuTarget = { type: type, item: item };
             const menu = document.getElementById('custom-context-menu');
@@ -390,11 +409,13 @@
             menu.classList.remove('hidden');
         }
 
+        // මෙනුවෙන් පිටත එබුවහොත් මෙනුව වසා දැමීම
         document.addEventListener('click', (e) => {
             const menu = document.getElementById('custom-context-menu');
             if(!menu.contains(e.target)) menu.classList.add('hidden');
         });
 
+        // Add Modal එක ඇරීම
         function openAddModal(type) {
             currentModalMode = 'add';
             activeMenuTarget = { type: type, item: null };
@@ -404,6 +425,7 @@
             setTimeout(() => document.getElementById('modal-input-field').focus(), 50);
         }
 
+        // Rename Modal එක ඇරීම
         document.getElementById('menu-rename-btn').addEventListener('click', () => {
             currentModalMode = 'rename';
             const target = activeMenuTarget;
@@ -421,6 +443,7 @@
             document.getElementById('custom-input-modal').classList.add('hidden');
         }
 
+        // Modal එක ඇතුළේ SAVE බටන් එක ක්‍රියාත්මක වීම (ලයිව් ක්ලවුඩ් සින්ක්)
         document.getElementById('modal-save-btn').addEventListener('click', async () => {
             const inputValue = document.getElementById('modal-input-field').value.trim();
             if(!inputValue) { alert('කරුණාකර නමක් ඇතුළත් කරන්න!'); return; }
@@ -443,6 +466,7 @@
             }
         });
 
+        // Delete බටන් එක ක්‍රියාත්මක වීම
         document.getElementById('menu-delete-btn').addEventListener('click', async () => {
             const target = activeMenuTarget;
             document.getElementById('custom-context-menu').classList.add('hidden');
@@ -459,12 +483,14 @@
             }
         });
 
+        // සර්ච් බාර් ලොජික් එක
         function searchModels() {
             const query = document.getElementById('model-search').value.toLowerCase();
             const filtered = appData.models.filter(m => m.name.toLowerCase().includes(query));
             renderButtons('model', filtered, 'model-container', 'bg-emerald-600');
         }
 
+        // ☁️ තොග සහ මිල ගණන් (items_stock ටේබල් එකෙන්) කියවා ගැනීම
         async function loadAllStockFromCloud() {
             const cloudData = await fetchSupabase('/items_stock');
             if (cloudData) {
@@ -477,6 +503,7 @@
             }
         }
 
+        // නිශ්චිත මොඩල් එකක විස්තර ලයිව් ලෝඩ් කර විවෘත කිරීම
         async function openProductDetailLive(modelItem) {
             currentModelId = modelItem.id;
             document.getElementById('detail-model-title').innerText = modelItem.name;
@@ -490,6 +517,7 @@
             updateDetailViewUI(); navigateTo('page-detail');
         }
 
+        // 🧮 වට්ටම් සහ Net Cost එක ලයිව් ගණනය කිරීම
         function calculateCostPriceLive() {
             const retail = parseFloat(document.getElementById('input-retail').value) || 0;
             const discount = parseFloat(document.getElementById('input-discount').value) || 0;
@@ -502,6 +530,7 @@
             document.getElementById('view-cost').innerText = cost.toLocaleString();
         }
 
+        // තොග ලැයිස්තුවට තාවකාලිකව වර්ණ එකතු කිරීම
         function addColourStockToArray() {
             const colour = document.getElementById('input-colour').value.trim();
             const qty = parseInt(document.getElementById('input-qty').value) || 0;
@@ -511,6 +540,7 @@
             updateDetailViewUI();
         }
 
+        // ☁️ මුළු නිෂ්පාදන පැතිකඩම ඩේටාබේස් එකට ස්ථිරවම සින්ක් කිරීම (Save)
         async function syncProductToDatabase() {
             const p = liveDatabaseStock[currentModelId];
             p.img = document.getElementById('input-img-url').value.trim();
@@ -521,6 +551,7 @@
             if(response) { alert('නිෂ්පාදන විස්තර සාර්ථකව ඩේටාබේස් එකට සේව් වුණා! 🎉'); updateDetailViewUI(); }
         }
 
+        // නිෂ්පාදන විස්තර UI එක ලස්සනට අප්ඩේට් කිරීම
         function updateDetailViewUI() {
             const p = liveDatabaseStock[currentModelId];
             document.getElementById('product-img').src = p.img || 'https://via.placeholder.com/300?text=No+Image';
@@ -533,11 +564,11 @@
             });
         }
 
-        // 🛠️ FIX 3: නිවැරදි Order එකට මුලින්ම Cloud Data ලෝඩ් කරගන්නවා
+        // 🚀 WINDOW ONLOAD: ඇප් එක ස්ටාර්ට් වෙද්දීම නිවැරදි පිළිවෙළට Cloud Data බාගත කරගැනීම
         window.onload = async () => { 
             console.log("App Starting, Fetching from Cloud...");
-            await loadCategoriesFromCloud(); 
-            await loadAllStockFromCloud(); 
+            await loadCategoriesFromCloud(); // මුලින්ම බටන් ටික ලෝඩ් වෙනවා
+            await loadAllStockFromCloud();      // ඊට පස්සේ ස්ටොක් ටික ලෝඩ් වෙනවා
 
             if(localStorage.getItem('sanjeewa_role')) {
                 currentRole = localStorage.getItem('sanjeewa_role');
