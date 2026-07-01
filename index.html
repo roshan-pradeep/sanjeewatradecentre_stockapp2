@@ -526,18 +526,21 @@
         }
 
         window.onload = async () => { 
-            // 🛠️ මෙතන කලින් තිබුණ 'localStorage.removeItem' එක අයින් කරා. නැත්නම් හැම පාරම ලොගින් එක නැති වෙනවා.
-            if(localStorage.getItem('sanjeewa_role')) {
-                currentRole = localStorage.getItem('sanjeewa_role');
-            } else {
-                currentRole = 'staff';
-            }
-            setupAdminUI();
-            navigateTo('page-login');
+    // 1. මුලින්ම Cloud එකේ තියෙන දත්ත ඔක්කොම ඇප් එකට බාගන්නවා
+    await loadCategoriesFromCloud(); 
+    await loadAllStockFromCloud(); 
 
-            await loadCategoriesFromCloud(); 
-            await loadAllStockFromCloud(); 
-        }
+    // 2. ඊට පස්සේ රෝල් එක චෙක් කරනවා
+    if(localStorage.getItem('sanjeewa_role')) {
+        currentRole = localStorage.getItem('sanjeewa_role');
+    } else {
+        currentRole = 'staff';
+    }
+    
+    // 3. අන්තිමට UI එක හදලා ලොගින් පේජ් එක පෙන්නනවා
+    setupAdminUI();
+    navigateTo('page-login'); 
+}
     </script>
 </body>
 </html>
