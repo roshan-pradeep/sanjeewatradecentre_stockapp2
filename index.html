@@ -180,6 +180,25 @@
         </div>
     </div>
 
+    <div id="custom-stock-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center; padding: 20px;">
+    <div style="background: #1e293b; color: white; width: 100%; max-width: 400px; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; font-family: sans-serif; animation: popIn 0.3s ease;">
+        <div style="font-size: 40px; margin-bottom: 12px;">🚨</div>
+        <h3 style="margin: 0 0 16px 0; color: #ef4444; font-size: 20px; font-weight: bold; letter-spacing: 1px;">LOW STOCK ALERT!</h3>
+        
+        <div id="custom-modal-body" style="text-align: left; background: #0f172a; padding: 16px; border-radius: 12px; max-height: 200px; overflow-y: auto; margin-bottom: 20px; font-size: 15px; line-height: 1.6; border-left: 4px solid #ef4444;">
+        </div>
+
+        <button onclick="closeStockModal()" style="background: #2563eb; color: white; border: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; transition: background 0.2s;">OK</button>
+    </div>
+</div>
+
+<style>
+@keyframes popIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+</style>
+
     <script>
         // 🛠️ FIX: අලුත්ම නිවැරදි Supabase ප්‍රොජෙක්ට් ලින්ක් එක සහ anon key එක සෙට් කළා
         const SUPABASE_URL = "https://ttviyfggsmiaemtbawvg.supabase.co";
@@ -565,7 +584,7 @@
             });
         }
 
-        // 🔔 සද්දෙත් එක්ක වැඩ කරන BACKGROUND PUSH NOTIFICATION SYSTEM
+        // 🔔 ශක්තිමත් කළ LOW STOCK NOTIFICATION SYSTEM (WITH CUSTOM POPUP)
         function checkLowStockNotifications() {
             let lowStockMessages = [];
 
@@ -579,7 +598,7 @@
                     Object.keys(product.stock).forEach(color => {
                         const qty = Number(product.stock[color]);
                         if (!isNaN(qty) && qty > 0 && qty <= 5) {
-                            lowStockMessages.push(`${modelName} (${color}) - Only ${qty} Pcs Left!`);
+                            lowStockMessages.push(`📍 ${modelName} (${color}) - Only ${qty} Pcs Left!`);
                         }
                     });
                 }
@@ -587,42 +606,41 @@
 
             if (lowStockMessages.length > 0) {
                 lowStockMessages.forEach(msg => {
-                    
-                    // 🎵 1. WhatsApp Tone එකක් වගේ සද්දයක් ප්ලේ කිරීම
+                    // 🎵 WhatsApp Tone එකක් වගේ සද්දයක් ප්ලේ කිරීම
                     try {
                         let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                         let oscillator = audioCtx.createOscillator();
                         let gainNode = audioCtx.createGain();
                         oscillator.connect(gainNode);
                         gainNode.connect(audioCtx.destination);
-                        
-                        // WhatsApp ටෝන් එකකට සමාන ඩබල් බීප් සද්දයක් හැදීම
                         oscillator.type = 'sine';
-                        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // High pitch
+                        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
                         gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
                         oscillator.start();
                         oscillator.stop(audioCtx.currentTime + 0.1);
-                    } catch(e) { console.log("Audio play blocked"); }
+                    } catch(e) { console.log("Audio blocked"); }
 
-                    // 📱 2. ඇප් එක වැහුවත් ෆෝන් එකේ උඩින්ම මැසේජ් එක පෙන්වන්න සර්විස් වර්කර් එකට යැවීම
+                    // 📱 Browser Notification බාර් එකට යැවීම
                     if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-                        navigator.serviceWorker.controller.postMessage({
-                            type: 'LOW_STOCK',
-                            body: msg
-                        });
+                        navigator.serviceWorker.controller.postMessage({ type: 'LOW_STOCK', body: msg });
                     } else if (Notification.permission === "granted") {
-                        // Service worker එක තාම ඇක්ටිව් නැත්නම් සාමාන්‍ය ක්‍රමයට උඩින් පෙන්වීම
                         new Notification("🚨 Sanjeewa Stock Alert", { body: msg });
                     }
                 });
 
-                // 📢 3. ස්ක්‍රීන් එක මැද ලොකු ඇලර්ට් එකත් පෙන්වීම
-                setTimeout(() => {
-                    alert("🚨 LOW STOCK ALERT! 🚨\n\n" + lowStockMessages.join("\n"));
-                }, 500);
+                // 🔥 💻 සාමාන්‍ย Alert එක වෙනුවට මැදින් එන ලස්සන Custom Pop-up එක පෙන්වීම
+                const modalBody = document.getElementById('custom-modal-body');
+                if (modalBody) {
+                    modalBody.innerHTML = lowStockMessages.join('<br>');
+                    document.getElementById('custom-stock-modal').style.display = 'flex';
+                }
             }
         }
 
+        // ❌ Custom Pop-up එක වසා දැමීමේ සරල කමාන්ඩ් එක
+        function closeStockModal() {
+            document.getElementById('custom-stock-modal').style.display = 'none';
+        }
         // 🚀 WINDOW ONLOAD: ඇප් එක ස්ටාර්ට් වෙද්දීම සර්විස් වර්කර් එක රෙජිස්ටර් කිරීම
         window.onload = async () => { 
             console.log("App Starting, Fetching from Cloud...");
