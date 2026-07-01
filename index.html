@@ -565,10 +565,10 @@
         }
 
         // 🚀 WINDOW ONLOAD: ඇප් එක ස්ටාර්ට් වෙද්දීම නිවැරදි පිළිවෙළට Cloud Data බාගත කරගැනීම
-        window.onload = async () => { 
+       window.onload = async () => { 
             console.log("App Starting, Fetching from Cloud...");
-            await loadCategoriesFromCloud(); // මුලින්ම බටන් ටික ලෝඩ් වෙනවා
-            await loadAllStockFromCloud();      // ඊට පස්සේ ස්ටොක් ටික ලෝඩ් වෙනවා
+            await loadCategoriesFromCloud();
+            await loadAllStockFromCloud();
 
             if(localStorage.getItem('sanjeewa_role')) {
                 currentRole = localStorage.getItem('sanjeewa_role');
@@ -577,7 +577,41 @@
             }
             setupAdminUI();
             navigateTo('page-login'); 
+
+            // ඇප් එක ලෝඩ් වෙලා තත්පර 2කින් ස්ටොක් චෙක් කරන ලයින් එක
+            setTimeout(checkLowStockNotifications, 2000); 
         }
+
+        // 🔔 LOW STOCK NOTIFICATION SYSTEM
+function checkLowStockNotifications() {
+    let lowStockMessages = [];
+
+    // ඩේටාබේස් එකෙන් ආපු හැම නිෂ්පාදනයක්ම එකින් එක පරීක්ෂා කිරීම
+    Object.keys(liveDatabaseStock).forEach(modelId => {
+        const product = liveDatabaseStock[modelId];
+        const modelName = appData.models.find(m => m.id === modelId)?.name || "Unknown Model";
+        
+        // නිෂ්පාදනයට අදාළ පාටවල් සහ තොග (stock_data) තිබේ නම්
+        if (product.stock && typeof product.stock === 'object') {
+            Object.keys(product.stock).forEach(color => {
+                const qty = parseInt(product.stock[color]) || 0;
+                
+                // ⚠️ Qty එක 5 හෝ ඊට අඩු නම් (හැබැයි 0 ට වඩා වැඩි නම්) Notification එකක් හදනවා
+                if (qty > 0 && qty <= 5) {
+                    lowStockMessages.push(`⚠️ ${modelName} (${color}) - Only ${qty} Pcs Left!`);
+                }
+            });
+        }
+    });
+
+    // අඩු තොග තියෙනවා නම් විතරක් Notification Alert එකක් පෙන්වීම
+    if (lowStockMessages.length > 0) {
+        // මැසේජ් ටික එක පල්ලෙහා එක වැටෙන්න සෙට් කිරීම
+        const fullMessage = "🚨 LOW STOCK ALERT! 🚨\n\n" + lowStockMessages.join("\n");
+        alert(fullMessage);
+    }
+}
+
     </script>
 </body>
 </html>
