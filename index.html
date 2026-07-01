@@ -565,7 +565,65 @@
             });
         }
 
-        // 🚀 WINDOW ONLOAD: ඇප් එක ස්ටාර්ට් වෙද්දීම ක්‍රියාත්මක වන කොටස
+        // 🔔 සද්දෙත් එක්ක වැඩ කරන BACKGROUND PUSH NOTIFICATION SYSTEM
+        function checkLowStockNotifications() {
+            let lowStockMessages = [];
+
+            if (!liveDatabaseStock || Object.keys(liveDatabaseStock).length === 0) return;
+
+            Object.keys(liveDatabaseStock).forEach(modelId => {
+                const product = liveDatabaseStock[modelId];
+                const modelName = appData.models.find(m => m.id === modelId)?.name || "Unknown Model";
+                
+                if (product.stock && typeof product.stock === 'object') {
+                    Object.keys(product.stock).forEach(color => {
+                        const qty = Number(product.stock[color]);
+                        if (!isNaN(qty) && qty > 0 && qty <= 5) {
+                            lowStockMessages.push(`${modelName} (${color}) - Only ${qty} Pcs Left!`);
+                        }
+                    });
+                }
+            });
+
+            if (lowStockMessages.length > 0) {
+                lowStockMessages.forEach(msg => {
+                    
+                    // 🎵 1. WhatsApp Tone එකක් වගේ සද්දයක් ප්ලේ කිරීම
+                    try {
+                        let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                        let oscillator = audioCtx.createOscillator();
+                        let gainNode = audioCtx.createGain();
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioCtx.destination);
+                        
+                        // WhatsApp ටෝන් එකකට සමාන ඩබල් බීප් සද්දයක් හැදීම
+                        oscillator.type = 'sine';
+                        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // High pitch
+                        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                        oscillator.start();
+                        oscillator.stop(audioCtx.currentTime + 0.1);
+                    } catch(e) { console.log("Audio play blocked"); }
+
+                    // 📱 2. ඇප් එක වැහුවත් ෆෝන් එකේ උඩින්ම මැසේජ් එක පෙන්වන්න සර්විස් වර්කර් එකට යැවීම
+                    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                        navigator.serviceWorker.controller.postMessage({
+                            type: 'LOW_STOCK',
+                            body: msg
+                        });
+                    } else if (Notification.permission === "granted") {
+                        // Service worker එක තාම ඇක්ටිව් නැත්නම් සාමාන්‍ය ක්‍රමයට උඩින් පෙන්වීම
+                        new Notification("🚨 Sanjeewa Stock Alert", { body: msg });
+                    }
+                });
+
+                // 📢 3. ස්ක්‍රීන් එක මැද ලොකු ඇලර්ට් එකත් පෙන්වීම
+                setTimeout(() => {
+                    alert("🚨 LOW STOCK ALERT! 🚨\n\n" + lowStockMessages.join("\n"));
+                }, 500);
+            }
+        }
+
+        // 🚀 WINDOW ONLOAD: ඇප් එක ස්ටාර්ට් වෙද්දීම සර්විස් වර්කර් එක රෙජිස්ටර් කිරීම
         window.onload = async () => { 
             console.log("App Starting, Fetching from Cloud...");
             await loadCategoriesFromCloud();
@@ -579,59 +637,21 @@
             setupAdminUI();
             navigateTo('page-login'); 
 
-            // 🔒 ඇප් එක ඕපන් වෙද්දීම Notification බාර් එකට අවසර (Permission) ඉල්ලීම
+            // 🔒 Notification Permission ඉල්ලීම
             if (Notification.permission !== "granted" && Notification.permission !== "denied") {
                 Notification.requestPermission();
             }
 
-            // ඇප් එක ලෝඩ් වෙලා තත්පර 2කින් ස්ටොක් චෙක් කරලා Notification එක දානවා
+            // ⚙️ Android App එකක් වගේ වැඩ කරන්න Service Worker එක රෙජිස්ටර් කිරීම
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker Registered!', reg))
+                .catch(err => console.log('Service Worker Failed!', err));
+            }
+
+            // තත්පර 2කින් ස්ටොක් චෙක් කරලා Notification එක දානවා
             setTimeout(checkLowStockNotifications, 2000); 
         }
-
-        // 🔔 ශක්තිමත් කළ LOW STOCK NOTIFICATION SYSTEM
-        function checkLowStockNotifications() {
-            let lowStockMessages = [];
-
-            if (!liveDatabaseStock || Object.keys(liveDatabaseStock).length === 0) {
-                console.log("No live stock data found to check.");
-                return;
-            }
-
-            Object.keys(liveDatabaseStock).forEach(modelId => {
-                const product = liveDatabaseStock[modelId];
-                const modelName = appData.models.find(m => m.id === modelId)?.name || "Unknown Model";
-                
-                if (product.stock && typeof product.stock === 'object') {
-                    Object.keys(product.stock).forEach(color => {
-                        // 💡 වැදගත්: ඩේටා එක කොහොම තිබ්බත් නිවැරදිව Number එකක් කරගැනීම
-                        const qty = Number(product.stock[color]);
-                        
-                        // Qty එක 5 හෝ 5ට අඩු, හැබැයි 0ට වඩා වැඩි නම් (0 කියන්නේ බඩුම නැති ඒවානේ)
-                        if (!isNaN(qty) && qty > 0 && qty <= 5) {
-                            lowStockMessages.push(`⚠️ ${modelName} (${color}) - Only ${qty} Pcs Left!`);
-                        }
-                    });
-                }
-            });
-
-            // 📢 අඩු තොග තියෙනවා නම් ක්‍රියාත්මක වන කොටස
-            if (lowStockMessages.length > 0) {
-                const fullMessage = "🚨 LOW STOCK ALERT! 🚨\n\n" + lowStockMessages.join("\n");
-                
-                // 1. සාමාන්‍ය ඇලර්ට් එක (මේක හැම තිස්සෙම 100% වැඩ කරනවා!)
-                alert(fullMessage);
-
-                // 2. Browser Notification බාර් එක (Permission තිබේ නම් විතරක් උඩින් මැසේජ් එකක් එයි)
-                if (Notification.permission === "granted") {
-                    lowStockMessages.forEach(msg => {
-                        new Notification("🚨 Sanjeewa Stock Alert", { body: msg });
-                    });
-                }
-            } else {
-                console.log("All stocks are good! Qty is above 5.");
-            }
-        }
-
     </script>
 </body>
 </html>
