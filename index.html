@@ -587,43 +587,47 @@
             setTimeout(checkLowStockNotifications, 2000); 
         }
 
-        // 🔔 LOW STOCK NOTIFICATION SYSTEM
-// 🔔 WhatsApp ස්ටයිල් එකට NOTIFICATION BAR එකට මැසේජ් යවන සිස්ටම් එක
+        // 🔔 ශක්තිමත් කළ LOW STOCK NOTIFICATION SYSTEM
         function checkLowStockNotifications() {
             let lowStockMessages = [];
 
-            // 1. ඩේටාබේස් එක ස්කෑන් කරලා අඩු තොග ඇති මොඩල්ස් සොයා ගැනීම
+            if (!liveDatabaseStock || Object.keys(liveDatabaseStock).length === 0) {
+                console.log("No live stock data found to check.");
+                return;
+            }
+
             Object.keys(liveDatabaseStock).forEach(modelId => {
                 const product = liveDatabaseStock[modelId];
                 const modelName = appData.models.find(m => m.id === modelId)?.name || "Unknown Model";
                 
                 if (product.stock && typeof product.stock === 'object') {
                     Object.keys(product.stock).forEach(color => {
-                        const qty = parseInt(product.stock[color]) || 0;
-                        if (qty > 0 && qty <= 5) {
-                            lowStockMessages.push(`${modelName} (${color}): Only ${qty} Pcs!`);
+                        // 💡 වැදගත්: ඩේටා එක කොහොම තිබ්බත් නිවැරදිව Number එකක් කරගැනීම
+                        const qty = Number(product.stock[color]);
+                        
+                        // Qty එක 5 හෝ 5ට අඩු, හැබැයි 0ට වඩා වැඩි නම් (0 කියන්නේ බඩුම නැති ඒවානේ)
+                        if (!isNaN(qty) && qty > 0 && qty <= 5) {
+                            lowStockMessages.push(`⚠️ ${modelName} (${color}) - Only ${qty} Pcs Left!`);
                         }
                     });
                 }
             });
 
-            // 2. අඩු තොග තියෙනවා නම් විතරක් වැඩේ පටන් ගන්නවා
+            // 📢 අඩු තොග තියෙනවා නම් ක්‍රියාත්මක වන කොටස
             if (lowStockMessages.length > 0) {
+                const fullMessage = "🚨 LOW STOCK ALERT! 🚨\n\n" + lowStockMessages.join("\n");
                 
-                // 📱 ක්‍රමය A: Browser එකෙන් Notification බාර් එකට මැසේජ් එක යැවීම (Permission දීලා තිබේ නම්)
+                // 1. සාමාන්‍ය ඇලර්ට් එක (මේක හැම තිස්සෙම 100% වැඩ කරනවා!)
+                alert(fullMessage);
+
+                // 2. Browser Notification බාර් එක (Permission තිබේ නම් විතරක් උඩින් මැසේජ් එකක් එයි)
                 if (Notification.permission === "granted") {
                     lowStockMessages.forEach(msg => {
-                        new Notification("🚨 LOW STOCK ALERT", {
-                            body: msg,
-                            icon: "https://cdn-icons-png.flaticon.com/512/564/564619.png" // ඇලර්ට් අයිකන් එකක්
-                        });
+                        new Notification("🚨 Sanjeewa Stock Alert", { body: msg });
                     });
-                } 
-                // 💻 ක්‍රමය B: යම් හෙයකින් Notification බාර් Permission නැත්නම් සාමාන්‍ය ඇලර්ට් එකක් පෙන්වීම
-                else {
-                    const fullMessage = "🚨 LOW STOCK ALERT! 🚨\n\n" + lowStockMessages.join("\n");
-                    alert(fullMessage);
                 }
+            } else {
+                console.log("All stocks are good! Qty is above 5.");
             }
         }
 
