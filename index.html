@@ -683,12 +683,18 @@
             });
         }
 
-        // 🔔 තොග 5ට වඩා අඩු (Low Stock) අයිතම තිබේ නම් WhatsApp ටෝන් එකක් සමඟ Notification දමන පද්ධතිය
+        // 🔔 තොග 5ට වඩා අඩු (Low Stock) අයිතම පරීක්ෂා කිරීම - [FIXED: පරණ මැකූ ඒවා අයින් කර ඇත]
         function checkLowStockNotifications() {
             let lowStockMessages = [];
             if (!liveDatabaseStock || Object.keys(liveDatabaseStock).length === 0) return;
 
             Object.keys(liveDatabaseStock).forEach(modelId => {
+                // 🔍 FIX: මේ Model ID එක දැනට ඇප් එකේ ඇත්තටම තියෙනවද කියලා structure එකේ චෙක් කරනවා
+                const modelExists = appData.models.some(m => m.id === modelId);
+                
+                // ඇප් එකේ නැති මොඩල් එකක් නම්, මේක මඟ හැරලා ඊළඟ එකට යන්න (Skip deleted models)
+                if (!modelExists) return; 
+
                 const product = liveDatabaseStock[modelId];
                 const modelName = appData.models.find(m => m.id === modelId)?.name || "Unknown Model";
                 
@@ -717,7 +723,7 @@
                     oscillator.stop(audioCtx.currentTime + 0.1);
                 } catch(e) { console.log("Audio blocked"); }
 
-                // 📱 දුරකථනයේ ප්‍රධාන Notification බාර් එකට Push බැනර් යැවීම
+                // 📱 පුෂ් නොටිෆිකේෂන් යැවීම
                 lowStockMessages.forEach(msg => {
                     if (navigator.serviceWorker && navigator.serviceWorker.controller) {
                         navigator.serviceWorker.controller.postMessage({ type: 'LOW_STOCK', body: msg });
