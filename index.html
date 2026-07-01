@@ -8,9 +8,9 @@
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* බටන් එකක් ලෝන්ග් ප්‍රෙස් කලාම පොඩි ඇනිමේෂන් එකක් එන්න */
+        /* 📱 බටන් එකක් ලෝන්ග් ප්‍රෙස් කලාම (ඔබන් හිටියාම) පොඩි ඇනිමේෂන් එකක් එන්න දාපු ස්ටයිල් එක */
         .long-press-active { transform: scale(0.95); opacity: 0.8; transition: 0.1s; }
-        /* ඇප් එක ඇතුළේ තියෙන අකුරු බොරුවට සිලෙක්ට් වීම වැළැක්වීමට (Mobile වලට පට්ට වැදගත්) */
+        /* 🚫 ඇප් එක ඇතුළේ තියෙන අකුරු වැරදීමකින් සිලෙක්ට් වීම (Highlight වීම) වැළැක්වීමට (Mobile වලට පට්ට වැදගත්) */
         .no-select { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
     </style>
 </head>
@@ -73,7 +73,7 @@
             <button onclick="navigateTo('page-company')" class="w-full bg-orange-500 text-white py-6 rounded-2xl text-xl font-bold shadow-md hover:bg-orange-600 transition">
                 Trade Centre
             </button>
-            <button onclick="alert('Furniture Section එක ළඟදීම...')" class="w-full bg-teal-600 text-white py-6 rounded-2xl text-xl font-bold shadow-md hover:bg-teal-700 transition">
+            <button onclick="showAlert('Furniture Section එක ළඟදීම...', 'warning')" class="w-full bg-teal-600 text-white py-6 rounded-2xl text-xl font-bold shadow-md hover:bg-teal-700 transition">
                 Furniture
             </button>
         </div>
@@ -182,63 +182,49 @@
     </div>
 
     <div id="custom-stock-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center; padding: 20px;">
-    <div style="background: #1e293b; color: white; width: 100%; max-width: 400px; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; font-family: sans-serif; animation: popIn 0.3s ease;">
-        <div style="font-size: 40px; margin-bottom: 12px;">🚨</div>
-        <h3 style="margin: 0 0 16px 0; color: #ef4444; font-size: 20px; font-weight: bold; letter-spacing: 1px;">LOW STOCK ALERT!</h3>
-        
-        <div id="custom-modal-body" style="text-align: left; background: #0f172a; padding: 16px; border-radius: 12px; max-height: 200px; overflow-y: auto; margin-bottom: 20px; font-size: 15px; line-height: 1.6; border-left: 4px solid #ef4444;">
+        <div style="background: #1e293b; color: white; width: 100%; max-width: 400px; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; font-family: sans-serif; animation: popIn 0.3s ease;">
+            <div style="font-size: 40px; margin-bottom: 12px;">🚨</div>
+            <h3 style="margin: 0 0 16px 0; color: #ef4444; font-size: 20px; font-weight: bold; letter-spacing: 1px;">LOW STOCK ALERT!</h3>
+            <div id="custom-modal-body" style="text-align: left; background: #0f172a; padding: 16px; border-radius: 12px; max-height: 200px; overflow-y: auto; margin-bottom: 20px; font-size: 15px; line-height: 1.6; border-left: 4px solid #ef4444;"></div>
+            <button onclick="closeStockModal()" style="background: #2563eb; color: white; border: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; transition: background 0.2s;">OK</button>
         </div>
-
-        <button onclick="closeStockModal()" style="background: #2563eb; color: white; border: none; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; transition: background 0.2s;">OK</button>
     </div>
-</div>
 
-<div id="app-custom-alert" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 20000; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(4px);">
-    <div style="background: #1e293b; color: white; width: 100%; max-width: 380px; border-radius: 20px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); text-align: center; font-family: sans-serif; animation: alertShow 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);">
-        
-        <div id="app-alert-icon" style="font-size: 45px; margin-bottom: 10px;">✅</div>
-        
-        <h3 id="app-alert-title" style="margin: 0 0 10px 0; font-size: 18px; font-weight: bold; letter-spacing: 0.5px;">NOTIFICATION</h3>
-        
-        <div id="app-alert-message" style="text-align: center; background: #0f172a; padding: 14px; border-radius: 12px; margin-bottom: 20px; font-size: 15px; color: #cbd5e1; line-height: 1.5; border-bottom: 4px solid #2563eb;">
-            Message goes here...
+    <div id="app-custom-alert" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 20000; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(4px);">
+        <div style="background: #1e293b; color: white; width: 100%; max-width: 380px; border-radius: 20px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); text-align: center; font-family: sans-serif; animation: alertShow 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);">
+            <div id="app-alert-icon" style="font-size: 45px; margin-bottom: 10px;">✅</div>
+            <h3 id="app-alert-title" style="margin: 0 0 10px 0; font-size: 18px; font-weight: bold; letter-spacing: 0.5px;">NOTIFICATION</h3>
+            <div id="app-alert-message" style="text-align: center; background: #0f172a; padding: 14px; border-radius: 12px; margin-bottom: 20px; font-size: 15px; color: #cbd5e1; line-height: 1.5; border-bottom: 4px solid #2563eb;">Message goes here...</div>
+            <button onclick="closeAppAlert()" style="background: #2563eb; color: white; border: none; padding: 12px 0; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; box-shadow: 0 4px 6px -1px rgba(37,99,235,0.2); transition: all 0.2s;">OK</button>
         </div>
-
-        <button onclick="closeAppAlert()" style="background: #2563eb; color: white; border: none; padding: 12px 0; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; box-shadow: 0 4px 6px -1px rgba(37,99,235,0.2); transition: all 0.2s;">OK</button>
     </div>
-</div>
 
-<style>
-@keyframes alertShow {
-    from { transform: scale(0.85); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-}
-</style>
-
-<style>
-@keyframes popIn {
-    from { transform: scale(0.8); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-}
-</style>
+    <style>
+        @keyframes alertShow { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    </style>
 
     <script>
-        // 🛠️ FIX: අලුත්ම නිවැරදි Supabase ප්‍රොජෙක්ට් ලින්ක් එක සහ anon key එක සෙට් කළා
+        // ☁️ Supabase සම්බන්ධතා දත්ත (Project URL සහ Secret Anon Key)
         const SUPABASE_URL = "https://ttviyfggsmiaemtbawvg.supabase.co";
         const SUPABASE_KEY = "sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz";
 
-        let currentRole = 'staff';       
-        let currentLoginMode = 'staff';  
-        let currentModelId = '';       
-        let liveDatabaseStock = {}; 
+        let currentRole = 'staff';       // පරිශීලකයාගේ වර්තමාන තත්ත්වය (staff/admin)
+        let currentLoginMode = 'staff';  // දැනට තෝරාගෙන ඇති ලොගින් ආකාරය
+        let currentModelId = '';         // දැනට විවෘත කර ඇති නිශ්චිත මොඩල් එකේ ID එක
+        let liveDatabaseStock = {};      // ක්ලවුඩ් එකෙන් කියවා ගන්නා සම්පූර්ණ තොග දත්ත ගබඩා වන ඔබ්ජෙක්ට් එක
         
-        // ඇප් එකේ Category ව්‍යුහය (Companys, Brands, Items, Models)
+        // 🛠️ FIX: Deep-Linking පද්ධතිය සඳහා දැනට සිලෙක්ට් කර ඇති Parent ID මතක තබා ගන්නා Variables
+        let selectedCompanyId = '';
+        let selectedBrandId = '';
+        let selectedItemId = '';
+
+        // 🗂️ බටන් ව්‍යුහය තාවකාලිකව රඳවා ගන්නා ප්‍රධාන මව් ව්‍යුහය
         let appData = { companys: [], brands: [], items: [], models: [] };
+        let activeMenuTarget = { type: null, item: null }; // Right click හෝ Long Press මඟින් සිලෙක්ට් වන බටන් එකේ දත්ත
+        let currentModalMode = 'add'; // පොප්-අප් එක ක්‍රියාත්මක වන මෝඩ් එක (add / rename)
 
-        let activeMenuTarget = { type: null, item: null };
-        let currentModalMode = 'add';
-
-        // 🌐 SUPABASE සන්නිවේදන කේන්ද්‍රය (Fetch API හසුරුවන්නා)
+        // 🌐 SUPABASE සන්නිවේදන කේන්ද්‍රය (Fetch API මඟින් දත්ත යැවීම සහ ලබා ගැනීම)
         async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = false) {
             const options = {
                 method: method,
@@ -249,7 +235,7 @@
                 }
             };
             if (isUpsert) {
-                options.headers["Prefer"] = "resolution=merge-duplicates"; // තිබුණොත් Update කරන්න නියෝගයක්
+                options.headers["Prefer"] = "resolution=merge-duplicates"; // තිබුනොත් Update (Upsert) කරන්න නියෝගයක්
             }
             if (body) options.body = JSON.stringify(body);
             try {
@@ -259,26 +245,24 @@
             } catch (err) { return null; }
         }
 
-        // ☁️ ඩේටාබේස් එකට බටන් ව්‍යුහය සේව් කරන ෆන්ෂන් එක
+        // ☁️ බටන් ව්‍යුහය (Category Structure) ඩේටාබේස් එකට සේව් කරන ෆන්ෂන් එක
         async function saveCategoriesToCloud() {
             const payload = { id: "main_structure", structure_data: appData };
-            const res = await fetchSupabase('/app_categories', 'POST', payload, true);
-            console.log("Cloud Save Result:", res);
+            await fetchSupabase('/app_categories', 'POST', payload, true);
         }
 
-        // ☁️ ඇප් එක ලෝඩ් වෙද්දී ඩේටාබේස් එකෙන් බටන් ව්‍යුහය කියවා ගන්නා ෆන්ෂන් එක
+        // ☁️ ඇප් එක ස්ටාර්ට් වෙද්දීම ඩේටාබේස් එකෙන් බටන් ව්‍යුහය කියවා ගන්නා ලොජික් එක
         async function loadCategoriesFromCloud() {
             const res = await fetchSupabase('/app_categories?id=eq.main_structure&order=id.desc');
             if (res && res.length > 0 && res[0].structure_data) {
                 let rawData = res[0].structure_data;
-                console.log("Cloud Loaded Data Structure:", rawData);
                 
-                // පැරණි 'companies' සහ අලුත් 'companys' දෙකම එකට මර්ජ් කර ආරක්ෂා කරගන්නා ලොජික් එක
+                // පරණ 'companies' සහ අලුත් 'companys' කී දෙකම එකට එකතු කර ආරක්ෂා කරගන්නා ලොජික් එක
                 let clearCompanys = [];
                 if (rawData.companies && Array.isArray(rawData.companies)) clearCompanys = [...rawData.companies];
-                if (rawData.companys && Array.isArray(rawData.companys)) clearCompanys = [...clearCompanys, ...rawData.companys];
+                if (rawData.companys && Array.isArray(rawData.companys)) clearCompanys = [...rawData.companys];
 
-                // ඩුප්ලිකේට් අයින් කිරීම
+                // ඩුප්ලිකේට් සමාගම් අයින් කිරීම (Data Cleaning)
                 let uniqueCompanys = [];
                 let map = new Map();
                 for (const item of clearCompanys) {
@@ -289,28 +273,28 @@
                 }
 
                 appData.companys = uniqueCompanys.length > 0 ? uniqueCompanys : [{ id: 'c1', name: 'Damro' }, { id: 'c2', name: 'Singer' }];
-                appData.brands = rawData.brands || [{ id: 'b1', name: 'Innovex' }, { id: 'b2', name: 'Piyestra' }];
-                appData.items = rawData.items || [{ id: 'i1', name: 'Television' }, { id: 'i2', name: 'Refrigerator' }];
-                appData.models = rawData.models || [{ id: 'm1', name: 'DDR 182' }, { id: 'm2', name: 'DDR 195' }];
+                appData.brands = rawData.brands || [];
+                appData.items = rawData.items || [];
+                appData.models = rawData.models || [];
             } else {
-                // ඩේටාබේස් එක හිස් නම් ඩිෆෝල්ට් බටන් සෙට් කරනවා
+                // ඩේටාබේස් එක මුළුමනින්ම හිස් නම් ඩිෆෝල්ට් සමාගම් දෙකක් දමා ඇප් එක ආරම්භ කිරීම
                 appData = {
                     companys: [{ id: 'c1', name: 'Damro' }, { id: 'c2', name: 'Singer' }],
-                    brands: [{ id: 'b1', name: 'Innovex' }, { id: 'b2', name: 'Piyestra' }],
-                    items: [{ id: 'i1', name: 'Television' }, { id: 'i2', name: 'Refrigerator' }],
-                    models: [{ id: 'm1', name: 'DDR 182' }, { id: 'm2', name: 'DDR 195' }]
+                    brands: [],
+                    items: [],
+                    models: []
                 };
                 await saveCategoriesToCloud();
             }
         }
 
-        // ඇඩ්මින් ලොගින් ෆීල්ඩ් එක එලියට දාන එක
+        // 🤫 රහස් ඇඩ්මින් ලොගින් ෆීල්ඩ් එක එලියට දමන ෆන්ෂන් එක
         function revealAdminMode() {
             document.getElementById('login-mode-container').classList.remove('hidden');
             switchLoginMode('admin');
         }
 
-        // ලොගින් මෝඩ් එක මාරු කිරීම (Admin / Staff)
+        // 🔄 ලොගින් ආකාරය මාරු කිරීම (Admin / Staff) සහ UI එක ඒ අනුව සකස් කිරීම
         function switchLoginMode(mode) {
             currentLoginMode = mode;
             document.getElementById('btn-mode-admin').className = mode === 'admin' ? "w-1/2 py-2 text-center rounded-md font-semibold bg-blue-600 text-white" : "w-1/2 py-2 text-center rounded-md font-semibold text-gray-700";
@@ -320,50 +304,49 @@
             document.getElementById('login-sub-title').innerText = mode === 'admin' ? "Admin Portal" : "Staff Portal";
         }
 
-        // 🔒 සුරක්ෂිත ආරක්ෂක පද්ධතිය (Login Authentication)
+        // 🔒 සුරක්ෂිත ආරක්ෂක පද්ධතිය (Login Authentication & Verification)
         async function handleSecureLogin() {
             const phone = document.getElementById('login-phone').value.trim();
             const pass = document.getElementById('login-pass').value.trim();
 
-            if (!phone) { alert('කරුණාකර අංකය ඇතුළත් කරන්න!'); return; }
+            if (!phone) { showAlert('කරුණාකර අංකය ඇතුළත් කරන්න!', 'error'); return; }
 
-            // Staff ලියාපදිංචි වී ඇත්දැයි Supabase එකෙන් පරීක්ෂා කිරීම
+            // ඇතුළත් කළ දුරකථන අංකය `allowed_staff` ටේබල් එකේ ලියාපදිංචි වී ඇත්දැයි බැලීම
             const staffCheck = await fetchSupabase(`/allowed_staff?phone_number=eq.${phone}`);
             const isRegisteredStaff = staffCheck && staffCheck.length > 0;
 
             if (currentLoginMode === 'admin') {
                 if (isRegisteredStaff) {
-                    alert("🚫 ඔබ Staff සාමාජිකයෙකු ලෙස හඳුනාගෙන ඇත! කරුණාකර Staff Portal එක හරහා ලොග් වන්න.");
+                    showAlert("🚫 ඔබ Staff සාමාජිකයෙකු ලෙස හඳුනාගෙන ඇත! Staff මෝඩ් එකෙන් ලොග් වන්න.", "warning");
                     switchLoginMode('staff');
                     return;
                 }
-                // 🔐 ඇඩ්මින් නම්බර් සහ පාස්වර්ඩ් එක වෙනස් කිරීමට මෙන්න මේ ලයින් එක පාවිච්චි කරන්න:
+                // 🔐 ඇඩ්මින් දත්ත (මෙහිදී වෙනස් කරගත හැක)
                 if (phone === '0712345678' && pass === 'Admin@123') { 
                     currentRole = 'admin';
-                    localStorage.setItem('sanjeewa_role', 'admin');
+                    localStorage.setItem('sanjeewa_role', 'admin'); // බ්‍රවුසර් මෙමරියේ තැන්පත් කිරීම
                     setupAdminUI(); navigateTo('page-home');
-                } else { alert('ඇඩ්මින් දත්ත වැරදියි!'); }
+                } else { showAlert('ඇඩ්මින් දත්ත වැරදියයි!', 'error'); }
             } else {
                 if (isRegisteredStaff) {
                     currentRole = 'staff';
                     localStorage.setItem('sanjeewa_role', 'staff');
                     setupAdminUI(); navigateTo('page-home');
-                } else { alert('මෙම අංකය ඩේටාබේස් එකේ ලියාපදිංචි කර නොමැත!'); }
+                } else { showAlert('මෙම අංකය ලියාපදිංචි කර නොමැත!', 'error'); }
             }
         }
 
-        // ලොග් අවුට් වීම
+        // 🚪 ඇප් එකෙන් සාර්ථකව පිටවීම (Logout)
         function handleLogout() {
             currentRole = 'staff'; currentLoginMode = 'staff';
             localStorage.removeItem('sanjeewa_role');
             document.getElementById('login-mode-container').classList.add('hidden');
             switchLoginMode('staff');
             document.getElementById('login-phone').value = ''; document.getElementById('login-pass').value = '';
-            setupAdminUI();
-            navigateTo('page-login');
+            setupAdminUI(); navigateTo('page-login');
         }
 
-        // පරිශීලකයා Admin ද නැද්ද යන්න මත UI එක වෙනස් කිරීම (Add buttons හංගන්න/පෙන්නන්න)
+        // 🛡️ යූසර්ගේ බලතල (Admin / Staff) අනුව Add Buttons පෙන්වීම හෝ සැඟවීම
         function setupAdminUI() {
             const adminElements = ['admin-add-company', 'admin-add-brand', 'admin-add-item', 'admin-add-model', 'admin-detail-controls', 'admin-staff-manager'];
             adminElements.forEach(id => {
@@ -372,7 +355,7 @@
             document.querySelectorAll('.admin-tip').forEach(el => el.classList.toggle('hidden', currentRole !== 'admin'));
         }
 
-        // Staff මෙම්බර්ස්ලට SMS ලින්ක් එක ජෙනරේට් කිරීම
+        // ✉️ නව සේවකයින් සඳහා පද්ධතියට ලියාපදිංචි වීමට SMS එකක් යවන මොඩියුලය
         async function generateStaffLink() {
             const staffPhone = document.getElementById('new-staff-phone').value.trim();
             if(!staffPhone) return;
@@ -383,7 +366,7 @@
             window.location.href = `sms:${staffPhone}${isIOS ? '&' : '?'}body=${encodeURIComponent(message)}`;
         }
 
-        // පූර්ණ පේජ් මාරු කිරීමේ (Navigation) පද්ධතිය
+        // 🛠️ FIX: Deep-Linking සහ ව්‍යුහාත්මක පෙරීම (Filtering) සහිත Navigation පද්ධතිය
         function navigateTo(pageId) {
             document.getElementById('custom-context-menu').classList.add('hidden');
             if(pageId === 'page-model') document.getElementById('model-search').value = ''; 
@@ -393,13 +376,28 @@
 
             setupAdminUI();
 
-            if(pageId === 'page-company') renderButtons('company', appData.companys || [], 'company-container', 'bg-orange-600');
-            if(pageId === 'page-brand') renderButtons('brand', appData.brands || [], 'brand-container', 'bg-blue-600');
-            if(pageId === 'page-item') renderButtons('item', appData.items || [], 'item-container', 'bg-gray-700');
-            if(pageId === 'page-model') renderButtons('model', appData.models || [], 'model-container', 'bg-emerald-600');
+            // 1. සමාගම් පේජ් එකට යද්දී සේරම සමාගම් පෙන්වයි
+            if(pageId === 'page-company') {
+                renderButtons('company', appData.companys || [], 'company-container', 'bg-orange-600');
+            }
+            // 2. බ්‍රෑන්ඩ් පේජ් එකට යද්දී ක්ලික් කළ Company එකට අයිති බ්‍රෑන්ඩ් විතරක් පෙන්නන්න Filter කරයි
+            if(pageId === 'page-brand') {
+                let filteredBrands = appData.brands.filter(b => b.companyId === selectedCompanyId);
+                renderButtons('brand', filteredBrands, 'brand-container', 'bg-blue-600');
+            }
+            // 3. අයිටම් පේජ් එකට යද්දී ක්ලික් කළ Brand එකට අයිති අයිටම් විතරක් පෙන්වයි
+            if(pageId === 'page-item') {
+                let filteredItems = appData.items.filter(i => i.brandId === selectedBrandId);
+                renderButtons('item', filteredItems, 'item-container', 'bg-gray-700');
+            }
+            // 4. මොඩල් පේජ් එකට යද්දී ක්ලික් කළ Item එකට අයිති මොඩල්ස් විතරක් පෙන්වයි
+            if(pageId === 'page-model') {
+                let filteredModels = appData.models.filter(m => m.itemId === selectedItemId);
+                renderButtons('model', filteredModels, 'model-container', 'bg-emerald-600');
+            }
         }
 
-        // දත්ත අනුව ඩයිනමික් ලෙස බටන්ස් නිර්මාණය කරන මොඩියුලය
+        // 🎛️ ලබාදෙන දත්ත ලැයිස්තුව අනුව ඩයිනමික් ලෙස බටන්ස් නිර්මාණය කර තිරයට දමන ප්‍රධාන එන්ජිම
         function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
             const container = document.getElementById(containerId); container.innerHTML = ''; 
             
@@ -411,12 +409,12 @@
                 let pressTimer = null;
                 let isLongPress = false;
 
-                // PC එකේදී Right Click හසුරුවනය
+                // PC එකේදී Right Click හසුරුවනය (Context Menu)
                 btn.addEventListener('contextmenu', (e) => {
                     if (currentRole === 'admin') { e.preventDefault(); showCustomContextMenu(e.clientX, e.clientY, type, item); }
                 });
 
-                // Mobile එකේදී Long Press (තත්පර 0.7) හසුරුවනය
+                // Mobile වලදී බටන් එක ඔබාගෙන සිටීම (Long Press - තත්පර 0.7) හසුරුවන ක්‍රියාවලිය
                 const startPress = (e) => {
                     if (currentRole !== 'admin') return;
                     isLongPress = false; btn.classList.add('long-press-active');
@@ -432,18 +430,32 @@
                 btn.addEventListener('mousedown', (e) => { if(e.button === 0) startPress(e); });
                 btn.addEventListener('mouseup', endPress); btn.addEventListener('mouseleave', endPress);
 
+                // බටන් එක සාමාන්‍ය පරිදි ක්ලික් කිරීමේදී සිදුවන දේ
                 btn.addEventListener('click', () => {
                     if (isLongPress) return;
-                    if(type === 'company') navigateTo('page-brand');
-                    else if(type === 'brand') navigateTo('page-item');
-                    else if(type === 'item') navigateTo('page-model');
-                    else if(type === 'model') openProductDetailLive(item);
+                    
+                    // 🛠️ FIX: ක්ලික් කරන බටන් එකේ ID එක ඊළඟ මට්ටමට යාමට පෙර ගෝලීයව සේව් කර ගැනීම
+                    if(type === 'company') {
+                        selectedCompanyId = item.id;
+                        navigateTo('page-brand');
+                    }
+                    else if(type === 'brand') {
+                        selectedBrandId = item.id;
+                        navigateTo('page-item');
+                    }
+                    else if(type === 'item') {
+                        selectedItemId = item.id;
+                        navigateTo('page-model');
+                    }
+                    else if(type === 'model') {
+                        openProductDetailLive(item);
+                    }
                 });
                 container.appendChild(btn);
             });
         }
 
-        // Right-Click මෙනු එක පෙන්වීම
+        // 🖥️ Right-Click මෙනුව නියමිත ස්ථානයේ පෙන්වීම
         function showCustomContextMenu(x, y, type, item) {
             activeMenuTarget = { type: type, item: item };
             const menu = document.getElementById('custom-context-menu');
@@ -452,33 +464,74 @@
             menu.classList.remove('hidden');
         }
 
-        // මෙනුවෙන් පිටත එබුවහොත් මෙනුව වසා දැමීම
+        // මෙනුවෙන් පිටත ඕනෑම තැනක ක්ලික් කළ විට මෙනුව වසා දැමීම
         document.addEventListener('click', (e) => {
             const menu = document.getElementById('custom-context-menu');
             if(!menu.contains(e.target)) menu.classList.add('hidden');
         });
 
-        // Add Modal එක ඇරීම
+        // 🎨 FIX: SweetAlert2 යොදාගෙන අලුතින් බටන් එකක් සාදන පොප්-අප් එක ක්‍රියාත්මක කිරීම
         function openAddModal(type) {
             currentModalMode = 'add';
             activeMenuTarget = { type: type, item: null };
-            document.getElementById('modal-title').innerText = `➕ Add New ${type.toUpperCase()}`;
-            document.getElementById('modal-input-field').value = '';
-            document.getElementById('custom-input-modal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('modal-input-field').focus(), 50);
+
+            Swal.fire({
+                title: `➕ Add New ${type.toUpperCase()}`,
+                input: 'text',
+                inputPlaceholder: `Enter ${type} name here...`,
+                showCancelButton: true,
+                confirmButtonColor: '#2563eb',
+                cancelButtonColor: '#64748b',
+                background: '#1e293b',
+                color: '#fff',
+                inputValidator: (value) => {
+                    if (!value) return 'You need to write a name!';
+                }
+            }).then(async (result) => {
+                if (result.value) {
+                    const inputValue = result.value.trim();
+                    let arrayKey = `${type}s`;
+                    
+                    // 🛠️ FIX: අලුත් බටන් එකක් හැදෙද්දී ඒක දැනට ඉන්න Parent ID එකට ලින්ක් කිරීම
+                    let newItem = { id: 'id_' + Date.now(), name: inputValue };
+                    if (type === 'brand') newItem.companyId = selectedCompanyId;
+                    if (type === 'item') newItem.brandId = selectedBrandId;
+                    if (type === 'model') newItem.itemId = selectedItemId;
+
+                    appData[arrayKey].push(newItem);
+                    await saveCategoriesToCloud(); // ක්ලවුඩ් සින්ක්
+                    navigateTo(`page-${type}`);
+                }
+            });
         }
 
-        // Rename Modal එක ඇරීම
+        // ✏️ FIX: SweetAlert2 යොදාගෙන බටන් එකක් Rename (නම වෙනස් කිරීම) කිරීමේ ලොජික් එක
         document.getElementById('menu-rename-btn').addEventListener('click', () => {
             currentModalMode = 'rename';
             const target = activeMenuTarget;
             document.getElementById('custom-context-menu').classList.add('hidden');
             
             if(target.item) {
-                document.getElementById('modal-title').innerText = `✏️ Rename "${target.item.name}"`;
-                document.getElementById('modal-input-field').value = target.item.name;
-                document.getElementById('custom-input-modal').classList.remove('hidden');
-                setTimeout(() => document.getElementById('modal-input-field').focus(), 50);
+                Swal.fire({
+                    title: `✏️ Rename "${target.item.name}"`,
+                    input: 'text',
+                    inputValue: target.item.name,
+                    showCancelButton: true,
+                    confirmButtonColor: '#2563eb',
+                    cancelButtonColor: '#64748b',
+                    background: '#1e293b',
+                    color: '#fff',
+                    inputValidator: (value) => {
+                        if (!value) return 'Field cannot be left blank!';
+                    }
+                }).then(async (result) => {
+                    if (result.value) {
+                        target.item.name = result.value.trim();
+                        await saveCategoriesToCloud();
+                        Swal.fire({ title: 'Saved!', text: 'Successfully updated!', icon: 'success', background: '#1e293b', color: '#fff' });
+                        navigateTo(`page-${target.type}`);
+                    }
+                });
             }
         });
 
@@ -486,54 +539,42 @@
             document.getElementById('custom-input-modal').classList.add('hidden');
         }
 
-        // Modal එක ඇතුළේ SAVE බටන් එක ක්‍රියාත්මක වීම (ලයිව් ක්ලවුඩ් සින්ක්)
-        document.getElementById('modal-save-btn').addEventListener('click', async () => {
-            const inputValue = document.getElementById('modal-input-field').value.trim();
-            if(!inputValue) { alert('කරුණාකර නමක් ඇතුළත් කරන්න!'); return; }
-
-            const target = activeMenuTarget;
-            closeInputModal();
-
-            let arrayKey = `${target.type}s`;
-
-            if (currentModalMode === 'add') {
-                let newItem = { id: 'id_' + Date.now(), name: inputValue };
-                appData[arrayKey].push(newItem);
-                await saveCategoriesToCloud();
-                navigateTo(`page-${target.type}`);
-            } else if (currentModalMode === 'rename' && target.item) {
-                target.item.name = inputValue;
-                await saveCategoriesToCloud();
-                alert("සාර්ථකව Rename කර සේව් කළා! 🎉");
-                navigateTo(`page-${target.type}`);
-            }
-        });
-
-        // Delete බටන් එක ක්‍රියාත්මක වීම
-        document.getElementById('menu-delete-btn').addEventListener('click', async () => {
+        // 🗑️ FIX: SweetAlert2 ඩාර්ක් තීම් අනතුරු ඇඟවීම් කොටුව හරහා බටන් එකක් මකා දැමීම (Delete)
+        document.getElementById('menu-delete-btn').addEventListener('click', () => {
             const target = activeMenuTarget;
             document.getElementById('custom-context-menu').classList.add('hidden');
             
             if(target.item) {
-                const confirmation = confirm(`⚠️ Are you sure?\nඔබට සැබෑවටම "${target.item.name}" මකා දැමීමට අවශ්‍යද?`);
-                if (confirmation) {
-                    let arrayKey = `${target.type}s`;
-                    appData[arrayKey] = appData[arrayKey].filter(i => i.id !== target.item.id);
-                    await saveCategoriesToCloud();
-                    alert("සාර්ථකව මකා දැමුවා! ❌");
-                    navigateTo(`page-${target.type}`);
-                }
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: `Do you really want to delete "${target.item.name}"? This will delete it from this view.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: 'Yes, Delete it!',
+                    background: '#1e293b',
+                    color: '#fff'
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        let arrayKey = `${target.type}s`;
+                        appData[arrayKey] = appData[arrayKey].filter(i => i.id !== target.item.id);
+                        await saveCategoriesToCloud();
+                        Swal.fire({ title: 'Deleted!', text: 'Successfully removed!', icon: 'success', background: '#1e293b', color: '#fff' });
+                        navigateTo(`page-${target.type}`);
+                    }
+                });
             }
         });
 
-        // සර්ච් බාර් ලොජික් එක
+        // 🔍 සර්ච් බාර් එක ඇතුළේ මොඩල්ස් සර්ච් කරද්දී, දැනට ඉන්න Item එකට අදාළ මොඩල්ස් විතරක් ෆිල්ටර් වීම
         function searchModels() {
             const query = document.getElementById('model-search').value.toLowerCase();
-            const filtered = appData.models.filter(m => m.name.toLowerCase().includes(query));
+            const filtered = appData.models.filter(m => m.itemId === selectedItemId && m.name.toLowerCase().includes(query));
             renderButtons('model', filtered, 'model-container', 'bg-emerald-600');
         }
 
-        // ☁️ තොග සහ මිල ගණන් (items_stock ටේබල් එකෙන්) කියවා ගැනීම
+        // ☁️ `items_stock` ටේබල් එකෙන් තොග, මිල ගණන් සහ පින්තූර ලින්ක් කියවා ගැනීම
         async function loadAllStockFromCloud() {
             const cloudData = await fetchSupabase('/items_stock');
             if (cloudData) {
@@ -546,7 +587,7 @@
             }
         }
 
-        // නිශ්චිත මොඩල් එකක විස්තර ලයිව් ලෝඩ් කර විවෘත කිරීම
+        // 📊 යම් නිශ්චිත මොඩල් එකක් ක්ලික් කළ විට එහි විස්තර ලයිව් ලෝඩ් කර පෙන්වීම
         async function openProductDetailLive(modelItem) {
             currentModelId = modelItem.id;
             document.getElementById('detail-model-title').innerText = modelItem.name;
@@ -560,7 +601,7 @@
             updateDetailViewUI(); navigateTo('page-detail');
         }
 
-        // 🧮 වට්ටම් සහ Net Cost එක ලයිව් ගණනය කිරීම
+        // 🧮 වට්ටම් (Discount) සහ අවසාන ශුද්ධ මිල (Net Cost Price) ලයිව් ගණනය කිරීමේ සූත්‍රය
         function calculateCostPriceLive() {
             const retail = parseFloat(document.getElementById('input-retail').value) || 0;
             const discount = parseFloat(document.getElementById('input-discount').value) || 0;
@@ -573,7 +614,7 @@
             document.getElementById('view-cost').innerText = cost.toLocaleString();
         }
 
-        // තොග ලැයිස්තුවට තාවකාලිකව වර්ණ එකතු කිරීම
+        // 🎨 තොග ලැයිස්තුවට (Stock Object) තාවකාලිකව වර්ණ සහ ප්‍රමාණයන් ඇතුළත් කිරීම
         function addColourStockToArray() {
             const colour = document.getElementById('input-colour').value.trim();
             const qty = parseInt(document.getElementById('input-qty').value) || 0;
@@ -583,7 +624,7 @@
             updateDetailViewUI();
         }
 
-        // ☁️ මුළු නිෂ්පාදන පැතිකඩම ඩේටාබේස් එකට ස්ථිරවම සින්ක් කිරීම (Save)
+        // ☁️ සකස් කළ මුළු නිෂ්පාදන තොරතුරු පැතිකඩම Supabase එකට ස්ථිරවම Save (Sync) කිරීම
         async function syncProductToDatabase() {
             const p = liveDatabaseStock[currentModelId];
             p.img = document.getElementById('input-img-url').value.trim();
@@ -591,10 +632,13 @@
             const payload = { model_id: currentModelId, model_name: mName, img_url: p.img, retail_price: p.retail, discount: p.discount, cost_price: p.cost, stock_data: p.stock };
             
             const response = await fetchSupabase('/items_stock', 'POST', payload, true);
-            if(response) { alert('නිෂ්පාදන විස්තර සාර්ථකව ඩේටාබේස් එකට සේව් වුණා! 🎉'); updateDetailViewUI(); }
+            if(response) { 
+                Swal.fire({ title: 'Saved!', text: 'නිෂ්පාදන විස්තර සාර්ථකව ඩේටාබේස් එකට සේව් වුණා! 🎉', icon: 'success', background: '#1e293b', color: '#fff' });
+                updateDetailViewUI(); 
+            }
         }
 
-        // නිෂ්පාදන විස්තර UI එක ලස්සනට අප්ඩේට් කිරීම
+        // 📱 විස්තර වෙනස් කළ පසු UI එක ලස්සනට අප්ඩේට් කර තිරයේ පෙන්වීම
         function updateDetailViewUI() {
             const p = liveDatabaseStock[currentModelId];
             document.getElementById('product-img').src = p.img || 'https://via.placeholder.com/300?text=No+Image';
@@ -607,10 +651,9 @@
             });
         }
 
-        // 🔔 ශක්තිමත් කළ LOW STOCK NOTIFICATION SYSTEM (WITH CUSTOM POPUP)
+        // 🔔 තොග 5ට වඩා අඩු (Low Stock) අයිතම තිබේ නම් WhatsApp ටෝන් එකක් සමඟ Notification දමන පද්ධතිය
         function checkLowStockNotifications() {
             let lowStockMessages = [];
-
             if (!liveDatabaseStock || Object.keys(liveDatabaseStock).length === 0) return;
 
             Object.keys(liveDatabaseStock).forEach(modelId => {
@@ -628,22 +671,22 @@
             });
 
             if (lowStockMessages.length > 0) {
-                lowStockMessages.forEach(msg => {
-                    // 🎵 WhatsApp Tone එකක් වගේ සද්දයක් ප්ලේ කිරීම
-                    try {
-                        let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                        let oscillator = audioCtx.createOscillator();
-                        let gainNode = audioCtx.createGain();
-                        oscillator.connect(gainNode);
-                        gainNode.connect(audioCtx.destination);
-                        oscillator.type = 'sine';
-                        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-                        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                        oscillator.start();
-                        oscillator.stop(audioCtx.currentTime + 0.1);
-                    } catch(e) { console.log("Audio blocked"); }
+                // 🎵 බීප් ශබ්දයක් (Audio Tone) උත්පාදනය කිරීම
+                try {
+                    let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    let oscillator = audioCtx.createOscillator();
+                    let gainNode = audioCtx.createGain();
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+                    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.1);
+                } catch(e) { console.log("Audio blocked"); }
 
-                    // 📱 Browser Notification බාර් එකට යැවීම
+                // 📱 දුරකථනයේ ප්‍රධාන Notification බාර් එකට Push බැනර් යැවීම
+                lowStockMessages.forEach(msg => {
                     if (navigator.serviceWorker && navigator.serviceWorker.controller) {
                         navigator.serviceWorker.controller.postMessage({ type: 'LOW_STOCK', body: msg });
                     } else if (Notification.permission === "granted") {
@@ -651,7 +694,7 @@
                     }
                 });
 
-                // 🔥 💻 සාමාන්‍ย Alert එක වෙනුවට මැදින් එන ලස්සන Custom Pop-up එක පෙන්වීම
+                // 💻 ඇප් එක මැදින් ලස්සන Custom Alert එකක් මඟින් ලැයිස්තුව පෙන්වීම
                 const modalBody = document.getElementById('custom-modal-body');
                 if (modalBody) {
                     modalBody.innerHTML = lowStockMessages.join('<br>');
@@ -660,16 +703,17 @@
             }
         }
 
-        // ❌ Custom Pop-up එක වසා දැමීමේ සරල කමාන්ඩ් එක
         function closeStockModal() {
             document.getElementById('custom-stock-modal').style.display = 'none';
         }
-        // 🚀 WINDOW ONLOAD: ඇප් එක ස්ටාර්ට් වෙද්දීම සර්විස් වර්කර් එක රෙජිස්ටර් කිරීම
+
+        // 🚀 WINDOW ONLOAD: ඇප් එක ස්ටාර්ට් වෙද්දීම පසුබිමෙන් සිදුවන ප්‍රධාන මෙහෙයුම්
         window.onload = async () => { 
             console.log("App Starting, Fetching from Cloud...");
-            await loadCategoriesFromCloud();
-            await loadAllStockFromCloud();
+            await loadCategoriesFromCloud(); // 1. බටන් ස්ට්‍රක්චර් එක කියවීම
+            await loadAllStockFromCloud();   // 2. මිල සහ තොග දත්ත කියවීම
 
+            // 3. කලින් ලොග් වී සිටියේ නම් කෙළින්ම ඇතුළට ගැනීම
             if(localStorage.getItem('sanjeewa_role')) {
                 currentRole = localStorage.getItem('sanjeewa_role');
             } else {
@@ -678,62 +722,54 @@
             setupAdminUI();
             navigateTo('page-login'); 
 
-            // 🔒 Notification Permission ඉල්ලීම
+            // 4. Notification යැවීමට අවසර ඉල්ලීම
             if (Notification.permission !== "granted" && Notification.permission !== "denied") {
                 Notification.requestPermission();
             }
 
-            // ⚙️ Android App එකක් වගේ වැඩ කරන්න Service Worker එක රෙජිස්ටර් කිරීම
+            // 5. Android ඇප් එකක් වගේ ක්‍රියා කිරීමට Service Worker එක පණ ගැන්වීම
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('sw.js')
                 .then(reg => console.log('Service Worker Registered!', reg))
                 .catch(err => console.log('Service Worker Failed!', err));
             }
 
-            // තත්පර 2කින් ස්ටොක් චෙක් කරලා Notification එක දානවා
+            // 6. ඇප් එක ක්‍රියාත්මක වී තත්පර 2කින් Low Stock ඇඟවීම් පරීක්ෂා කිරීම
             setTimeout(checkLowStockNotifications, 2000); 
         }
 
+        // 🔔 සාමාන්‍ය මැසේජ් පෙන්වීමට යොදාගන්නා පොදු ඇලර්ට් ෆන්ෂන් එක
+        function showAlert(message, type = 'success') {
+            const modal = document.getElementById('app-custom-alert');
+            const iconDiv = document.getElementById('app-alert-icon');
+            const titleDiv = document.getElementById('app-alert-title');
+            const msgDiv = document.getElementById('app-alert-message');
 
-        // 🚀 මුළු ඇප් එකටම පාවිච්චි කළ හැකි පොදු CUSTOM ALERT FUNCTION
-// type එකට 'success', 'warning', හෝ 'error' දිය හැක.
-function showAlert(message, type = 'success') {
-    const modal = document.getElementById('app-custom-alert');
-    const iconDiv = document.getElementById('app-alert-icon');
-    const titleDiv = document.getElementById('app-alert-title');
-    const msgDiv = document.getElementById('app-alert-message');
+            if (!modal || !msgDiv) return;
+            msgDiv.innerHTML = message;
 
-    if (!modal || !msgDiv) return;
+            if (type === 'error') {
+                iconDiv.innerHTML = "❌";
+                titleDiv.innerHTML = "ERROR";
+                titleDiv.style.color = "#ef4444";
+                msgDiv.style.borderBottom = "4px solid #ef4444";
+            } else if (type === 'warning') {
+                iconDiv.innerHTML = "⚠️";
+                titleDiv.innerHTML = "WARNING";
+                titleDiv.style.color = "#f59e0b";
+                msgDiv.style.borderBottom = "4px solid #f59e0b";
+            } else {
+                iconDiv.innerHTML = "✅";
+                titleDiv.innerHTML = "SUCCESS";
+                titleDiv.style.color = "#10b981";
+                msgDiv.style.borderBottom = "4px solid #10b981";
+            }
+            modal.style.display = 'flex';
+        }
 
-    // 1. මැසේජ් එක ඇතුළත් කිරීම
-    msgDiv.innerHTML = message;
-
-    // 2. වර්ගය (Type) අනුව පාට සහ අයිකන් මාරු කිරීම
-    if (type === 'error') {
-        iconDiv.innerHTML = "❌";
-        titleDiv.innerHTML = "ERROR";
-        titleDiv.style.color = "#ef4444"; // රතු පාට
-        msgDiv.style.borderBottom = "4px solid #ef4444";
-    } else if (type === 'warning') {
-        iconDiv.innerHTML = "⚠️";
-        titleDiv.innerHTML = "WARNING";
-        titleDiv.style.color = "#f59e0b"; // කහ පාට
-        msgDiv.style.borderBottom = "4px solid #f59e0b";
-    } else {
-        iconDiv.innerHTML = "✅";
-        titleDiv.innerHTML = "SUCCESS";
-        titleDiv.style.color = "#10b981"; // කොළ පාට
-        msgDiv.style.borderBottom = "4px solid #10b981";
-    }
-
-    // 3. පොප්-අප් එක ස්ක්‍රීන් මැදට පෙන්වීම
-    modal.style.display = 'flex';
-}
-
-// ❌ පොප්-අප් එක වහන ෆන්ෂන් එක
-function closeAppAlert() {
-    document.getElementById('app-custom-alert').style.display = 'none';
-}
+        function closeAppAlert() {
+            document.getElementById('app-custom-alert').style.display = 'none';
+        }
     </script>
 </body>
 </html>
