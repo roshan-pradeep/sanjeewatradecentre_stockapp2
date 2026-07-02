@@ -757,23 +757,29 @@
             document.getElementById('custom-stock-modal').style.display = 'none';
         }
 
-        // 🚀 WINDOW ONLOAD: FIXED - ආරක්ෂිත ලොගින් පද්ධතිය සහ Flicker වීම මුළුමනින්ම නැවැත්වීම
+        // 🚀 WINDOW ONLOAD: FIXED - ලොගින් පේජ් එකත් හරියටම වැඩ, රිෆ්‍රෙෂ් වෙද්දී Flicker වෙන්නෙත් නැහැ!
         window.onload = async () => { 
             console.log("App Starting...");
             
-            // 🔒 රිෆ්‍රෙෂ් වෙද්දී ලොගින් පේජ් එක එකපාරටම පැනීම වැළැක්වීමට තාවකාලිකව Hide කිරීම
-            const loginPage = document.getElementById('page-login');
-            if(loginPage) loginPage.classList.add('hidden');
+            // 🔍 1. Supabase එකෙන් දත්ත අදින්න කලින්ම ලොග් වෙලාද නැද්ද කියලා ක්ෂණිකව බ්‍රවුසර් මෙමරිය චෙක් කරනවා
+            const isLoggedIn = localStorage.getItem('sanjeewa_role');
+            const lastPage = localStorage.getItem('last_page');
 
-            await loadCategoriesFromCloud(); // 1. බටන් ස්ට්‍රක්චර් එක කියවීම
-            await loadAllStockFromCloud();   // 2. මිල සහ තොග දත්ත කියවීම
+            // ⚡ 2. ලොග් වෙලා ඉන්නවා නම් සහ පරණ හිටපු පේජ් එකක් තියෙනවා නම්, ලොගින් පේජ් එක ක්ෂණිකව හංගනවා (Flicker වීම වැළැක්වීමට)
+            if (isLoggedIn && lastPage && lastPage !== 'page-login') {
+                const loginPage = document.getElementById('page-login');
+                if(loginPage) loginPage.classList.add('hidden');
+            }
 
-            // 3. කලින් ලොග් වී සිටියේ නම් දත්ත කියවා ගැනීම
-            if(localStorage.getItem('sanjeewa_role')) {
-                currentRole = localStorage.getItem('sanjeewa_role');
+            // ☁️ 3. පසුබිමෙන් (Background) ඩේටාබේස් දත්ත ලෝඩ් වෙනවා
+            await loadCategoriesFromCloud(); // බටන් ස්ට්‍රක්චර් එක කියවීම
+            await loadAllStockFromCloud();   // මිල සහ තොග දත්ත කියවීම
+
+            // 🔑 4. පේජ් එකට යැවීමේ ප්‍රධාන ලොජික් එක
+            if(isLoggedIn) {
+                currentRole = isLoggedIn;
                 setupAdminUI();
 
-                let lastPage = localStorage.getItem('last_page');
                 if (lastPage && lastPage !== 'page-login') {
                     selectedCompanyId = localStorage.getItem('sel_company_id') || '';
                     selectedBrandId = localStorage.getItem('sel_brand_id') || '';
@@ -789,30 +795,31 @@
                             updateDetailViewUI();
                         }
                     }
-                    navigateTo(lastPage); // ලොග් වෙලා නම් කෙළින්ම හිටපු පේජ් එකට
+                    navigateTo(lastPage); // කෙළින්ම හිටපු පේජ් එකට පනිනවා
                 } else {
                     navigateTo('page-home');
                 }
             } else {
-                // 🔑 ලොග් වෙලා නැත්නම් විතරක් ලොගින් පේජ් එක ආපහු පෙන්වනවා (ෆෝන් නම්බර් එක අනිවාර්යයි!)
+                // 🔒 ලොග් වෙලා නැත්නම්, ලොගින් පේජ් එක ෂුවර් එකටම පෙන්වලා එතනටම නවත්වනවා
                 currentRole = 'staff';
-                if(loginPage) loginPage.classList.remove('hidden');
+                const loginPage = document.getElementById('page-login');
+                if(loginPage) loginPage.classList.remove('hidden'); 
                 navigateTo('page-login');
             }
 
-            // 4. Notification යැවීමට අවසර ඉල්ලීම
+            // 5. Notification යැවීමට අවසර ඉල්ලීම
             if (Notification.permission !== "granted" && Notification.permission !== "denied") {
                 Notification.requestPermission();
             }
 
-            // 5. Service Worker එක පණ ගැන්වීම
+            // 6. Service Worker එක පණ ගැන්වීම
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('sw.js')
                 .then(reg => console.log('Service Worker Registered!'))
                 .catch(err => console.log('Service Worker Failed!', err));
             }
 
-            // 6. ඇඟවීම් පරීක්ෂා කිරීම
+            // 7. ඇඟවීම් පරීක්ෂා කිරීම
             setTimeout(checkLowStockNotifications, 2000); 
         }
     </script>
