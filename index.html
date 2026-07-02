@@ -348,13 +348,6 @@
         function handleLogout() {
             currentRole = 'staff'; currentLoginMode = 'staff';
             localStorage.removeItem('sanjeewa_role');
-            // 🧹 පරණ පේජ් මෙමරිය අයින් කිරීම
-            localStorage.removeItem('last_page');
-            localStorage.removeItem('sel_company_id');
-            localStorage.removeItem('sel_brand_id');
-            localStorage.removeItem('sel_item_id');
-            localStorage.removeItem('cur_model_id');
-
             document.getElementById('login-mode-container').classList.add('hidden');
             switchLoginMode('staff');
             document.getElementById('login-phone').value = ''; document.getElementById('login-pass').value = '';
@@ -381,7 +374,7 @@
             window.location.href = `sms:${staffPhone}${isIOS ? '&' : '?'}body=${encodeURIComponent(message)}`;
         }
 
-        // 🛠️ FIXED: Deep-Linking සහ Refresh කළත් හිටපු පේජ් එකේම ඉතුරු වන Navigation පද්ධතිය
+        // 🛠️ FIX: Deep-Linking සහ ව්‍යුහාත්මක පෙරීම (Filtering) සහිත Navigation පද්ධතිය + Breadcrumb පාර පෙන්වීම
         function navigateTo(pageId) {
             document.getElementById('custom-context-menu').classList.add('hidden');
             if(pageId === 'page-model') document.getElementById('model-search').value = ''; 
@@ -391,41 +384,40 @@
 
             setupAdminUI();
 
-            // 💾 දැනට ඉන්න පේජ් එක සහ සිලෙක්ට් කරපු IDs බ්‍රවුසර් මෙමරියේ සේව් කිරීම
-            localStorage.setItem('last_page', pageId);
-            localStorage.setItem('sel_company_id', selectedCompanyId);
-            localStorage.setItem('sel_brand_id', selectedBrandId);
-            localStorage.setItem('sel_item_id', selectedItemId);
-            localStorage.setItem('cur_model_id', currentModelId);
-
             // 🛑 හැම පේජ් එකකටම අදාළ මව් නාමයන් සොයාගන්නා ලොජික් එක
             let compName = appData.companys.find(c => c.id === selectedCompanyId)?.name || '';
             let brandName = appData.brands.find(b => b.id === selectedBrandId)?.name || '';
             let itemName = appData.items.find(i => i.id === selectedItemId)?.name || '';
 
+            // 1. සමාගම් පේජ් එකට යද්දී සේරම සමාගම් පෙන්වයි
             if(pageId === 'page-company') {
                 renderButtons('company', appData.companys || [], 'company-container', 'bg-orange-600');
             }
+            // 2. බ්‍රෑන්ඩ් පේජ් එකට යද්දී ක්ලික් කළ Company එකට අයිති බ්‍රෑන්ඩ් විතරක් පෙන්නන්න Filter කරයි
             if(pageId === 'page-brand') {
                 document.getElementById('breadcrumb-brand').innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${compName}</span> /`;
                 let filteredBrands = appData.brands.filter(b => b.companyId === selectedCompanyId);
                 renderButtons('brand', filteredBrands, 'brand-container', 'bg-blue-600');
             }
+            // 3. අයිටම් පේජ් එකට යද්දී ක්ලික් කළ Brand එකට අයිති අයිටම් විතරක් පෙන්වයි
             if(pageId === 'page-item') {
                 document.getElementById('breadcrumb-item').innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${compName}</span> / <span class="text-blue-600 font-bold">${brandName}</span> /`;
                 let filteredItems = appData.items.filter(i => i.brandId === selectedBrandId);
                 renderButtons('item', filteredItems, 'item-container', 'bg-gray-700');
             }
+            // 4. මොඩල් පේජ් එකට යද්දී ක්ලික් කළ Item එකට අයිති මොඩල්ස් විතරක් පෙන්වයි
             if(pageId === 'page-model') {
                 document.getElementById('breadcrumb-model').innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${compName}</span> / <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-gray-700 font-bold">${itemName}</span> /`;
                 let filteredModels = appData.models.filter(m => m.itemId === selectedItemId);
                 renderButtons('model', filteredModels, 'model-container', 'bg-emerald-600');
             }
+            // 5. ඩීටේල් පේජ් එකේදීත් සම්පූර්ණ පාර උඩින්ම පෙන්වයි
             if(pageId === 'page-detail') {
                 let modelName = appData.models.find(m => m.id === currentModelId)?.name || '';
                 document.getElementById('breadcrumb-detail').innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${compName}</span> / <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-gray-700 font-bold">${itemName}</span> / <span class="text-emerald-600 font-bold">${modelName}</span>`;
             }
         }
+
         // 🎛️ ලබාදෙන දත්ත ලැයිස්තුව අනුව ඩයිනමික් ලෙස බටන්ස් නිර්මාණය කර තිරයට දමන ප්‍රධාන එන්ජිම
         function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
             const container = document.getElementById(containerId); container.innerHTML = ''; 
@@ -757,70 +749,68 @@
             document.getElementById('custom-stock-modal').style.display = 'none';
         }
 
-        // 🚀 WINDOW ONLOAD: FIXED - ලොගින් පේජ් එකත් හරියටම වැඩ, රිෆ්‍රෙෂ් වෙද්දී Flicker වෙන්නෙත් නැහැ!
+        // 🚀 WINDOW ONLOAD: ඇප් එක ස්ටාර්ට් වෙද්දීම පසුබිමෙන් සිදුවන ප්‍රධාන මෙහෙයුම්
         window.onload = async () => { 
-            console.log("App Starting...");
-            
-            // 🔍 1. Supabase එකෙන් දත්ත අදින්න කලින්ම ලොග් වෙලාද නැද්ද කියලා ක්ෂණිකව බ්‍රවුසර් මෙමරිය චෙක් කරනවා
-            const isLoggedIn = localStorage.getItem('sanjeewa_role');
-            const lastPage = localStorage.getItem('last_page');
+            console.log("App Starting, Fetching from Cloud...");
+            await loadCategoriesFromCloud(); // 1. බටන් ස්ට්‍රක්චර් එක කියවීම
+            await loadAllStockFromCloud();   // 2. මිල සහ තොග දත්ත කියවීම
 
-            // ⚡ 2. ලොග් වෙලා ඉන්නවා නම් සහ පරණ හිටපු පේජ් එකක් තියෙනවා නම්, ලොගින් පේජ් එක ක්ෂණිකව හංගනවා (Flicker වීම වැළැක්වීමට)
-            if (isLoggedIn && lastPage && lastPage !== 'page-login') {
-                const loginPage = document.getElementById('page-login');
-                if(loginPage) loginPage.classList.add('hidden');
-            }
-
-            // ☁️ 3. පසුබිමෙන් (Background) ඩේටාබේස් දත්ත ලෝඩ් වෙනවා
-            await loadCategoriesFromCloud(); // බටන් ස්ට්‍රක්චර් එක කියවීම
-            await loadAllStockFromCloud();   // මිල සහ තොග දත්ත කියවීම
-
-            // 🔑 4. පේජ් එකට යැවීමේ ප්‍රධාන ලොජික් එක
-            if(isLoggedIn) {
-                currentRole = isLoggedIn;
-                setupAdminUI();
-
-                if (lastPage && lastPage !== 'page-login') {
-                    selectedCompanyId = localStorage.getItem('sel_company_id') || '';
-                    selectedBrandId = localStorage.getItem('sel_brand_id') || '';
-                    selectedItemId = localStorage.getItem('sel_item_id') || '';
-                    currentModelId = localStorage.getItem('cur_model_id') || '';
-
-                    if (lastPage === 'page-detail' && currentModelId) {
-                        if (liveDatabaseStock[currentModelId]) {
-                            const p = liveDatabaseStock[currentModelId];
-                            document.getElementById('input-img-url').value = p.img || '';
-                            document.getElementById('input-retail').value = p.retail || 0;
-                            document.getElementById('input-discount').value = p.discount || 0;
-                            updateDetailViewUI();
-                        }
-                    }
-                    navigateTo(lastPage); // කෙළින්ම හිටපු පේජ් එකට පනිනවා
-                } else {
-                    navigateTo('page-home');
-                }
+            // 3. කලින් ලොග් වී සිටියේ නම් කෙළින්ම ඇතුළට ගැනීම
+            if(localStorage.getItem('sanjeewa_role')) {
+                currentRole = localStorage.getItem('sanjeewa_role');
             } else {
-                // 🔒 ලොග් වෙලා නැත්නම්, ලොගින් පේජ් එක ෂුවර් එකටම පෙන්වලා එතනටම නවත්වනවා
                 currentRole = 'staff';
-                const loginPage = document.getElementById('page-login');
-                if(loginPage) loginPage.classList.remove('hidden'); 
-                navigateTo('page-login');
             }
+            setupAdminUI();
+            navigateTo('page-login'); 
 
-            // 5. Notification යැවීමට අවසර ඉල්ලීම
+            // 4. Notification යැවීමට අවසර ඉල්ලීම
             if (Notification.permission !== "granted" && Notification.permission !== "denied") {
                 Notification.requestPermission();
             }
 
-            // 6. Service Worker එක පණ ගැන්වීම
+            // 5. Android ඇප් එකක් වගේ ක්‍රියා කිරීමට Service Worker එක පණ ගැන්වීම
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Service Worker Registered!'))
+                .then(reg => console.log('Service Worker Registered!', reg))
                 .catch(err => console.log('Service Worker Failed!', err));
             }
 
-            // 7. ඇඟවීම් පරීක්ෂා කිරීම
+            // 6. ඇප් එක ක්‍රියාත්මක වී තත්පර 2කින් Low Stock ඇඟවීම් පරීක්ෂා කිරීම
             setTimeout(checkLowStockNotifications, 2000); 
+        }
+
+        // 🔔 සාමාන්‍ය මැසේජ් පෙන්වීමට යොදාගන්නා පොදු ඇලර්ට් ෆන්ෂන් එක
+        function showAlert(message, type = 'success') {
+            const modal = document.getElementById('app-custom-alert');
+            const iconDiv = document.getElementById('app-alert-icon');
+            const titleDiv = document.getElementById('app-alert-title');
+            const msgDiv = document.getElementById('app-alert-message');
+
+            if (!modal || !msgDiv) return;
+            msgDiv.innerHTML = message;
+
+            if (type === 'error') {
+                iconDiv.innerHTML = "❌";
+                titleDiv.innerHTML = "ERROR";
+                titleDiv.style.color = "#ef4444";
+                msgDiv.style.borderBottom = "4px solid #ef4444";
+            } else if (type === 'warning') {
+                iconDiv.innerHTML = "⚠️";
+                titleDiv.innerHTML = "WARNING";
+                titleDiv.style.color = "#f59e0b";
+                msgDiv.style.borderBottom = "4px solid #f59e0b";
+            } else {
+                iconDiv.innerHTML = "✅";
+                titleDiv.innerHTML = "SUCCESS";
+                titleDiv.style.color = "#10b981";
+                msgDiv.style.borderBottom = "4px solid #10b981";
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeAppAlert() {
+            document.getElementById('app-custom-alert').style.display = 'none';
         }
     </script>
 </body>
