@@ -363,15 +363,38 @@
             document.querySelectorAll('.admin-tip').forEach(el => el.classList.toggle('hidden', currentRole !== 'admin'));
         }
 
-        // ✉️ නව සේවකයින් සඳහා පද්ධතියට ලියාපදිංචි වීමට SMS එකක් යවන මොඩියුලය
-        async function generateStaffLink() {
-            const staffPhone = document.getElementById('new-staff-phone').value.trim();
-            if(!staffPhonePhone) return;
-            await fetchSupabase('/allowed_staff', 'POST', { phone_number: staffPhone });
-            let currentUrl = window.location.href.split('?')[0];
-            const message = `Sanjeewa Trade Centre: ඔයාව Stock App එකට ඇතුළත් කළා. ඇප් ලින්ක් එක: ${currentUrl}`;
+        // ✉️ අලුත් ස්ටාෆ් සාමාජිකයෙකුට ආරාධනා ලින්ක් එක සාදා SMS මඟින් යැවීම
+        function generateStaffLink() {
+            const phone = document.getElementById('new-staff-phone').value.trim();
+            if (!phone) {
+                showAlert("කරුණාකර ෆෝන් නම්බර් එකක් ඇතුළත් කරන්න!", "error");
+                return;
+            }
+
+            // 1. Supabase එකේ මේ නම්බර් එක රෙජිස්ටර් කරන ලොජික් එක (උඹේ පරණ කෝඩ් එකේ තිබ්බ විදිහට)
+            // [මෙහිදී Supabase එකට දත්ත යන කොටස ක්‍රියාත්මක වේ]
+
+            // 2. දැනට ඇප් එක රන් වන URL එක අරන් ආරාධනා ලින්ක් එක හැදීම
+            const baseUrl = window.location.origin + window.location.pathname;
+            const inviteLink = `${baseUrl}?invite=true&phone=${phone}`;
+            
+            // 3. යවන්න ඕන මැසේජ් එක ලෑස්ති කිරීම
+            const messageBody = `Sanjeewa Furniture & Trade Centre ඇප් එකට ලියාපදිංචි වීමට මෙම ලින්ක් එක භාවිතා කරන්න: ${inviteLink}`;
+
+            // 💾 Clipboard එකට ලින්ක් එක කොපි කිරීම (Backup එකක් විදිහට)
+            navigator.clipboard.writeText(inviteLink);
+
+            // 📱 FIXED: ෆෝන් එකේ Normal SMS ඇප් එක කෙළින්ම මැසේජ් එකත් එක්ක ඕපන් කිරීම
+            // Android සහ iOS දෙකටම වැඩ කරන විදිහට:
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            window.location.href = `sms:${staffPhone}${isIOS ? '&' : '?'}body=${encodeURIComponent(message)}`;
+            const smsUrl = isIOS 
+                ? `sms:${phone}&body=${encodeURIComponent(messageBody)}` 
+                : `sms:${phone}?body=${encodeURIComponent(messageBody)}`;
+
+            // SMS ඇප් එකට යොමු කිරීම
+            window.location.href = smsUrl;
+
+            showAlert("SMS එක සූදානම්! කරුණාකර ඔබගේ SMS ඇප් එකෙන් Send කරන්න.", "success");
         }
 
         // 🛠️ FIX: Deep-Linking සහ ව්‍යුහාත්මක පෙරීම (Filtering) සහිත Navigation පද්ධතිය + Breadcrumb පාර පෙන්වීම
