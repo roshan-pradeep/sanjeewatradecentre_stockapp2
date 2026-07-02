@@ -593,47 +593,65 @@
             });
         }
 
-        // Live Realtime Dynamic Synchronizer Engine for Stock Profiles
-        async function openProductDetailLive(modelItem) {
-            currentModelId = modelItem.id;
-            document.getElementById('detail-model-title').innerText = modelItem.name;
-            
-            // Clean dynamic structures
-            document.getElementById('product-img').src = "https://via.placeholder.com/300?text=Loading...";
-            document.getElementById('view-retail').innerText = "0.00";
-            document.getElementById('view-discount').innerText = "0";
-            document.getElementById('view-cost').innerText = "0.00";
-            document.getElementById('view-qty-colors').innerHTML = "Loading live data...";
+       // Live Realtime Dynamic Synchronizer Engine for Stock Profiles
+async function openProductDetailLive(modelItem) {
+    currentModelId = modelItem.id;
+    document.getElementById('detail-model-title').innerText = modelItem.name;
+    
+    // Clean dynamic structures
+    document.getElementById('product-img').src = "https://via.placeholder.com/300?text=Loading...";
+    document.getElementById('view-retail').innerText = "0.00";
+    document.getElementById('view-discount').innerText = "0";
+    document.getElementById('view-cost').innerText = "0.00";
+    document.getElementById('view-qty-colors').innerHTML = "Loading live data...";
 
-            navigateTo('page-detail');
+    navigateTo('page-detail');
 
-            // Pull profile data from live Cloud Database
-            const res = await fetchSupabase(`/product_stock?model_id=eq.${currentModelId}`);
-            if(res && res.length > 0) {
-                const profile = res[0];
-                document.getElementById('product-img').src = profile.image_url || "https://via.placeholder.com/300?text=No+Image";
-                document.getElementById('view-retail').innerText = parseFloat(profile.retail_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
-                document.getElementById('view-discount').innerText = profile.discount || "0";
-                document.getElementById('view-cost').innerText = parseFloat(profile.cost_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
-                
-                // Admin input sync mappings
-                document.getElementById('input-img-url').value = profile.image_url || '';
-                document.getElementById('input-retail').value = profile.retail_price || '';
-                document.getElementById('input-discount').value = profile.discount || '';
-                
-                tempColorStockList = profile.color_qty_json || {};
-                renderColorStockOutputs(tempColorStockList);
-                checkLowStockAlertSystem(modelItem.name, tempColorStockList);
-            } else {
-                document.getElementById('product-img').src = "https://via.placeholder.com/300?text=No+Image";
-                document.getElementById('input-img-url').value = '';
-                document.getElementById('input-retail').value = '';
-                document.getElementById('input-discount').value = '';
-                tempColorStockList = {};
-                document.getElementById('view-qty-colors').innerHTML = "<span class='text-red-500 italic'>තොග දත්ත ඇතුළත් කර නොමැත.</span>";
-            }
-        }
+    // ⚡ [SUPER FIX] බ්‍රවුසර් මතකයේ (Cache) කලින් සේව් කරපු අලුත්ම දත්ත තියෙනවාද බලනවා
+    if (window.localStockCache && window.localStockCache[currentModelId]) {
+        const cached = window.localStockCache[currentModelId];
+        
+        document.getElementById('product-img').src = cached.image_url || "https://via.placeholder.com/300?text=No+Image";
+        document.getElementById('view-retail').innerText = parseFloat(cached.retail_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
+        document.getElementById('view-discount').innerText = cached.discount || "0";
+        document.getElementById('view-cost').innerText = parseFloat(cached.cost_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
+        
+        document.getElementById('input-img-url').value = cached.image_url || '';
+        document.getElementById('input-retail').value = cached.retail_price || '';
+        document.getElementById('input-discount').value = cached.discount || '';
+        
+        tempColorStockList = cached.color_qty_json || {};
+        renderColorStockOutputs(tempColorStockList);
+        checkLowStockAlertSystem(modelItem.name, tempColorStockList);
+        return; // 🛑 මතකයෙන් ඩේටා හම්බුනා නම් මෙතනින් function එක නතර කරනවා (සර්වර් එකට යන්න දෙන්නේ නෑ)
+    }
 
+    // Pull profile data from live Cloud Database (මතකයේ නැත්නම් විතරක් සර්වර් එකෙන් ගන්නවා)
+    const res = await fetchSupabase(`/product_stock?model_id=eq.${currentModelId}`);
+    if(res && res.length > 0) {
+        const profile = res[0];
+        document.getElementById('product-img').src = profile.image_url || "https://via.placeholder.com/300?text=No+Image";
+        document.getElementById('view-retail').innerText = parseFloat(profile.retail_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
+        document.getElementById('view-discount').innerText = profile.discount || "0";
+        document.getElementById('view-cost').innerText = parseFloat(profile.cost_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
+        
+        // Admin input sync mappings
+        document.getElementById('input-img-url').value = profile.image_url || '';
+        document.getElementById('input-retail').value = profile.retail_price || '';
+        document.getElementById('input-discount').value = profile.discount || '';
+        
+        tempColorStockList = profile.color_qty_json || {};
+        renderColorStockOutputs(tempColorStockList);
+        checkLowStockAlertSystem(modelItem.name, tempColorStockList);
+    } else {
+        document.getElementById('product-img').src = "https://via.placeholder.com/300?text=No+Image";
+        document.getElementById('input-img-url').value = '';
+        document.getElementById('input-retail').value = '';
+        document.getElementById('input-discount').value = '';
+        tempColorStockList = {};
+        document.getElementById('view-qty-colors').innerHTML = "<span class='text-red-500 italic'>තොග දත්ත ඇතුළත් කර නොමැත.</span>";
+    }
+}
         function renderColorStockOutputs(colorsJson) {
             const container = document.getElementById('view-qty-colors');
             container.innerHTML = '';
@@ -693,21 +711,28 @@
         color_qty_json: tempColorStockList
     };
 
-    // 1. Supabase Cloud එකට ඩේටා යවනවා
+    // 1. Supabase Cloud Sync
     await fetchSupabase('/product_stock', 'POST', recordPayload, true);
     
-    // 2. ⚡ [IMPORTANT FIX] ඇප් එකේ Local Memory/Array එකත් එවලේම අප්ඩේට් කරනවා
-    // එතකොට බැක් වෙලා ආයෙ ආවත් මේ අලුත් දත්තමයි පේන්නේ!
-    let localModel = appData.models.find(m => m.id === currentModelId);
-    if (localModel) {
-        localModel.image_url = img;
-        localModel.retail_price = retail;
-        localModel.discount = discount;
-        localModel.cost_price = cost;
-        localModel.color_qty_json = tempColorStockList; // array එක සෙට් කිරීම
+    // 2. ⚡ [SUPER FIX] Model Array එකයි, Stock Array එකයි දෙකම Local Memory එකේ අප්ඩේට් කරනවා
+    if (!window.localStockCache) window.localStockCache = {};
+    
+    // මේ Model ID එකට අදාළ දත්ත ටික Global Object එකක තියාගන්නවා බ්‍රවුසර් මතකයේ
+    window.localStockCache[currentModelId] = recordPayload;
+
+    // ඔයාගේ ප්‍රධාන appData එකේ models ලිස්ට් එකත් අප්ඩේට් කරනවා
+    if (typeof appData !== 'undefined' && appData.models) {
+        let localModel = appData.models.find(m => m.id === currentModelId);
+        if (localModel) {
+            localModel.image_url = img;
+            localModel.retail_price = retail;
+            localModel.discount = discount;
+            localModel.cost_price = cost;
+            localModel.color_qty_json = tempColorStockList;
+        }
     }
     
-    // 3. දැනට Screen එකේ පේන Live Views ටික අප්ඩේට් කිරීම
+    // 3. UI එක Instant අප්ඩේට් කිරීම
     document.getElementById('product-img').src = img || "https://via.placeholder.com/300?text=No+Image";
     document.getElementById('view-retail').innerText = retail.toLocaleString('en-US', {minimumFractionDigits: 2});
     document.getElementById('view-discount').innerText = discount;
