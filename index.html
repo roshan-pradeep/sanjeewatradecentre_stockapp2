@@ -363,38 +363,15 @@
             document.querySelectorAll('.admin-tip').forEach(el => el.classList.toggle('hidden', currentRole !== 'admin'));
         }
 
-        // ✉️ අලුත් ස්ටාෆ් සාමාජිකයෙකුට ආරාධනා ලින්ක් එක සාදා SMS මඟින් යැවීම
-        function generateStaffLink() {
-            const phone = document.getElementById('new-staff-phone').value.trim();
-            if (!phone) {
-                showAlert("කරුණාකර ෆෝන් නම්බර් එකක් ඇතුළත් කරන්න!", "error");
-                return;
-            }
-
-            // 1. Supabase එකේ මේ නම්බර් එක රෙජිස්ටර් කරන ලොජික් එක (උඹේ පරණ කෝඩ් එකේ තිබ්බ විදිහට)
-            // [මෙහිදී Supabase එකට දත්ත යන කොටස ක්‍රියාත්මක වේ]
-
-            // 2. දැනට ඇප් එක රන් වන URL එක අරන් ආරාධනා ලින්ක් එක හැදීම
-            const baseUrl = window.location.origin + window.location.pathname;
-            const inviteLink = `${baseUrl}?invite=true&phone=${phone}`;
-            
-            // 3. යවන්න ඕන මැසේජ් එක ලෑස්ති කිරීම
-            const messageBody = `Sanjeewa Furniture & Trade Centre ඇප් එකට ලියාපදිංචි වීමට මෙම ලින්ක් එක භාවිතා කරන්න: ${inviteLink}`;
-
-            // 💾 Clipboard එකට ලින්ක් එක කොපි කිරීම (Backup එකක් විදිහට)
-            navigator.clipboard.writeText(inviteLink);
-
-            // 📱 FIXED: ෆෝන් එකේ Normal SMS ඇප් එක කෙළින්ම මැසේජ් එකත් එක්ක ඕපන් කිරීම
-            // Android සහ iOS දෙකටම වැඩ කරන විදිහට:
+        // ✉️ නව සේවකයින් සඳහා පද්ධතියට ලියාපදිංචි වීමට SMS එකක් යවන මොඩියුලය
+        async function generateStaffLink() {
+            const staffPhone = document.getElementById('new-staff-phone').value.trim();
+            if(!staffPhonePhone) return;
+            await fetchSupabase('/allowed_staff', 'POST', { phone_number: staffPhone });
+            let currentUrl = window.location.href.split('?')[0];
+            const message = `Sanjeewa Trade Centre: ඔයාව Stock App එකට ඇතුළත් කළා. ඇප් ලින්ක් එක: ${currentUrl}`;
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            const smsUrl = isIOS 
-                ? `sms:${phone}&body=${encodeURIComponent(messageBody)}` 
-                : `sms:${phone}?body=${encodeURIComponent(messageBody)}`;
-
-            // SMS ඇප් එකට යොමු කිරීම
-            window.location.href = smsUrl;
-
-            showAlert("SMS එක සූදානම්! කරුණාකර ඔබගේ SMS ඇප් එකෙන් Send කරන්න.", "success");
+            window.location.href = `sms:${staffPhone}${isIOS ? '&' : '?'}body=${encodeURIComponent(message)}`;
         }
 
         // 🛠️ FIX: Deep-Linking සහ ව්‍යුහාත්මක පෙරීම (Filtering) සහිත Navigation පද්ධතිය + Breadcrumb පාර පෙන්වීම
@@ -772,65 +749,68 @@
             document.getElementById('custom-stock-modal').style.display = 'none';
         }
 
-        // 🚀 WINDOW ONLOAD: 100% FIXED - ලොගින් පේජ් එකත් හරියටම වැඩ, රිෆ්‍රෙෂ් එකත් සුපිරියටම වැඩ!
+        // 🚀 WINDOW ONLOAD: ඇප් එක ස්ටාර්ට් වෙද්දීම පසුබිමෙන් සිදුවන ප්‍රධාන මෙහෙයුම්
         window.onload = async () => { 
-            console.log("App Starting...");
-            
-            // 🔍 1. බ්‍රවුසර් මෙමරියේ ලොගින් දත්ත තියෙනවද කියලා මුලින්ම බලනවා
-            const isLoggedIn = localStorage.getItem('sanjeewa_role');
-            const lastPage = localStorage.getItem('last_page');
+            console.log("App Starting, Fetching from Cloud...");
+            await loadCategoriesFromCloud(); // 1. බටන් ස්ට්‍රක්චර් එක කියවීම
+            await loadAllStockFromCloud();   // 2. මිල සහ තොග දත්ත කියවීම
 
-            // ⚡ 2. ලොග් වෙලා ඉන්නවා නම්, ඩේටාබේස් එකෙන් දත්ත එනකන් ඉන්නෙ නැතුව ක්ෂණිකව ලොගින් පේජ් එක හංගනවා
-            if (isLoggedIn && lastPage && lastPage !== 'page-login') {
-                const loginPage = document.getElementById('page-login');
-                if(loginPage) loginPage.classList.add('hidden');
-                
-                // දැනට සේව් වුණු IDs මෙමරියෙන් ගන්නවා
-                selectedCompanyId = localStorage.getItem('sel_company_id') || '';
-                selectedBrandId = localStorage.getItem('sel_brand_id') || '';
-                selectedItemId = localStorage.getItem('sel_item_id') || '';
-                currentModelId = localStorage.getItem('cur_model_id') || '';
-
-                currentRole = isLoggedIn;
-                setupAdminUI();
-                navigateTo(lastPage); // කෙළින්ම හිටපු පේජ් එකට යවනවා
+            // 3. කලින් ලොග් වී සිටියේ නම් කෙළින්ම ඇතුළට ගැනීම
+            if(localStorage.getItem('sanjeewa_role')) {
+                currentRole = localStorage.getItem('sanjeewa_role');
             } else {
-                // 🔒 ලොග් වෙලා නැත්නම්, ලොගින් පේජ් එක ෂුවර් එකටම පෙන්වනවා
                 currentRole = 'staff';
-                const loginPage = document.getElementById('page-login');
-                if(loginPage) loginPage.classList.remove('hidden'); 
-                navigateTo('page-login');
             }
+            setupAdminUI();
+            navigateTo('page-login'); 
 
-            // ☁️ 3. ඊටපස්සේ පසුබිමෙන් (Background) සන්ෆ්ලවර් වගේ ඩේටාබේස් දත්ත ලෝඩ් වෙනවා
-            await loadCategoriesFromCloud(); // බටන් ස්ට්‍රක්චර් එක කියවීම
-            await loadAllStockFromCloud();   // මිල සහ තොග දත්ත කියවීම
-
-            // 🔄 4. මොඩල් ඩීටේල් පේජ් එකේ ඉඳන් රිෆ්‍රෙෂ් කළා නම් විතරක් දත්ත ලෝඩ් වුණාට පස්සේ UI එක අප්ඩේට් කරනවා
-            if (isLoggedIn && lastPage === 'page-detail' && currentModelId) {
-                if (liveDatabaseStock[currentModelId]) {
-                    const p = liveDatabaseStock[currentModelId];
-                    document.getElementById('input-img-url').value = p.img || '';
-                    document.getElementById('input-retail').value = p.retail || 0;
-                    document.getElementById('input-discount').value = p.discount || 0;
-                    updateDetailViewUI();
-                }
-            }
-
-            // 5. Notification යැවීමට අවසර ඉල්ලීම
+            // 4. Notification යැවීමට අවසර ඉල්ලීම
             if (Notification.permission !== "granted" && Notification.permission !== "denied") {
                 Notification.requestPermission();
             }
 
-            // 6. Service Worker එක පණ ගැන්වීම
+            // 5. Android ඇප් එකක් වගේ ක්‍රියා කිරීමට Service Worker එක පණ ගැන්වීම
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Service Worker Registered!'))
+                .then(reg => console.log('Service Worker Registered!', reg))
                 .catch(err => console.log('Service Worker Failed!', err));
             }
 
-            // 7. ඇඟවීම් පරීක්ෂා කිරීම
+            // 6. ඇප් එක ක්‍රියාත්මක වී තත්පර 2කින් Low Stock ඇඟවීම් පරීක්ෂා කිරීම
             setTimeout(checkLowStockNotifications, 2000); 
+        }
+
+        // 🔔 සාමාන්‍ය මැසේජ් පෙන්වීමට යොදාගන්නා පොදු ඇලර්ට් ෆන්ෂන් එක
+        function showAlert(message, type = 'success') {
+            const modal = document.getElementById('app-custom-alert');
+            const iconDiv = document.getElementById('app-alert-icon');
+            const titleDiv = document.getElementById('app-alert-title');
+            const msgDiv = document.getElementById('app-alert-message');
+
+            if (!modal || !msgDiv) return;
+            msgDiv.innerHTML = message;
+
+            if (type === 'error') {
+                iconDiv.innerHTML = "❌";
+                titleDiv.innerHTML = "ERROR";
+                titleDiv.style.color = "#ef4444";
+                msgDiv.style.borderBottom = "4px solid #ef4444";
+            } else if (type === 'warning') {
+                iconDiv.innerHTML = "⚠️";
+                titleDiv.innerHTML = "WARNING";
+                titleDiv.style.color = "#f59e0b";
+                msgDiv.style.borderBottom = "4px solid #f59e0b";
+            } else {
+                iconDiv.innerHTML = "✅";
+                titleDiv.innerHTML = "SUCCESS";
+                titleDiv.style.color = "#10b981";
+                msgDiv.style.borderBottom = "4px solid #10b981";
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeAppAlert() {
+            document.getElementById('app-custom-alert').style.display = 'none';
         }
     </script>
 </body>
