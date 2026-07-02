@@ -36,7 +36,7 @@
         </div>
     </div>
 
-    <div id="page-login" class="flex flex-col items-center justify-center min-h-screen p-4">
+    <div id="page-login" class="hidden flex flex-col items-center justify-center min-h-screen p-4">
         <div class="bg-white p-6 rounded-2xl shadow-lg w-full max-w-sm">
             <h2 class="text-2xl font-bold text-center text-blue-600 mb-2">Sanjeewa Trade Centre</h2>
             <p id="login-sub-title" class="text-xs text-center text-gray-500 mb-6">Staff Portal</p>
@@ -757,7 +757,7 @@
             document.getElementById('custom-stock-modal').style.display = 'none';
         }
 
-        // 🚀 WINDOW ONLOAD: FIXED - රිෆ්‍රෙෂ් කළ විට හිටපු පේජ් එකටම ස්වයංක්‍රීයව රැගෙන යාම
+        // 🚀 WINDOW ONLOAD: FIXED - රිෆ්‍රෙෂ් වෙද්දී ලොගින් පේජ් එක මතු වී පැනීම (Flicker) මුළුමනින්ම වළක්වා ඇත
         window.onload = async () => { 
             console.log("App Starting, Fetching from Cloud...");
             await loadCategoriesFromCloud(); // 1. බටන් ස්ට්‍රක්චර් එක කියවීම
@@ -787,14 +787,14 @@
                         }
                     }
                     
-                    // කෙළින්ම හිටපු පේජ් එකටම යවනවා
+                    // කෙළින්ම හිටපු පේජ් එක විතරක් ලෝඩ් කරයි (ලොගින් එක පේන්නෙම නැහැ)
                     navigateTo(lastPage);
                 } else {
                     navigateTo('page-home'); // ලොග් වෙලා හැබැයි හෝම් එකේ හිටියේ නම්
                 }
             } else {
                 currentRole = 'staff';
-                navigateTo('page-login'); // ලොග් වෙලා නැත්නම් විතරක් ලොගින් පේජ් එකට
+                navigateTo('page-login'); // ලොග් වෙලා නැත්නම් විතරක් ලොගින් පේජ් එක පෙන්වයි
             }
 
             // 4. Notification යැවීමට අවසර ඉල්ලීම
