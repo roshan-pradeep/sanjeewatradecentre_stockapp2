@@ -36,7 +36,7 @@
         </div>
     </div>
 
-    <div id="page-login" class="hidden flex flex-col items-center justify-center min-h-screen p-4">
+    <div id="page-login" class="flex flex-col items-center justify-center min-h-screen p-4">
         <div class="bg-white p-6 rounded-2xl shadow-lg w-full max-w-sm">
             <h2 class="text-2xl font-bold text-center text-blue-600 mb-2">Sanjeewa Trade Centre</h2>
             <p id="login-sub-title" class="text-xs text-center text-gray-500 mb-6">Staff Portal</p>
@@ -757,9 +757,14 @@
             document.getElementById('custom-stock-modal').style.display = 'none';
         }
 
-        // 🚀 WINDOW ONLOAD: FIXED - රිෆ්‍රෙෂ් වෙද්දී ලොගින් පේජ් එක මතු වී පැනීම (Flicker) මුළුමනින්ම වළක්වා ඇත
+        // 🚀 WINDOW ONLOAD: FIXED - ආරක්ෂිත ලොගින් පද්ධතිය සහ Flicker වීම මුළුමනින්ම නැවැත්වීම
         window.onload = async () => { 
-            console.log("App Starting, Fetching from Cloud...");
+            console.log("App Starting...");
+            
+            // 🔒 රිෆ්‍රෙෂ් වෙද්දී ලොගින් පේජ් එක එකපාරටම පැනීම වැළැක්වීමට තාවකාලිකව Hide කිරීම
+            const loginPage = document.getElementById('page-login');
+            if(loginPage) loginPage.classList.add('hidden');
+
             await loadCategoriesFromCloud(); // 1. බටන් ස්ට්‍රක්චර් එක කියවීම
             await loadAllStockFromCloud();   // 2. මිල සහ තොග දත්ත කියවීම
 
@@ -768,7 +773,6 @@
                 currentRole = localStorage.getItem('sanjeewa_role');
                 setupAdminUI();
 
-                // 🔄 බ්‍රවුසර් එකේ පරණ සේව් වුණු පේජ් දත්ත තියෙනවද බලනවා
                 let lastPage = localStorage.getItem('last_page');
                 if (lastPage && lastPage !== 'page-login') {
                     selectedCompanyId = localStorage.getItem('sel_company_id') || '';
@@ -776,7 +780,6 @@
                     selectedItemId = localStorage.getItem('sel_item_id') || '';
                     currentModelId = localStorage.getItem('cur_model_id') || '';
 
-                    // මොඩල් ඩීටේල් පේජ් එකේ ඉඳන් රිෆ්‍රෙෂ් කළා නම් UI එක ලයිව් අප්ඩේට් කරන්න ඕනේ
                     if (lastPage === 'page-detail' && currentModelId) {
                         if (liveDatabaseStock[currentModelId]) {
                             const p = liveDatabaseStock[currentModelId];
@@ -786,15 +789,15 @@
                             updateDetailViewUI();
                         }
                     }
-                    
-                    // කෙළින්ම හිටපු පේජ් එක විතරක් ලෝඩ් කරයි (ලොගින් එක පේන්නෙම නැහැ)
-                    navigateTo(lastPage);
+                    navigateTo(lastPage); // ලොග් වෙලා නම් කෙළින්ම හිටපු පේජ් එකට
                 } else {
-                    navigateTo('page-home'); // ලොග් වෙලා හැබැයි හෝම් එකේ හිටියේ නම්
+                    navigateTo('page-home');
                 }
             } else {
+                // 🔑 ලොග් වෙලා නැත්නම් විතරක් ලොගින් පේජ් එක ආපහු පෙන්වනවා (ෆෝන් නම්බර් එක අනිවාර්යයි!)
                 currentRole = 'staff';
-                navigateTo('page-login'); // ලොග් වෙලා නැත්නම් විතරක් ලොගින් පේජ් එක පෙන්වයි
+                if(loginPage) loginPage.classList.remove('hidden');
+                navigateTo('page-login');
             }
 
             // 4. Notification යැවීමට අවසර ඉල්ලීම
@@ -809,7 +812,7 @@
                 .catch(err => console.log('Service Worker Failed!', err));
             }
 
-            // 6. ඇප් එක ක්‍රියාත්මක වී තත්පර 2කින් Low Stock ඇඟවීම් පරීක්ෂා කිරීම
+            // 6. ඇඟවීම් පරීක්ෂා කිරීම
             setTimeout(checkLowStockNotifications, 2000); 
         }
     </script>
