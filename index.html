@@ -697,6 +697,7 @@ async function openProductDetailLive(modelItem) {
 
         // 💡 SYNC CORE RE-MAPPED FUNCTION
     async function syncProductToDatabase() {
+    // ⚡ [IMPORTANT FIX] අත හැරිලා තිබ්බ Variables ටික මෙන්න මෙතනින් හරියටම ගන්නවා
     const img = document.getElementById('input-img-url').value.trim();
     const retail = parseFloat(document.getElementById('input-retail').value) || 0;
     const discount = parseFloat(document.getElementById('input-discount').value) || 0;
@@ -711,18 +712,13 @@ async function openProductDetailLive(modelItem) {
         color_qty_json: tempColorStockList
     };
 
-    // 1. Supabase Cloud Sync
-    await fetchSupabase('/product_stock', 'POST', recordPayload, true);
-    
-    // 2. ⚡ [SUPER FIX] Model Array එකයි, Stock Array එකයි දෙකම Local Memory එකේ අප්ඩේට් කරනවා
+    // 1. සර්වර් එකට යන්න කලින්ම ලෝකල් මතකය (Cache) අප්ඩේට් කරනවා
     if (!window.localStockCache) window.localStockCache = {};
-    
-    // මේ Model ID එකට අදාළ දත්ත ටික Global Object එකක තියාගන්නවා බ්‍රවුසර් මතකයේ
     window.localStockCache[currentModelId] = recordPayload;
 
-    // ඔයාගේ ප්‍රධාන appData එකේ models ලිස්ට් එකත් අප්ඩේට් කරනවා
+    // appData එකේ models ලිස්ට් එකත් එවලේම අප්ඩේට් කරනවා
     if (typeof appData !== 'undefined' && appData.models) {
-        let localModel = appData.models.find(m => m.id === currentModelId);
+        let localModel = appData.models.find(m => m.id == currentModelId);
         if (localModel) {
             localModel.image_url = img;
             localModel.retail_price = retail;
@@ -732,15 +728,21 @@ async function openProductDetailLive(modelItem) {
         }
     }
     
-    // 3. UI එක Instant අප්ඩේට් කිරීම
+    // 2. වම් පැත්තේ තියෙන UI එක Instant අප්ඩේට් කිරීම
     document.getElementById('product-img').src = img || "https://via.placeholder.com/300?text=No+Image";
     document.getElementById('view-retail').innerText = retail.toLocaleString('en-US', {minimumFractionDigits: 2});
     document.getElementById('view-discount').innerText = discount;
     document.getElementById('view-cost').innerText = cost.toLocaleString('en-US', {minimumFractionDigits: 2});
 
     showAlert('පැතිකඩ සහ තොග දත්ත සාර්ථකව සමමුහුර්ත කරන ලදී!', 'success');
-}
 
+    try {
+        // 3. ☁️ බැක්ග්‍රවුන්ඩ් එකෙන් Supabase එකට සේව් වෙන්න ඇරීම
+        await fetchSupabase('/product_stock', 'POST', recordPayload, true);
+    } catch (err) {
+        console.log("Supabase sync background delay:", err);
+    }
+}
         function checkLowStockAlertSystem(modelName, colorsJson) {
             let lowItems = [];
             Object.keys(colorsJson).forEach(c => {
