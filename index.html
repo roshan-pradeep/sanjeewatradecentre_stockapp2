@@ -613,7 +613,7 @@ async function openProductDetailLive(modelItem) {
     currentModelId = modelItem.id;
     document.getElementById('detail-model-title').innerText = modelItem.name;
     
-    // UI eka loading kiyala pennanna (Mehen user-friendly wenawa)
+    // UI එක Loading විදිහට පෙන්වනවා
     document.getElementById('product-img').src = "https://via.placeholder.com/300?text=Loading+Data...";
     document.getElementById('view-retail').innerText = "---";
     document.getElementById('view-cost').innerText = "---";
@@ -621,34 +621,39 @@ async function openProductDetailLive(modelItem) {
 
     navigateTo('page-detail');
 
-    // Supabase eken data ganna
+    // ⚡ [CACHE FIX] මෙතනදී අපි කලින් හදපු fetchSupabase එකෙන් අලුත්ම දත්ත ගන්නවා.
+    // fetchSupabase එක ඇතුලේ අපි _t=${new Date().getTime()} දාලා තියෙන නිසා අලුත්ම දත්ත එනවා.
     const res = await fetchSupabase(`/product_stock?model_id=eq.${currentModelId}`);
     
     if(res && res.length > 0) {
         const profile = res[0];
         
-        // Data awa gaman UI eka update wenawa
+        // Data ආව ගමන් UI එක update වෙනවා
         document.getElementById('product-img').src = profile.image_url || "https://via.placeholder.com/300?text=No+Image";
         document.getElementById('view-retail').innerText = parseFloat(profile.retail_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
         document.getElementById('view-discount').innerText = profile.discount || "0";
         document.getElementById('view-cost').innerText = parseFloat(profile.cost_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
         
-        // Admin inputs tika purawanna
+        // Admin inputs ටික පුරවනවා
         document.getElementById('input-img-url').value = profile.image_url || '';
         document.getElementById('input-retail').value = profile.retail_price || '';
         document.getElementById('input-discount').value = profile.discount || '';
         
         tempColorStockList = profile.color_qty_json || {};
         renderColorStockOutputs(tempColorStockList);
-        checkLowStockAlertSystem(modelItem.name, tempColorStockList);
+        
+        // Low stock alert එක චෙක් කරනවා
+        if (typeof checkLowStockAlertSystem === 'function') {
+            checkLowStockAlertSystem(modelItem.name, tempColorStockList);
+        }
     } else {
-        // Data nathnam mehema pennanna
+        // Data නැත්නම් මෙහෙම පෙන්වනවා
         document.getElementById('product-img').src = "https://via.placeholder.com/300?text=No+Image";
         document.getElementById('view-retail').innerText = "0.00";
         document.getElementById('view-cost').innerText = "0.00";
         document.getElementById('view-qty-colors').innerHTML = "<span class='text-red-500'>No data found.</span>";
         
-        // Inputs reset karanna
+        // Inputs reset කරනවා
         document.getElementById('input-img-url').value = '';
         document.getElementById('input-retail').value = '';
         document.getElementById('input-discount').value = '';
