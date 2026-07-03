@@ -681,12 +681,8 @@ async function openProductDetailLive(modelItem) {
         }
 
         // 💡 SYNC CORE RE-MAPPED FUNCTION
-    /**
- * 🛠️ Sanjeewa Trade Centre - Stock App 
- * ☁️ Cloud Sync & Local Storage Persistence Engine
- */
-
-async function syncProductToDatabase() {
+    async function syncProductToDatabase() {
+    // 1. Inputs වලින් ඩේටා ටික නිවැරදිව ගන්නවා
     const img = document.getElementById('input-img-url').value.trim();
     const retail = parseFloat(document.getElementById('input-retail').value) || 0;
     const discount = parseFloat(document.getElementById('input-discount').value) || 0;
@@ -701,76 +697,27 @@ async function syncProductToDatabase() {
         color_qty_json: tempColorStockList
     };
 
-    // ⚡ අලුත් FIX එක: LocalStorage අයින් කළා. හැමදේම Supabase එකට විතරයි යන්නේ!
+    // 2. ⚡ UI එක Instant අප්ඩේට් කිරීම (සර්වර් එකෙන් එනකම් ඉන්න ඕනේ නැහැ)
+    document.getElementById('product-img').src = img || "https://via.placeholder.com/300?text=No+Image";
+    document.getElementById('view-retail').innerText = retail.toLocaleString('en-US', {minimumFractionDigits: 2});
+    document.getElementById('view-discount').innerText = discount;
+    document.getElementById('view-cost').innerText = cost.toLocaleString('en-US', {minimumFractionDigits: 2});
+
+    // 3. ☁️ සර්වර් එකට දත්ත යවනවා (Cache නැතුව කෙලින්ම සර්වර් එකට)
     try {
         await fetchSupabase('/product_stock', 'POST', recordPayload, true);
         
-        // UI එක සැනෙකින් අප්ඩේට් කරන්න
-        updateDetailUI(recordPayload); 
-        
-        showAlert('✅ දත්ත Cloud එකට සාර්ථකව සේව් වුණා!', 'success');
-    } catch (err) {
-        showAlert('❌ දත්ත සේව් වුණේ නැහැ, නෙට් එක බලන්න!', 'error');
-    }
-}
-
-// 🚀 App එක පටන් ගන්නකොට දත්ත Load කරන හැටි
-async function initApp() {
-    const savedRole = localStorage.getItem('sanjeewa_role');
-    if (savedRole) currentRole = savedRole;
-    
-    // කැටගරි ටික සර්වර් එකෙන් ගන්නවා
-    await loadCategoriesFromCloud();
-    
-    // UI එක හදනවා
-    setupAdminUI();
-
-    // ලොග් වෙලා නම් ගෙදරට යනවා
-    if (savedRole) {
-        navigateTo('page-home');
-    } else {
-        navigateTo('page-login');
-    }
-}
-
-// 📱 පේජ් එකක් ඕපන් කරද්දී කලින් සේව් කරපු ඩේටා තියෙනවද බලන හැටි
-async function openProductDetailLive(modelItem) {
-    currentModelId = modelItem.id;
-    document.getElementById('detail-model-title').innerText = modelItem.name;
-    navigateTo('page-detail');
-
-    // 1. මුලින්ම Cloud Database එකෙන් බලනවා (Staff කෙනෙක්ට මුලින්ම පේන්න ඕනේ සර්වර් එකේ දත්ත)
-    const res = await fetchSupabase(`/product_stock?model_id=eq.${currentModelId}`);
-    
-    if (res && res.length > 0) {
-        // සර්වර් එකේ දත්ත තියෙනවා නම් ඒක ලෝඩ් කරනවා
-        updateDetailUI(res[0]);
-        // ලෝකල් එකත් අප්ඩේට් කරගන්නවා (Backup එකක් විදිහට)
-        localStorage.setItem(`stock_data_${currentModelId}`, JSON.stringify(res[0]));
-    } else {
-        // 2. Cloud එකේ දත්ත නැත්නම් විතරක් LocalStorage එකෙන් බලනවා
-        const localData = localStorage.getItem(`stock_data_${currentModelId}`);
-        if (localData) {
-            updateDetailUI(JSON.parse(localData));
-        } else {
-            // කිසිම දත්තයක් නැත්නම් හිස් කරනවා
-            document.getElementById('view-qty-colors').innerHTML = "තොග දත්ත ඇතුළත් කර නොමැත.";
+        // 4. WhatsApp / Low Stock Alert එක සර්වර් එකට යැව්වට පස්සේ රන් කරනවා
+        const modelTitle = document.getElementById('detail-model-title').innerText;
+        if (typeof checkLowStockAlertSystem === 'function') {
+            checkLowStockAlertSystem(modelTitle, tempColorStockList);
         }
+        
+        showAlert('පැතිකඩ සහ තොග දත්ත සාර්ථකව Cloud එකට යැවුණා!', 'success');
+    } catch (err) {
+        console.error("Sync Error:", err);
+        showAlert('කනෙක්ෂන් අවුලක්! දත්ත සේව් වුණේ නැහැ.', 'error');
     }
-}
-
-// UI එක Update කරන පොදු ෆන්ක්ෂන් එක
-function updateDetailUI(profile) {
-    document.getElementById('product-img').src = profile.image_url || "https://via.placeholder.com/300?text=No+Image";
-    document.getElementById('view-retail').innerText = parseFloat(profile.retail_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
-    document.getElementById('view-discount').innerText = profile.discount || "0";
-    document.getElementById('view-cost').innerText = parseFloat(profile.cost_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
-    document.getElementById('input-img-url').value = profile.image_url || '';
-    document.getElementById('input-retail').value = profile.retail_price || '';
-    document.getElementById('input-discount').value = profile.discount || '';
-    
-    tempColorStockList = profile.color_qty_json || {};
-    renderColorStockOutputs(tempColorStockList);
 }
         function checkLowStockAlertSystem(modelName, colorsJson) {
             let lowItems = [];
