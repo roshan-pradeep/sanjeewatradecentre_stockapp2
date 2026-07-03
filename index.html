@@ -766,17 +766,19 @@ async function openProductDetailLive(modelItem) {
     document.getElementById('detail-model-title').innerText = modelItem.name;
     navigateTo('page-detail');
 
-    // 1. මුලින්ම LocalStorage එකෙන් බලනවා (Tab එක වැහුවත් මෙතනින් ඩේටා එනවා)
-    const localData = localStorage.getItem(`stock_data_${currentModelId}`);
+    // 1. මුලින්ම Cloud Database එකෙන් බලනවා (Staff කෙනෙක්ට මුලින්ම පේන්න ඕනේ සර්වර් එකේ දත්ත)
+    const res = await fetchSupabase(`/product_stock?model_id=eq.${currentModelId}`);
     
-    if (localData) {
-        const profile = JSON.parse(localData);
-        updateDetailUI(profile);
+    if (res && res.length > 0) {
+        // සර්වර් එකේ දත්ත තියෙනවා නම් ඒක ලෝඩ් කරනවා
+        updateDetailUI(res[0]);
+        // ලෝකල් එකත් අප්ඩේට් කරගන්නවා (Backup එකක් විදිහට)
+        localStorage.setItem(`stock_data_${currentModelId}`, JSON.stringify(res[0]));
     } else {
-        // 2. නැත්නම් සර්වර් එකෙන් ගන්නවා
-        const res = await fetchSupabase(`/product_stock?model_id=eq.${currentModelId}`);
-        if(res && res.length > 0) {
-            updateDetailUI(res[0]);
+        // 2. Cloud එකේ දත්ත නැත්නම් විතරක් LocalStorage එකෙන් බලනවා
+        const localData = localStorage.getItem(`stock_data_${currentModelId}`);
+        if (localData) {
+            updateDetailUI(JSON.parse(localData));
         } else {
             // කිසිම දත්තයක් නැත්නම් හිස් කරනවා
             document.getElementById('view-qty-colors').innerHTML = "තොග දත්ත ඇතුළත් කර නොමැත.";
