@@ -598,28 +598,27 @@ async function openProductDetailLive(modelItem) {
     currentModelId = modelItem.id;
     document.getElementById('detail-model-title').innerText = modelItem.name;
     
-    // UI එක Loading විදිහට පෙන්වනවා
-    document.getElementById('product-img').src = "https://via.placeholder.com/300?text=Loading...";
-    document.getElementById('view-retail').innerText = "0.00";
-    document.getElementById('view-discount').innerText = "0";
-    document.getElementById('view-cost').innerText = "0.00";
-    document.getElementById('view-qty-colors').innerHTML = "Loading live data...";
+    // UI eka loading kiyala pennanna (Mehen user-friendly wenawa)
+    document.getElementById('product-img').src = "https://via.placeholder.com/300?text=Loading+Data...";
+    document.getElementById('view-retail').innerText = "---";
+    document.getElementById('view-cost').innerText = "---";
+    document.getElementById('view-qty-colors').innerHTML = "Loading data from server...";
 
     navigateTo('page-detail');
 
-    // ⚡ [NEW FIX] Cache එකට යන්න කලින් කෙලින්ම Cloud එකෙන් දත්ත ගන්නවා
+    // Supabase eken data ganna
     const res = await fetchSupabase(`/product_stock?model_id=eq.${currentModelId}`);
     
     if(res && res.length > 0) {
         const profile = res[0];
         
-        // UI එක Update කිරීම
+        // Data awa gaman UI eka update wenawa
         document.getElementById('product-img').src = profile.image_url || "https://via.placeholder.com/300?text=No+Image";
         document.getElementById('view-retail').innerText = parseFloat(profile.retail_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
         document.getElementById('view-discount').innerText = profile.discount || "0";
         document.getElementById('view-cost').innerText = parseFloat(profile.cost_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
         
-        // Admin Input fields පුරවනවා
+        // Admin inputs tika purawanna
         document.getElementById('input-img-url').value = profile.image_url || '';
         document.getElementById('input-retail').value = profile.retail_price || '';
         document.getElementById('input-discount').value = profile.discount || '';
@@ -628,13 +627,16 @@ async function openProductDetailLive(modelItem) {
         renderColorStockOutputs(tempColorStockList);
         checkLowStockAlertSystem(modelItem.name, tempColorStockList);
     } else {
-        // දත්ත නැත්නම් Reset කරනවා
+        // Data nathnam mehema pennanna
         document.getElementById('product-img').src = "https://via.placeholder.com/300?text=No+Image";
+        document.getElementById('view-retail').innerText = "0.00";
+        document.getElementById('view-cost').innerText = "0.00";
+        document.getElementById('view-qty-colors').innerHTML = "<span class='text-red-500'>No data found.</span>";
+        
+        // Inputs reset karanna
         document.getElementById('input-img-url').value = '';
         document.getElementById('input-retail').value = '';
         document.getElementById('input-discount').value = '';
-        tempColorStockList = {};
-        document.getElementById('view-qty-colors').innerHTML = "<span class='text-red-500 italic'>තොග දත්ත ඇතුළත් කර නොමැත.</span>";
     }
 }
         function renderColorStockOutputs(colorsJson) {
