@@ -598,7 +598,7 @@ async function openProductDetailLive(modelItem) {
     currentModelId = modelItem.id;
     document.getElementById('detail-model-title').innerText = modelItem.name;
     
-    // Clean dynamic structures
+    // UI එක Loading විදිහට පෙන්වනවා
     document.getElementById('product-img').src = "https://via.placeholder.com/300?text=Loading...";
     document.getElementById('view-retail').innerText = "0.00";
     document.getElementById('view-discount').innerText = "0";
@@ -607,35 +607,19 @@ async function openProductDetailLive(modelItem) {
 
     navigateTo('page-detail');
 
-    // ⚡ [SUPER FIX] බ්‍රවුසර් මතකයේ (Cache) කලින් සේව් කරපු අලුත්ම දත්ත තියෙනවාද බලනවා
-    if (window.localStockCache && window.localStockCache[currentModelId]) {
-        const cached = window.localStockCache[currentModelId];
-        
-        document.getElementById('product-img').src = cached.image_url || "https://via.placeholder.com/300?text=No+Image";
-        document.getElementById('view-retail').innerText = parseFloat(cached.retail_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
-        document.getElementById('view-discount').innerText = cached.discount || "0";
-        document.getElementById('view-cost').innerText = parseFloat(cached.cost_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
-        
-        document.getElementById('input-img-url').value = cached.image_url || '';
-        document.getElementById('input-retail').value = cached.retail_price || '';
-        document.getElementById('input-discount').value = cached.discount || '';
-        
-        tempColorStockList = cached.color_qty_json || {};
-        renderColorStockOutputs(tempColorStockList);
-        checkLowStockAlertSystem(modelItem.name, tempColorStockList);
-        return; // 🛑 මතකයෙන් ඩේටා හම්බුනා නම් මෙතනින් function එක නතර කරනවා (සර්වර් එකට යන්න දෙන්නේ නෑ)
-    }
-
-    // Pull profile data from live Cloud Database (මතකයේ නැත්නම් විතරක් සර්වර් එකෙන් ගන්නවා)
+    // ⚡ [NEW FIX] Cache එකට යන්න කලින් කෙලින්ම Cloud එකෙන් දත්ත ගන්නවා
     const res = await fetchSupabase(`/product_stock?model_id=eq.${currentModelId}`);
+    
     if(res && res.length > 0) {
         const profile = res[0];
+        
+        // UI එක Update කිරීම
         document.getElementById('product-img').src = profile.image_url || "https://via.placeholder.com/300?text=No+Image";
         document.getElementById('view-retail').innerText = parseFloat(profile.retail_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
         document.getElementById('view-discount').innerText = profile.discount || "0";
         document.getElementById('view-cost').innerText = parseFloat(profile.cost_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
         
-        // Admin input sync mappings
+        // Admin Input fields පුරවනවා
         document.getElementById('input-img-url').value = profile.image_url || '';
         document.getElementById('input-retail').value = profile.retail_price || '';
         document.getElementById('input-discount').value = profile.discount || '';
@@ -644,6 +628,7 @@ async function openProductDetailLive(modelItem) {
         renderColorStockOutputs(tempColorStockList);
         checkLowStockAlertSystem(modelItem.name, tempColorStockList);
     } else {
+        // දත්ත නැත්නම් Reset කරනවා
         document.getElementById('product-img').src = "https://via.placeholder.com/300?text=No+Image";
         document.getElementById('input-img-url').value = '';
         document.getElementById('input-retail').value = '';
@@ -702,7 +687,6 @@ async function openProductDetailLive(modelItem) {
  */
 
 async function syncProductToDatabase() {
-    // 1. UI එකේ තියෙන අලුත්ම දත්ත ටික ගන්නවා
     const img = document.getElementById('input-img-url').value.trim();
     const retail = parseFloat(document.getElementById('input-retail').value) || 0;
     const discount = parseFloat(document.getElementById('input-discount').value) || 0;
@@ -717,27 +701,16 @@ async function syncProductToDatabase() {
         color_qty_json: tempColorStockList
     };
 
-    // 2. ⚡ [PERMANENT SAVE] Tab එක වහලා ආයෙ ආවත් එන්න LocalStorage එකේ Save කරනවා
-    localStorage.setItem(`stock_data_${currentModelId}`, JSON.stringify(recordPayload));
-
-    // 3. UI එක Instant අප්ඩේට් කිරීම
-    document.getElementById('product-img').src = img || "https://via.placeholder.com/300?text=No+Image";
-    document.getElementById('view-retail').innerText = retail.toLocaleString('en-US', {minimumFractionDigits: 2});
-    document.getElementById('view-discount').innerText = discount;
-    document.getElementById('view-cost').innerText = cost.toLocaleString('en-US', {minimumFractionDigits: 2});
-
-    // 4. WhatsApp / Low Stock Alert එක
-    if (typeof checkLowStockAlertSystem === 'function') {
-        checkLowStockAlertSystem(document.getElementById('detail-model-title').innerText, tempColorStockList);
-    }
-
-    showAlert('දත්ත සුරැකිනු ලැබුවා!', 'success');
-
-    // 5. ☁️ සර්වර් එකටත් දත්ත යවනවා
+    // ⚡ අලුත් FIX එක: LocalStorage අයින් කළා. හැමදේම Supabase එකට විතරයි යන්නේ!
     try {
         await fetchSupabase('/product_stock', 'POST', recordPayload, true);
+        
+        // UI එක සැනෙකින් අප්ඩේට් කරන්න
+        updateDetailUI(recordPayload); 
+        
+        showAlert('✅ දත්ත Cloud එකට සාර්ථකව සේව් වුණා!', 'success');
     } catch (err) {
-        console.log("Cloud sync failed, data saved locally:", err);
+        showAlert('❌ දත්ත සේව් වුණේ නැහැ, නෙට් එක බලන්න!', 'error');
     }
 }
 
