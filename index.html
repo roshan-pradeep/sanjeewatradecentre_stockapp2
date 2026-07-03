@@ -696,8 +696,13 @@ async function openProductDetailLive(modelItem) {
         }
 
         // 💡 SYNC CORE RE-MAPPED FUNCTION
-    async function syncProductToDatabase() {
-    // ⚡ [IMPORTANT FIX] අත හැරිලා තිබ්බ Variables ටික මෙන්න මෙතනින් හරියටම ගන්නවා
+    /**
+ * 🛠️ Sanjeewa Trade Centre - Stock App 
+ * ☁️ Cloud Sync & Local Storage Persistence Engine
+ */
+
+async function syncProductToDatabase() {
+    // 1. UI එකේ තියෙන අලුත්ම දත්ත ටික ගන්නවා
     const img = document.getElementById('input-img-url').value.trim();
     const retail = parseFloat(document.getElementById('input-retail').value) || 0;
     const discount = parseFloat(document.getElementById('input-discount').value) || 0;
@@ -712,36 +717,85 @@ async function openProductDetailLive(modelItem) {
         color_qty_json: tempColorStockList
     };
 
-    // 1. සර්වර් එකට යන්න කලින්ම ලෝකල් මතකය (Cache) අප්ඩේට් කරනවා
-    if (!window.localStockCache) window.localStockCache = {};
-    window.localStockCache[currentModelId] = recordPayload;
+    // 2. ⚡ [PERMANENT SAVE] Tab එක වහලා ආයෙ ආවත් එන්න LocalStorage එකේ Save කරනවා
+    localStorage.setItem(`stock_data_${currentModelId}`, JSON.stringify(recordPayload));
 
-    // appData එකේ models ලිස්ට් එකත් එවලේම අප්ඩේට් කරනවා
-    if (typeof appData !== 'undefined' && appData.models) {
-        let localModel = appData.models.find(m => m.id == currentModelId);
-        if (localModel) {
-            localModel.image_url = img;
-            localModel.retail_price = retail;
-            localModel.discount = discount;
-            localModel.cost_price = cost;
-            localModel.color_qty_json = tempColorStockList;
-        }
-    }
-    
-    // 2. වම් පැත්තේ තියෙන UI එක Instant අප්ඩේට් කිරීම
+    // 3. UI එක Instant අප්ඩේට් කිරීම
     document.getElementById('product-img').src = img || "https://via.placeholder.com/300?text=No+Image";
     document.getElementById('view-retail').innerText = retail.toLocaleString('en-US', {minimumFractionDigits: 2});
     document.getElementById('view-discount').innerText = discount;
     document.getElementById('view-cost').innerText = cost.toLocaleString('en-US', {minimumFractionDigits: 2});
 
-    showAlert('පැතිකඩ සහ තොග දත්ත සාර්ථකව සමමුහුර්ත කරන ලදී!', 'success');
+    // 4. WhatsApp / Low Stock Alert එක
+    if (typeof checkLowStockAlertSystem === 'function') {
+        checkLowStockAlertSystem(document.getElementById('detail-model-title').innerText, tempColorStockList);
+    }
 
+    showAlert('දත්ත සුරැකිනු ලැබුවා!', 'success');
+
+    // 5. ☁️ සර්වර් එකටත් දත්ත යවනවා
     try {
-        // 3. ☁️ බැක්ග්‍රවුන්ඩ් එකෙන් Supabase එකට සේව් වෙන්න ඇරීම
         await fetchSupabase('/product_stock', 'POST', recordPayload, true);
     } catch (err) {
-        console.log("Supabase sync background delay:", err);
+        console.log("Cloud sync failed, data saved locally:", err);
     }
+}
+
+// 🚀 App එක පටන් ගන්නකොට දත්ත Load කරන හැටි
+async function initApp() {
+    const savedRole = localStorage.getItem('sanjeewa_role');
+    if (savedRole) currentRole = savedRole;
+    
+    // කැටගරි ටික සර්වර් එකෙන් ගන්නවා
+    await loadCategoriesFromCloud();
+    
+    // UI එක හදනවා
+    setupAdminUI();
+
+    // ලොග් වෙලා නම් ගෙදරට යනවා
+    if (savedRole) {
+        navigateTo('page-home');
+    } else {
+        navigateTo('page-login');
+    }
+}
+
+// 📱 පේජ් එකක් ඕපන් කරද්දී කලින් සේව් කරපු ඩේටා තියෙනවද බලන හැටි
+async function openProductDetailLive(modelItem) {
+    currentModelId = modelItem.id;
+    document.getElementById('detail-model-title').innerText = modelItem.name;
+    navigateTo('page-detail');
+
+    // 1. මුලින්ම LocalStorage එකෙන් බලනවා (Tab එක වැහුවත් මෙතනින් ඩේටා එනවා)
+    const localData = localStorage.getItem(`stock_data_${currentModelId}`);
+    
+    if (localData) {
+        const profile = JSON.parse(localData);
+        updateDetailUI(profile);
+    } else {
+        // 2. නැත්නම් සර්වර් එකෙන් ගන්නවා
+        const res = await fetchSupabase(`/product_stock?model_id=eq.${currentModelId}`);
+        if(res && res.length > 0) {
+            updateDetailUI(res[0]);
+        } else {
+            // කිසිම දත්තයක් නැත්නම් හිස් කරනවා
+            document.getElementById('view-qty-colors').innerHTML = "තොග දත්ත ඇතුළත් කර නොමැත.";
+        }
+    }
+}
+
+// UI එක Update කරන පොදු ෆන්ක්ෂන් එක
+function updateDetailUI(profile) {
+    document.getElementById('product-img').src = profile.image_url || "https://via.placeholder.com/300?text=No+Image";
+    document.getElementById('view-retail').innerText = parseFloat(profile.retail_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
+    document.getElementById('view-discount').innerText = profile.discount || "0";
+    document.getElementById('view-cost').innerText = parseFloat(profile.cost_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
+    document.getElementById('input-img-url').value = profile.image_url || '';
+    document.getElementById('input-retail').value = profile.retail_price || '';
+    document.getElementById('input-discount').value = profile.discount || '';
+    
+    tempColorStockList = profile.color_qty_json || {};
+    renderColorStockOutputs(tempColorStockList);
 }
         function checkLowStockAlertSystem(modelName, colorsJson) {
             let lowItems = [];
