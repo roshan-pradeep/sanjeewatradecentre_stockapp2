@@ -719,30 +719,28 @@ async function openProductDetailLive(modelItem) {
         color_qty_json: tempColorStockList
     };
 
-    // 2. ⚡ UI එක Instant අප්ඩේට් කිරීම (සර්වර් එකෙන් එනකම් ඉන්න ඕනේ නැහැ)
-    document.getElementById('product-img').src = img || "https://via.placeholder.com/300?text=No+Image";
-    document.getElementById('view-retail').innerText = retail.toLocaleString('en-US', {minimumFractionDigits: 2});
-    document.getElementById('view-discount').innerText = discount;
-    document.getElementById('view-cost').innerText = cost.toLocaleString('en-US', {minimumFractionDigits: 2});
-
+    
     // 3. ☁️ සර්වර් එකට දත්ත යවනවා (Cache නැතුව කෙලින්ම සර්වර් එකට)
     try {
         await fetchSupabase('/product_stock', 'POST', recordPayload, true);
         
-        // ⚡ මෙන්න මේ ලයින් එක එකතු කරන්න! 
-        // මේකෙන් වෙන්නේ සර්වර් එකේ තියෙන අලුත්ම ඩේටා ආයෙත් ඇප් එකට ගන්න එක.
-        await openProductDetailLive({ id: currentModelId, name: document.getElementById('detail-model-title').innerText });
+        // ⚡ වැදගත්ම වෙනස:
+        // දත්ත Save වුණාම, පේජ් එක මුල සිට Load කරන්න එපා (Navigate කරන්න එපා).
+        // ඒ වෙනුවට මේ විදියට කළාම Inputs මැකෙන්නේ නැහැ:
         
-        // WhatsApp Alert එක
         const modelTitle = document.getElementById('detail-model-title').innerText;
         if (typeof checkLowStockAlertSystem === 'function') {
             checkLowStockAlertSystem(modelTitle, tempColorStockList);
         }
         
-        showAlert('පැතිකඩ සහ තොග දත්ත සාර්ථකව Cloud එකට යැවුණා!', 'success');
+        showAlert('✅ දත්ත සාර්ථකව Cloud එකට යැවුණා!', 'success');
+        
+        // අලුත් දත්ත Server එකෙන් එනකම් ඉන්න ඕනේ නැහැ, 
+        // මොකද අපි දැනටමත් inputs වල තියෙන දත්ත දන්නවා.
+        // එහෙම නැත්නම් පේජ් එක Refresh කරනවා නම්, Input fields වලට ආපහු දත්ත දාන්න ඕනේ.
     } catch (err) {
         console.error("Sync Error:", err);
-        showAlert('කනෙක්ෂන් අවුලක්! දත්ත සේව් වුණේ නැහැ.', 'error');
+        showAlert('❌ කනෙක්ෂන් අවුලක්!', 'error');
     }
 }
         function checkLowStockAlertSystem(modelName, colorsJson) {
