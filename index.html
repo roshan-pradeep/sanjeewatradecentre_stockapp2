@@ -244,26 +244,41 @@
         let currentModalMode = 'add'; 
         let tempColorStockList = {}; // Temporary holding container for color configurations
 
-        // 🌐 Cloud Database Connector Engine
-        async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = false) {
-            const options = {
-                method: method,
-                headers: { 
-                    "apikey": SUPABASE_KEY, 
-                    "Authorization": `Bearer ${SUPABASE_KEY}`, 
-                    "Content-Type": "application/json"
-                }
-            };
-            if (isUpsert) {
-                options.headers["Prefer"] = "resolution=merge-duplicates"; 
-            }
-            if (body) options.body = JSON.stringify(body);
-            try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1${endpoint}`, options);
-                if (response.status === 201 || response.status === 204) return { success: true };
-                return await response.json();
-            } catch (err) { return null; }
+        // 🌐 Cloud Database Connector Engine (Cache බයිපාස් කරන විදිහට හැදුවා)
+async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = false) {
+    const options = {
+        method: method,
+        headers: { 
+            "apikey": SUPABASE_KEY, 
+            "Authorization": `Bearer ${SUPABASE_KEY}`, 
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache", // ⚡ මෙන්න මේක තමයි වැදගත්! පරණ ඩේටා ගන්න එපා කියන එක.
+            "Pragma": "no-cache"
         }
+    };
+    
+    if (isUpsert) {
+        options.headers["Prefer"] = "resolution=merge-duplicates"; 
+    }
+    
+    if (body) options.body = JSON.stringify(body);
+    
+    try {
+        // GET රික්වෙස්ට් එකක් නම් අලුත්ම දත්ත ගන්න timestamp එකක් අමුණනවා (Cache බිඳින්න)
+        let url = `${SUPABASE_URL}/rest/v1${endpoint}`;
+        if (method === 'GET') {
+            const separator = url.includes('?') ? '&' : '?';
+            url += `${separator}_t=${new Date().getTime()}`;
+        }
+
+        const response = await fetch(url, options);
+        if (response.status === 201 || response.status === 204) return { success: true };
+        return await response.json();
+    } catch (err) { 
+        console.error("Supabase Fetch Error:", err);
+        return null; 
+    }
+}
 
         async function saveCategoriesToCloud() {
             const payload = { id: "main_structure", structure_data: appData };
@@ -709,7 +724,11 @@ async function openProductDetailLive(modelItem) {
     try {
         await fetchSupabase('/product_stock', 'POST', recordPayload, true);
         
-        // 4. WhatsApp / Low Stock Alert එක සර්වර් එකට යැව්වට පස්සේ රන් කරනවා
+        // ⚡ මෙන්න මේ ලයින් එක එකතු කරන්න! 
+        // මේකෙන් වෙන්නේ සර්වර් එකේ තියෙන අලුත්ම ඩේටා ආයෙත් ඇප් එකට ගන්න එක.
+        await openProductDetailLive({ id: currentModelId, name: document.getElementById('detail-model-title').innerText });
+        
+        // WhatsApp Alert එක
         const modelTitle = document.getElementById('detail-model-title').innerText;
         if (typeof checkLowStockAlertSystem === 'function') {
             checkLowStockAlertSystem(modelTitle, tempColorStockList);
