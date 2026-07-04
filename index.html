@@ -709,13 +709,13 @@ async function openProductDetailLive(modelItem) {
         // 💡 SYNC CORE RE-MAPPED FUNCTION
     async function syncProductToDatabase() {
     const payload = {
-        model_id: currentModelId,
-        image_url: document.getElementById('input-img-url').value,
-        retail_price: parseFloat(document.getElementById('input-retail').value || 0),
-        discount: parseFloat(document.getElementById('input-discount').value || 0),
-        cost_price: parseFloat(document.getElementById('view-cost').innerText.replace(/,/g, '') || 0),
-        color_qty_json: tempColorStockList
-    };
+    model_id: currentModelId,
+    image_url: document.getElementById('input-img-url').value,
+    retail_price: parseFloat(document.getElementById('input-retail').value || 0),
+    discount: parseFloat(document.getElementById('input-discount').value || 0),
+    cost_price: parseFloat(document.getElementById('view-cost').innerText.replace(/,/g, '') || 0),
+    color_qty_json: tempColorStockList // මෙතන නම හරියටම Database එකේ තියෙන එකමද බලන්න
+};
 
     try {
         // මෙතන අනිවාර්යයෙන්ම rest/v1 කියලා දාන්න
