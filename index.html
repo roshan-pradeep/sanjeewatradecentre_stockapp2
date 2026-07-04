@@ -309,6 +309,16 @@ function updateUI() {
     if (typeof updateUI === 'function') {
         updateUI();
     }
+    window.onload = () => {
+    const lastPage = localStorage.getItem('lastPage');
+    
+    // හිටපු තැන තියෙනවා නම් ඒකට යන්න, නැත්නම් home එකට යන්න
+    if (lastPage) {
+        navigateTo(lastPage);
+    } else {
+        navigateTo('page-home');
+    }
+};
 }
 
         function revealAdminMode() {
@@ -432,6 +442,12 @@ function updateUI() {
             if(pageId === 'page-detail') {
                 let modelName = appData.models.find(m => m.id === currentModelId)?.name || '';
                 document.getElementById('breadcrumb-detail').innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${itemName}</span> / <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-emerald-600 font-bold">${modelName}</span>`;
+            
+            
+            }
+
+            {localStorage.setItem('lastPage', pageId);
+
             }
         }
 
