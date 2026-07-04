@@ -232,13 +232,14 @@
 const SUPABASE_URL = "https://ttviyfggsmiaemtbawvg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz"; // අර නිල් පාටින් රවුම් කරපු එක
 
-/// මේ variable ටික අනිවාර්යයෙන්ම උඩින්ම දාන්න
+// මේ variable ටික අනිවාර්යයෙන්ම උඩින්ම දාන්න
 let currentRole = null;
 let selectedItemId = null;
 let selectedBrandId = null;
 let activeMenuTarget = null;
-let tempColorStockList = []; // මේකයි අලුතින්ම දාන්න ඕනේ!
+let tempColorStockList = [];
 let appData = { items: [], brands: [], models: [] };
+let currentLoginMode = 'email'; // මේක තමයි මදි වුණේ!
 
 async function fetchSupabase(endpoint, method = 'GET', body = null) {
     // endpoint එකේ මුල '/' තියෙනවද බලන්න, නැත්තම් එකතු කරන්න
