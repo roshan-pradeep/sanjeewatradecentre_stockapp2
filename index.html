@@ -258,47 +258,37 @@ async function fetchSupabase(endpoint, method = 'POST', body = null) {
         return null;
     }
 }
-       async function saveCategoriesToCloud() {
+       // මේ variable ටික අනිවාර්යයෙන්ම උඩින් දාගන්න
+let currentRole = null; 
+let appData = { items: [], brands: [], models: [] };
+
+async function loadCategoriesFromCloud() {
     try {
-        // 1. මුලින්ම පේජ් එකේ තියෙන දත්ත ඔක්කොම structure එකට ගන්න
-        const payload = {
-            id: 'main_structure', // මේක කලින් තිබ්බ id එකම වෙන්න ඕනේ
-            structure_data: appData
-        };
-
-        // 2. PATCH ඉල්ලීමක් යවන්න (පරණ එක උඩ අලුත් එක overwrite කරන්න)
-        const res = await fetchSupabase('/app_categories?id=eq.main_structure', 'PATCH', payload);
-
-        console.log("Save Response:", res); // මේක Console එකේ බලාගන්න
-        return res;
-        
-    } catch (err) {
-        console.error("Save to Cloud Error:", err);
-        showAlert('❌ සේව් කිරීමේදී දෝෂයක් ආවා!', 'error');
-    }
-}
-
-        async function loadCategoriesFromCloud() {
-    try {
+        // ID එක හරියටම "main_structure" ද කියලා බලන්න
         const res = await fetchSupabase('/app_categories?id=eq.main_structure');
-        console.log("Supabase Data:", res); // දත්ත එනවාද බලන්න Console එකේ
+        
+        console.log("Supabase Data Response:", res); 
 
         if (res && res.length > 0 && res[0].structure_data) {
-            // මෙතන තමයි දත්ත වෙන් කරගන්නේ
             let rawData = res[0].structure_data;
             appData.items = rawData.items || [];
             appData.brands = rawData.brands || [];
             appData.models = rawData.models || [];
             
-            // දැන් UI එක update කරන්න
+            // දැන් පේජ් එක update කරන්න function එක call කරන්න
             updateUI(); 
         } else {
-            console.warn("No structure data found, initializing empty...");
-            appData = { items: [], brands: [], models: [] };
+            console.warn("Database එකේ structure_data එකක් නැහැ, හෝ ID එක වැරදියි.");
         }
     } catch (e) {
         console.error("Database connection error:", e);
     }
+}
+
+// අනිවාර්යයෙන්ම මේ function එකක් තියෙන්න ඕනේ
+function updateUI() {
+    console.log("UI Updated: දත්ත ලැබුණා.");
+    // මෙතන තමයි ඔයාගේ HTML වලට දත්ත යවන්නේ
 }
 
         // 🚀 Initialization Lifecycle
