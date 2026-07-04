@@ -227,8 +227,8 @@
 
     <script>
         // ☁️ Supabase Configuration
-        const SUPABASE_URL = "https://ttviyfggsmiaemtbawvg.supabase.co/rest/v1";
-        const SUPABASE_KEY = "sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz"; // මේක හරිද බලන්න
+        const SUPABASE_URL = "https://ttviyfggsmiaemtbawvg.supabase.co"; // මෙතන අගට /rest/v1 දාන්න එපා!
+        const SUPABASE_KEY = "sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz";
 
         let currentRole = 'staff';       
         let currentLoginMode = 'staff';  
@@ -246,27 +246,30 @@
 
         // 🌐 Cloud Database Connector Engine (Cache බයිපාස් කරන විදිහට හැදුවා)
 async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = false) {
-    // SUPABASE_URL එකේ අගට /rest/v1 තියෙන නිසා, ආයෙත් දාන්න එපා.
-    const url = `${SUPABASE_URL}${endpoint}`; 
+    // URL එක හැදෙන විදිය නිවැරදි කරමු:
+    const url = `${SUPABASE_URL}/rest/v1${endpoint}`; 
     
-    // ඉතිරි කෝඩ් එක මෙහෙමයි:
     const options = {
         method: method,
         headers: { 
             "apikey": SUPABASE_KEY, 
             "Authorization": `Bearer ${SUPABASE_KEY}`, 
             "Content-Type": "application/json",
-            "Cache-Control": "no-cache",
             "Prefer": isUpsert ? "resolution=merge-duplicates" : "return=representation"
         }
     };
+    
     if (body) options.body = JSON.stringify(body);
     
-    // මේකෙන් අලුත් දත්තම ගන්නවා
-    const finalUrl = method === 'GET' ? `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}` : url;
-
-    const response = await fetch(finalUrl, options);
-    return await response.json();
+    try {
+        const response = await fetch(url, options);
+        // JSON විදියට එන්නේ නැත්නම් error එකක් නොදී හිස් array එකක් දෙන්න
+        if (!response.ok) return []; 
+        return await response.json();
+    } catch (err) {
+        console.error("Fetch Error:", err);
+        return [];
+    }
 }
         async function saveCategoriesToCloud() {
             const payload = { id: "main_structure", structure_data: appData };
