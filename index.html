@@ -534,13 +534,25 @@ function updateUI() {
         });
 
         // Modal Box Controller Systems
-        function openAddModal(type) {
-            currentModalMode = 'add';
-            activeMenuTarget.type = type;
-            document.getElementById('modal-title').innerText = `Add New ${type.toUpperCase()}`;
-            document.getElementById('modal-input-field').value = '';
-            document.getElementById('custom-input-modal').classList.remove('hidden');
-        }
+function openAddModal(type) {
+    currentModalMode = 'add';
+    
+    // activeMenuTarget එක තියෙනවද බලන්න, නැත්නම් හදන්න
+    if (!activeMenuTarget) {
+        activeMenuTarget = {}; 
+    }
+    
+    activeMenuTarget.type = type;
+    
+    // මෙතන අනිත් ටිකත් අනිවාර්යයෙන්ම බලන්න (ID එකේ අකුරු වැරදිද කියලා)
+    const modalTitle = document.getElementById('modal-title');
+    const modalInput = document.getElementById('modal-input-field');
+    const modalContainer = document.getElementById('custom-input-modal');
+
+    if (modalTitle) modalTitle.innerText = `Add New ${type.toUpperCase()}`;
+    if (modalInput) modalInput.value = '';
+    if (modalContainer) modalContainer.classList.remove('hidden');
+}
 
         function triggerRename() {
             currentModalMode = 'rename';
