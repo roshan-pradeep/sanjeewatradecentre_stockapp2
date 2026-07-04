@@ -227,7 +227,7 @@
 
     <script>
         // ☁️ Supabase Configuration
-        const SUPABASE_URL = "https://ttviyfggsmiaemtbawvg.supabase.co/rest/v1/";
+        const SUPABASE_URL = "https://ttviyfggsmiaemtbawvg.supabase.co";
         const SUPABASE_KEY = "sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz";
 
         let currentRole = 'staff';       
@@ -247,7 +247,7 @@
         // 🌐 Cloud Database Connector Engine (Cache බයිපාස් කරන විදිහට හැදුවා)
 async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = false) {
     // SUPABASE_URL එකේ අගට /rest/v1 තියෙනවා නම් මෙතනින් ආයෙත් දාන්න එපා!
-    let url = `${SUPABASE_URL}${endpoint}`; 
+    let url = `${SUPABASE_URL}/rest/v1${endpoint}`;
     
     const options = {
         method: method,
@@ -277,17 +277,23 @@ async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = f
         }
 
         async function loadCategoriesFromCloud() {
-            const res = await fetchSupabase('/app_categories?id=eq.main_structure&order=id.desc');
-            if (res && res.length > 0 && res[0].structure_data) {
-                let rawData = res[0].structure_data;
-                appData.items = rawData.items || [];
-                appData.brands = rawData.brands || [];
-                appData.models = rawData.models || [];
-            } else {
-                appData = { items: [], brands: [], models: [] };
-                await saveCategoriesToCloud();
-            }
+    try {
+        const res = await fetchSupabase('/app_categories?id=eq.main_structure');
+        // මෙතන අලුත් Check එකක් දාන්න
+        if (res && Array.isArray(res) && res.length > 0 && res[0].structure_data) {
+            let rawData = res[0].structure_data;
+            appData.items = rawData.items || [];
+            appData.brands = rawData.brands || [];
+            appData.models = rawData.models || [];
+        } else {
+            console.log("No data found, initializing empty structure...");
+            appData = { items: [], brands: [], models: [] };
+            await saveCategoriesToCloud();
         }
+    } catch (e) {
+        console.error("Database connection error:", e);
+    }
+}
 
         // 🚀 Initialization Lifecycle
         async function initApp() {
