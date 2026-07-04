@@ -795,6 +795,17 @@ window.addEventListener('load', function() {
     const startPage = localStorage.getItem('sanjeewa_role') ? 'page-home' : 'page-login';
     history.replaceState({ pageId: startPage }, "", "#" + startPage);
 });
+
+function updateUI() {
+    console.log("UI Updating...");
+    
+    // උදාහරණයක් විදියට: 
+    // HTML එකේ ID එකක් තියෙනවා නම් ඒකට දත්ත දාන්න මෙහෙම පුළුවන්
+    // document.getElementById('retail-price').innerText = "Rs. " + appData.price;
+    
+    // උඹේ ඇප් එකේ තියෙන UI එක අනුව මෙතන කෝඩ් එක වෙනස් වෙන්න ඕනේ.
+    // අවම වශයෙන් Console එකේ මේක හරි පේන්න ඕනේ.
+}
     </script>
 </body>
 </html>
