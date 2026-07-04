@@ -226,6 +226,13 @@
     </div>
 
     <script>
+
+        // මේ variable ටික අනිවාර්යයෙන්ම උඩින් දාගන්න
+let currentRole = null;
+let selectedItemId = null; // මේක එකතු කරන්න
+let appData = { items: [], brands: [], models: [] };
+
+
         // මේ විදියට variable දෙක හදාගන්න (අගට කිසිම දෙයක් දාන්න එපා)
 const SUPABASE_URL = "https://ttviyfggsmiaemtbawvg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz"; // අර නිල් පාටින් රවුම් කරපු එක
@@ -256,10 +263,7 @@ async function fetchSupabase(endpoint, method = 'GET', body = null) {
         return null;
     }
 }
-       // මේ variable ටික අනිවාර්යයෙන්ම උඩින් දාගන්න
-let currentRole = null; 
-let appData = { items: [], brands: [], models: [] };
-
+       
 async function loadCategoriesFromCloud() {
     try {
         // ID එක හරියටම "main_structure" ද කියලා බලන්න
