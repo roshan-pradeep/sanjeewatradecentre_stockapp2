@@ -718,26 +718,31 @@ async function openProductDetailLive(modelItem) {
     };
 
     try {
-        // මෙතන අනිවාර්යයෙන්ම items_stock කියලා තියෙන්න ඕනේ
-        const response = await fetch(`${SUPABASE_URL}/items_stock`, {
+        // මෙතන අනිවාර්යයෙන්ම rest/v1 කියලා දාන්න
+        const url = `${SUPABASE_URL}/rest/v1/items_stock`;
+        
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 "apikey": SUPABASE_KEY,
                 "Authorization": `Bearer ${SUPABASE_KEY}`,
                 "Content-Type": "application/json",
-                "Prefer": "resolution=merge-duplicates"
+                "Prefer": "return=representation" // මේක පාවිච්චි කරන එක වඩා ආරක්ෂිතයි
             },
             body: JSON.stringify(payload)
         });
 
+        const data = await response.json(); // එන උත්තරය බලන්න
+
         if (response.ok) {
             showAlert('✅ සාර්ථකව සේව් වුණා!', 'success');
+            console.log("Success:", data);
         } else {
-            console.error("Error status:", response.status);
+            console.error("Error status:", response.status, data);
             showAlert('❌ සේව් වුණේ නැහැ! (Error ' + response.status + ')', 'error');
         }
     } catch (err) {
-        console.error(err);
+        console.error("Fetch Catch Error:", err);
         showAlert('❌ සේව් කිරීමේදී දෝෂයක්!', 'error');
     }
 }
