@@ -226,55 +226,35 @@
     </div>
 
     <script>
-        // ☁️ Supabase Configuration
-        const SUPABASE_URL = "https://ttviyfggsmiaemtbawvg.supabase.co"; // මෙතන අගට /rest/v1 දාන්න එපා!
-        const SUPABASE_KEY = "sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz";
+        // මේ විදියට variable දෙක හදාගන්න (අගට කිසිම දෙයක් දාන්න එපා)
+const SUPABASE_URL = "https://ttviyfggsmiaemtbawvg.supabase.co";
+const SUPABASE_KEY = "sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz"; // අර නිල් පාටින් රවුම් කරපු එක
 
-        let currentRole = 'staff';       
-        let currentLoginMode = 'staff';  
-        let currentModelId = '';         
-        let liveDatabaseStock = {};      
-        
-        // 🛠️ Structural Variables (Company ඉවත් කර සකස් කරන ලදී)
-        let selectedItemId = '';
-        let selectedBrandId = '';
-
-        let appData = { items: [], brands: [], models: [] };
-        let activeMenuTarget = { type: null, item: null }; 
-        let currentModalMode = 'add'; 
-        let tempColorStockList = {}; // Temporary holding container for color configurations
-
-        // 🌐 Cloud Database Connector Engine (Cache බයිපාස් කරන විදිහට හැදුවා)
-async function fetchSupabase(endpoint, method = 'GET', body = null) {
-    // 1. මෙතනින් URL එක හදාගන්න. endpoint එකේ මුල '/' තියෙනවද බලන්න.
-    const url = `${SUPABASE_URL}/rest/v1${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+async function fetchSupabase(endpoint, method = 'POST', body = null) {
+    // URL එක හදද්දී /rest/v1 එක පාරක් විතරක් එන විදියට හදන්න
+    const url = `${SUPABASE_URL}/rest/v1${endpoint}`;
     
     const options = {
         method: method,
-        mode: 'cors', // Browser එකට කියනවා CORS වලට ඉඩ දෙන්න කියලා
         headers: { 
             "apikey": SUPABASE_KEY, 
             "Authorization": `Bearer ${SUPABASE_KEY}`, 
             "Content-Type": "application/json",
             "Prefer": "return=representation"
-        }
+        },
+        body: body ? JSON.stringify(body) : null
     };
-    
-    if (body) options.body = JSON.stringify(body);
     
     try {
         const response = await fetch(url, options);
-        
-        // 400 හෝ 500 error එකක් ආවොත් ඒක print කරන්න
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error("Supabase Error Response:", errorText);
+            const err = await response.text();
+            console.error("Supabase Error:", err);
             return null;
         }
-        
         return await response.json();
     } catch (err) {
-        console.error("Fetch Catch Error:", err); // CORS error එක මෙතන තමයි අල්ලන්නේ
+        console.error("Fetch Error (Check CORS):", err);
         return null;
     }
 }
