@@ -298,16 +298,20 @@ async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = f
         async function loadCategoriesFromCloud() {
     try {
         const res = await fetchSupabase('/app_categories?id=eq.main_structure');
-        // මෙතන අලුත් Check එකක් දාන්න
-        if (res && Array.isArray(res) && res.length > 0 && res[0].structure_data) {
+        console.log("Supabase Data:", res); // දත්ත එනවාද බලන්න Console එකේ
+
+        if (res && res.length > 0 && res[0].structure_data) {
+            // මෙතන තමයි දත්ත වෙන් කරගන්නේ
             let rawData = res[0].structure_data;
             appData.items = rawData.items || [];
             appData.brands = rawData.brands || [];
             appData.models = rawData.models || [];
+            
+            // දැන් UI එක update කරන්න
+            updateUI(); 
         } else {
-            console.log("No data found, initializing empty structure...");
+            console.warn("No structure data found, initializing empty...");
             appData = { items: [], brands: [], models: [] };
-            await saveCategoriesToCloud();
         }
     } catch (e) {
         console.error("Database connection error:", e);
