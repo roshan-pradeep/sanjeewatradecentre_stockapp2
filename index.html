@@ -775,6 +775,21 @@ async function openProductDetailLive(modelItem) {
         showAlert('❌ සේව් කිරීමේදී දෝෂයක්!', 'error');
     }
 }
+
+
+async function saveCategoriesToCloud(newCategory) {
+    try {
+        const { data, error } = await supabase
+            .from('app_categories') // ඔයාගේ categories table එකේ නම මෙතනට දාන්න
+            .insert([{ name: newCategory }]);
+            
+        if (error) throw error;
+        console.log("Category saved successfully!");
+        alert("Category saved!");
+    } catch (err) {
+        console.error("Error saving category:", err.message);
+    }
+}
         function checkLowStockAlertSystem(modelName, colorsJson) {
             let lowItems = [];
             Object.keys(colorsJson).forEach(c => {
