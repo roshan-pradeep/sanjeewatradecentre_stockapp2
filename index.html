@@ -246,9 +246,7 @@
 
         // 🌐 Cloud Database Connector Engine (Cache බයිපාස් කරන විදිහට හැදුවා)
 async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = false) {
-    // URL එක හැදෙන විදිය නිවැරදි කරමු:
-    const url = `${SUPABASE_URL}/rest/v1${endpoint}`; 
-    
+    const url = `${SUPABASE_URL}/rest/v1${endpoint}`;
     const options = {
         method: method,
         headers: { 
@@ -258,23 +256,43 @@ async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = f
             "Prefer": isUpsert ? "resolution=merge-duplicates" : "return=representation"
         }
     };
-    
     if (body) options.body = JSON.stringify(body);
     
     try {
         const response = await fetch(url, options);
-        // JSON විදියට එන්නේ නැත්නම් error එකක් නොදී හිස් array එකක් දෙන්න
-        if (!response.ok) return []; 
+        
+        // සාර්ථකද කියලා බලන්න (200-299 අතර නම් සාර්ථකයි)
+        if (!response.ok) {
+            console.error(`Supabase Error ${response.status}: ${await response.text()}`);
+            return null; // Error එකක් ආවොත් null දෙනවා
+        }
+
+        if (response.status === 204) return { success: true }; 
         return await response.json();
     } catch (err) {
-        console.error("Fetch Error:", err);
-        return [];
+        console.error("Fetch Exception:", err);
+        return null; // මොකක් හරි කැඩුණොත් null දෙනවා
     }
 }
-        async function saveCategoriesToCloud() {
-            const payload = { id: "main_structure", structure_data: appData };
-            await fetchSupabase('/app_categories', 'POST', payload, true);
-        }
+       async function saveCategoriesToCloud() {
+    try {
+        // 1. මුලින්ම පේජ් එකේ තියෙන දත්ත ඔක්කොම structure එකට ගන්න
+        const payload = {
+            id: 'main_structure', // මේක කලින් තිබ්බ id එකම වෙන්න ඕනේ
+            structure_data: appData
+        };
+
+        // 2. PATCH ඉල්ලීමක් යවන්න (පරණ එක උඩ අලුත් එක overwrite කරන්න)
+        const res = await fetchSupabase('/app_categories?id=eq.main_structure', 'PATCH', payload);
+
+        console.log("Save Response:", res); // මේක Console එකේ බලාගන්න
+        return res;
+        
+    } catch (err) {
+        console.error("Save to Cloud Error:", err);
+        showAlert('❌ සේව් කිරීමේදී දෝෂයක් ආවා!', 'error');
+    }
+}
 
         async function loadCategoriesFromCloud() {
     try {
@@ -535,37 +553,45 @@ async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = f
         }
 
         async function handleModalSave() {
-            const nameValue = document.getElementById('modal-input-field').value.trim();
-            if(!nameValue) return;
+    const nameValue = document.getElementById('modal-input-field').value.trim();
+    if (!nameValue) return;
 
-            if(currentModalMode === 'add') {
-                const newId = 'id_' + Date.now();
-                if(activeMenuTarget.type === 'item') {
-                    appData.items.push({ id: newId, name: nameValue });
-                } else if(activeMenuTarget.type === 'brand') {
-                    // 🛠️ Item එකට අදාළව Brand එක සේව් වේ
-                    appData.brands.push({ id: newId, name: nameValue, itemId: selectedItemId });
-                } else if(activeMenuTarget.type === 'model') {
-                    // Brand එකට අදාළව Model එක සේව් වේ
-                    appData.models.push({ id: newId, name: nameValue, brandId: selectedBrandId });
-                }
-            } else if(currentModalMode === 'rename') {
-                let itemObj = null;
-                if(activeMenuTarget.type === 'item') itemObj = appData.items.find(i => i.id === activeMenuTarget.item.id);
-                if(activeMenuTarget.type === 'brand') itemObj = appData.brands.find(b => b.id === activeMenuTarget.item.id);
-                if(activeMenuTarget.type === 'model') itemObj = appData.models.find(m => m.id === activeMenuTarget.item.id);
-                if(itemObj) itemObj.name = nameValue;
-            }
-
-            await saveCategoriesToCloud();
-            closeInputModal();
-            
-            // Refresh Active Interface Screen Template
-            if(activeMenuTarget.type === 'item') navigateTo('page-item');
-            if(activeMenuTarget.type === 'brand') navigateTo('page-brand');
-            if(activeMenuTarget.type === 'model') navigateTo('page-model');
-            showAlert('දත්ත සාර්ථකව යාවත්කාලීන කරන ලදී!', 'success');
+    if (currentModalMode === 'add') {
+        const newId = 'id_' + Date.now();
+        if (activeMenuTarget.type === 'item') {
+            appData.items.push({ id: newId, name: nameValue });
+        } else if (activeMenuTarget.type === 'brand') {
+            appData.brands.push({ id: newId, name: nameValue, itemId: selectedItemId });
+        } else if (activeMenuTarget.type === 'model') {
+            appData.models.push({ id: newId, name: nameValue, brandId: selectedBrandId });
         }
+    } else if (currentModalMode === 'rename') {
+        let itemObj = null;
+        if (activeMenuTarget.type === 'item') itemObj = appData.items.find(i => i.id === activeMenuTarget.item.id);
+        else if (activeMenuTarget.type === 'brand') itemObj = appData.brands.find(b => b.id === activeMenuTarget.item.id);
+        else if (activeMenuTarget.type === 'model') itemObj = appData.models.find(m => m.id === activeMenuTarget.item.id);
+        
+        if (itemObj) itemObj.name = nameValue;
+    }
+
+    // 💡 මෙන්න මේ වෙනස - 'await' දාන්න:
+    try {
+        await saveCategoriesToCloud(); 
+        
+        // 💡 ඊට පස්සේ UI එක Refresh කරන්න:
+        closeInputModal();
+        
+        if (activeMenuTarget.type === 'item') navigateTo('page-item');
+        else if (activeMenuTarget.type === 'brand') navigateTo('page-brand');
+        else if (activeMenuTarget.type === 'model') navigateTo('page-model');
+        
+        showAlert('දත්ත සාර්ථකව යාවත්කාලීන කරන ලදී!', 'success');
+        
+    } catch (error) {
+        console.error("Save Error:", error);
+        showAlert('❌ දත්ත සේව් වුණේ නැහැ, නැවත උත්සාහ කරන්න!', 'error');
+    }
+}
 
         async function triggerDelete() {
             document.getElementById('custom-context-menu').classList.add('hidden');
