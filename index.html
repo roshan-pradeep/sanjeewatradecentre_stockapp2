@@ -778,7 +778,8 @@ async function triggerDelete(itemId) {
     document.getElementById('detail-model-title').innerText = modelItem.name;
     
     // UI එක Loading විදිහට පෙන්වනවා
-    document.getElementById('product-img').src = "https://via.placeholder.com/300?text=Loading+Data...";
+    // මේ පේළිය වෙනස් කරන්න:
+    document.getElementById('product-img').src = "https://placehold.co/300?text=Loading+Data...";
     document.getElementById('view-retail').innerText = "---";
     document.getElementById('view-cost').innerText = "---";
     document.getElementById('view-qty-colors').innerHTML = "Loading data from server...";
@@ -798,7 +799,7 @@ async function triggerDelete(itemId) {
         if (data) {
             const profile = data;
             
-            document.getElementById('product-img').src = profile.image_url || "https://via.placeholder.com/300?text=No+Image";
+            document.getElementById('product-img').src = profile.image_url || "https://placehold.co/300?text=No+Image";
             document.getElementById('view-retail').innerText = parseFloat(profile.retail_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
             document.getElementById('view-discount').innerText = profile.discount || "0";
             document.getElementById('view-cost').innerText = parseFloat(profile.cost_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
@@ -815,7 +816,7 @@ async function triggerDelete(itemId) {
             }
         } else {
             // Data නැත්නම්
-            document.getElementById('product-img').src = "https://via.placeholder.com/300?text=No+Image";
+            document.getElementById('product-img').src = "https://placehold.co/300?text=No+Image";
             document.getElementById('view-retail').innerText = "0.00";
             document.getElementById('view-cost').innerText = "0.00";
             document.getElementById('view-qty-colors').innerHTML = "<span class='text-red-500'>No data found.</span>";
