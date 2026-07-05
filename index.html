@@ -109,7 +109,7 @@
         <div class="mb-4">
             <input type="text" id="item-search" oninput="searchItems()" placeholder="Search Item (e.g. TV, Fridge)..." class="w-full p-3 border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
         </div>
-       <div id="item-container" class="grid grid-cols-2 gap-4">
+       <div id="items-list" class="grid grid-cols-2 gap-4"></div>
    </div>
     </div>
 
@@ -310,9 +310,11 @@ window.triggerDelete = async function(itemId) {
 // UI eka update karanna
 function updateUI() {
     const container = document.getElementById('items-list');
+    
+    // මේකෙන් අර "අයියෝ" කියන Error එක නතර වෙනවා
     if (!container) {
-        console.error("අයියෝ! 'items-list' කියන ID එක තියෙන Container එක හොයාගන්න බැහැ. HTML එක බලන්න!");
-        return;
+        console.log("Container එක තවම ලෝඩ් වෙලා නෑ, ටිකක් ඉමු...");
+        return; 
     }
     container.innerHTML = '';
 
@@ -332,20 +334,16 @@ function updateUI() {
 
    async function loadCategoriesFromCloud() {
     try {
-        console.log("Database එකෙන් දත්ත ගන්නවා...");
-
-        // .eq() දාන්න එපා, මොකද උඹට ඕනේ ඔක්කොම ටික ගන්න නිසා
-        const { data, error } = await sbClient
-            .from('items_stock')
-            .select('*'); // ඔක්කොම Column ටික ගන්න
-
+        const { data, error } = await sbClient.from('items_stock').select('*');
         if (error) throw error;
 
-        // දැන් data එකේ තියෙන්නේ ඔක්කොම Item ටික
         if (data) {
-            appData.items = data; // ඒ ටික appData එකට දාගන්න
-            console.log("Load වුණු දත්ත:", appData.items);
-            updateUI(); // UI එක Update කරන්න
+            appData.items = data;
+            
+            // මේකෙන් කරන්නේ HTML එක හැදුනාට පස්සේ updateUI එක දුවන එක
+            setTimeout(() => {
+                updateUI();
+            }, 500); // මිලි තත්පර 500ක් ඉඳලා බලන්න
         }
     } catch (e) {
         console.error("Load Error:", e.message);
@@ -496,7 +494,6 @@ async function generateStaffLinkWhatsApp() {
 
 
 
-        // 🛠️ Navigation Core Logic Engine (New Structured Layout Flow)
         function navigateTo(pageId) {
     if (!window.isBackAction) {
         history.pushState({ pageId: pageId }, "", "#" + pageId);
@@ -530,14 +527,16 @@ async function generateStaffLinkWhatsApp() {
     let itemName = (selectedItemId && appData.items.find(i => i.id === selectedItemId)) ? appData.items.find(i => i.id === selectedItemId).name : '';
     let brandName = (selectedBrandId && appData.brands.find(b => b.id === selectedBrandId)) ? appData.brands.find(b => b.id === selectedBrandId).name : ''
 
-    // 1. SELECT ITEM PAGE
+    // මෙතන අනිවාර්යයෙන්ම HTML එකේ තියෙන ID එකම දෙන්න:
+    
+    // 1. SELECT ITEM PAGE (දැන් 'items-list' පාවිච්චි කරමු)
     if(pageId === 'page-item') {
         const breadcrumb = document.getElementById('breadcrumb-item');
         if(breadcrumb) breadcrumb.innerHTML = `📍 Location: <span class="text-orange-600 font-bold">Items Portfolio</span> /`;
-        renderButtons('item', appData.items || [], 'item-container', 'bg-orange-500');
+        renderButtons('item', appData.items || [], 'items-list', 'bg-orange-500');
     }
     
-    // 2. SELECT BRAND PAGE
+    // 2. SELECT BRAND PAGE (මෙතනත් හරි ID එක දෙන්න)
     if(pageId === 'page-brand') {
         const breadcrumb = document.getElementById('breadcrumb-brand');
         if(breadcrumb) breadcrumb.innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${itemName}</span> /`;
@@ -555,8 +554,6 @@ async function generateStaffLinkWhatsApp() {
 
     localStorage.setItem('lastPage', pageId);
 }
-
-
 
 
         // 🛠️ NEW: Item Realtime Live Search Logic
@@ -581,11 +578,18 @@ async function generateStaffLinkWhatsApp() {
 
         // Dynamic Custom Button Generator Engine
         function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
-            const container = document.getElementById(containerId);
-            
-            if (!container) {
-        console.warn(`කන්ටේනර් එකක් හම්බුනේ නැහැ: ${containerId}. ටිකක් වෙලා ඉඳලා උත්සාහ කරන්න.`);
-        return; 
+    const container = document.getElementById(containerId);
+    
+    // 1. Container එක නැත්නම් වැඩේ නවත්වන්න
+    if (!container) {
+        console.warn("Container එක හම්බ වුනේ නැහැ:", containerId);
+        return;
+    }
+
+    // 2. දත්ත NULL හෝ හිස් නම් මේක පෙන්වන්න
+    if (!dataArray || dataArray.length === 0) {
+        container.innerHTML = `<p class="col-span-2 text-center text-gray-400 py-6 text-sm italic">කිසිවක් සොයාගත නොහැක.</p>`;
+        return;
     }
             container.innerHTML = '';
             
@@ -596,7 +600,7 @@ async function generateStaffLinkWhatsApp() {
 
             dataArray.forEach(item => {
                 const btn = document.createElement('button');
-                btn.innerText = item.name;
+                btn.innerText = item ? item.name : 'Unknown';
                 btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none no-select transition-all shadow-md`;
                 
                 let pressTimer = null;
@@ -687,11 +691,29 @@ function openAddModal(type) {
 
 
         function triggerRename() {
-            currentModalMode = 'rename';
-            document.getElementById('modal-title').innerText = `Rename ${activeMenuTarget.type.toUpperCase()}`;
-            document.getElementById('modal-input-field').value = activeMenuTarget.item.name;
-            document.getElementById('custom-input-modal').classList.remove('hidden');
+    // 1. මුලින්ම බලමු menu එකේ මොන item එකද තියෙන්නේ කියලා
+    if (!activeMenuTarget || !activeMenuTarget.item) {
+        console.warn("Rename කරන්න Item එකක් තෝරලා නෑ.");
+        return;
+    }
+
+    const item = activeMenuTarget.item;
+    
+    // 2. අර පරණ input එක හොයන්න කලින් පේජ් එකේ ඒක තියෙනවද කියලා check කරමු
+    const inputField = document.getElementById('rename-input');
+    
+    if (inputField) {
+        // input එක තිබුනොත් විතරක් value එක දාන්න
+        inputField.value = item.name;
+    } else {
+        // නැත්නම් නිකන්ම නමක් අහන්න prompt එකක් පාවිච්චි කරමු (මේක ලේසියි)
+        const newName = prompt("අලුත් නම මොකක්ද?", item.name);
+        if (newName) {
+            console.log("Rename කරනවා:", item.id, "නම:", newName);
+            // මෙතනින් උඹේ database update කරන ෆන්ක්ෂන් එකට අලුත් නම යවන්න (උදා: updateItemName(item.id, newName))
         }
+    }
+}
 
 
 
