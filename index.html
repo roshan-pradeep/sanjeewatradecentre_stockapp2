@@ -853,17 +853,36 @@ async function openProductDetailLive(modelItem) {
 
 
 
-async function saveCategoriesToCloud(newCategory) {
+async function saveCategoriesToCloud(newCategoryName) {
     try {
-        // මෙතන 'supabase' වෙනුවට අලුතින් හදපු 'sbClient' එක පාවිච්චි කරන්න
-        const { data, error } = await sbClient
-            .from('app_categories') 
-            .insert([{ name: newCategory }]);
-            
-        if (error) throw error;
+        // 1. මුලින්ම තියෙන දත්ත ටික ගන්න
+        const { data: currentData, error: fetchError } = await sbClient
+            .from('app_categories')
+            .select('structure_data')
+            .eq('id', 'main_structure')
+            .single();
+
+        if (fetchError) throw fetchError;
+
+        // 2. JSON දත්ත ටික අලුත් කරන්න
+        let updatedData = currentData.structure_data;
+        updatedData.items.push({ 
+            id: 'id_' + Date.now(), 
+            name: newCategoryName 
+        });
+
+        // 3. Database එකට ආයේ update කරන්න
+        const { error: updateError } = await sbClient
+            .from('app_categories')
+            .update({ structure_data: updatedData })
+            .eq('id', 'main_structure');
+
+        if (updateError) throw updateError;
+
         alert("Category saved successfully!");
+        loadCategoriesFromCloud(); // දත්ත ටික ආයේ refresh කරන්න
     } catch (err) {
-        console.error("Error saving category:", err.message);
+        console.error("Error updating category:", err.message);
         alert("Error: " + err.message);
     }
 }
