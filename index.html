@@ -238,10 +238,13 @@
     const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     console.log("Supabase initialized!");
-    
+
     // 2. Global Variables
     let currentRole = 'guest';
     let appData = { items: [], brands: [], models: [] };
+    let selectedItemId = null; 
+    let selectedBrandId = null;
+    let currentModelId = null;
 
     // 3. initApp Function (මේකත් මෙතනමයි)
     function initApp() {
@@ -446,8 +449,8 @@ async function loadCategoriesFromCloud() {
 
             setupAdminUI();
 
-            let itemName = appData.items.find(i => i.id === selectedItemId)?.name || '';
-            let brandName = appData.brands.find(b => b.id === selectedBrandId)?.name || '';
+            let itemName = (selectedItemId && appData.items.find(i => i.id === selectedItemId)) ? appData.items.find(i => i.id === selectedItemId).name : '';
+            let brandName = (selectedBrandId && appData.brands.find(b => b.id === selectedBrandId)) ? appData.brands.find(b => b.id === selectedBrandId).name : ''
 
             // 1. SELECT ITEM PAGE
             if(pageId === 'page-item') {
