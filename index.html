@@ -27,16 +27,21 @@
         </button>
     </div>
 
+
+
     <div id="custom-input-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-100">
             <h3 id="modal-title" class="text-lg font-bold text-gray-800 mb-4">Add New Item</h3>
-            <input type="text" id="modal-input-field" placeholder="Enter name here..." class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4">
+            <input type="text" id="category-name-input" class="border p-2 w-full" placeholder="Enter name...">
             <div class="flex gap-3 justify-end">
                 <button onclick="closeInputModal()" class="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-xl text-sm">Cancel</button>
                 <button id="modal-save-btn" onclick="handleModalSave()" class="px-5 py-2 bg-blue-600 text-white font-bold rounded-xl text-sm hover:bg-blue-700 transition">Save 💾</button>
             </div>
         </div>
     </div>
+
+
+
 
     <div id="page-login" class="flex flex-col items-center justify-center min-h-screen p-4">
         <div class="bg-white p-6 rounded-2xl shadow-lg w-full max-w-sm">
@@ -253,21 +258,17 @@
 
 
 
-    function initApp() {
-    console.log("App initializing...");
+    async function initApp() {
+    // 1. මුලින්ම localStorage එකේ තියෙන දත්ත පෙන්වන්න (අකුණු සැර වගේ එනවා)
+    const cachedData = localStorage.getItem('app_data_cache');
+    if (cachedData) {
+        appData = JSON.parse(cachedData);
+        updateUI(); 
+    }
 
-    // 1. කලින් සේව් කරපු නමක් තියෙනවද බලන්න
-    // පේජ් එක ලෝඩ් වෙද්දී කලින් තියෙන දත්ත පෙන්වන්න (UI එක පාලු නැති වෙන්න)
-let savedData = localStorage.getItem('my_app_data');
-if (savedData) {
-    appData = JSON.parse(savedData);
-    updateUI(); // දත්ත ටික ඉක්මනට UI එකට දාන්න
+    // 2. ඊට පස්සේ Cloud එකෙන් අලුත් දත්ත ගන්න
+    await loadCategoriesFromCloud();
 }
-
-    // 2. Cloud එකෙන් දත්ත ගන්න
-    loadCategoriesFromCloud();
-}
-
     
 
     
@@ -277,118 +278,109 @@ if (savedData) {
     if (!container) return;
     container.innerHTML = '';
 
-    appData.items.forEach(item => {
-        // අයිතමයේ නම සහ ID එක පේන්න ඕනේ
-        console.log("Button එකක් හදනවා: නම -", item.name, "ID -", item.id);
+    // මෙතන log එක දාමු දත්ත හරියට තියෙනවද බලන්න
+    console.log("දැනට තියෙන Items ටික:", appData.items);
 
-        const btn = document.createElement('button');
-        btn.innerText = "Delete " + (item.name || "No Name");
-        btn.className = "bg-red-500 text-white p-2 m-1 rounded";
-        
-        // අනිවාර්යයෙන්ම item.id එක උඩ විදියට පාස් කරන්න
-        btn.onclick = function() {
-            triggerDelete(item.id);
-        };
-        
-        container.appendChild(btn);
+    appData.items.forEach(item => {
+        // වැදගත්ම දේ: ID එක තියෙනවද බලන්න
+        if (item && item.id) {
+            console.log("Button හදනවා - ID:", item.id);
+            
+            const btn = document.createElement('button');
+            btn.innerText = "Delete " + (item.name || "No Name");
+            btn.className = "bg-red-500 text-white p-2 m-1 rounded";
+            
+            btn.onclick = function() {
+                triggerDelete(item.id);
+            };
+            container.appendChild(btn);
+        } else {
+            console.warn("මේ අයිතමයේ ID එකක් නැහැ, ඒ නිසා බොත්තම හදන්නේ නැහැ:", item);
+        }
     });
 }
 
 
 
 
-    // 4. Fetch Supabase
-    async function fetchSupabase(endpoint, method = 'GET', body = null) {
-        const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-        const url = `${SUPABASE_URL}/rest/v1${path}`;
-        
-        const options = {
-            method: method,
-            headers: { 
-                "apikey": SUPABASE_KEY, 
-                "Authorization": `Bearer ${SUPABASE_KEY}`, 
-                "Content-Type": "application/json",
-                "Prefer": "return=representation" 
-            }
-        };
-        if (body) options.body = JSON.stringify(body);
-        
-        try {
-            const response = await fetch(url, options);
-            return await response.json();
-        } catch (err) {
-            console.error("Fetch Error:", err);
-            return null;
+   // දත්ත ගන්න
+async function loadCategoriesFromCloud() {
+    try {
+        const { data, error } = await sbClient
+            .from('app_categories')
+            .select('structure_data')
+            .eq('id', 'main_structure')
+            .maybeSingle();
+
+        if (error) throw error;
+        if (data && data.structure_data) {
+            appData = data.structure_data;
+            updateUI();
         }
+    } catch (e) {
+        console.error("Load Error:", e.message);
     }
+}
+
+// දත්ත Save කරන්න
+async function saveCategoriesToCloud() {
+    try {
+        const { error } = await sbClient
+            .from('app_categories')
+            .update({ structure_data: appData })
+            .eq('id', 'main_structure');
+
+        if (error) throw error;
+        console.log("Database update success!");
+    } catch (e) {
+        console.error("Save Error:", e.message);
+    }
+}
 
 
 
        
 async function loadCategoriesFromCloud() {
     try {
-        const res = await fetchSupabase('/app_categories?id=eq.main_structure');
-        console.log("Supabase Data Response:", res); 
+        const { data, error } = await sbClient
+            .from('app_categories')
+            .select('structure_data')
+            .eq('id', 'main_structure')
+            .maybeSingle(); // දෝෂ වළක්වා ගැනීමට මෙය පාවිච්චි කරන්න
 
-        // දත්ත ඇවිල්ලා තියෙනවාද බලන්න
-        if (res && res.length > 0) {
-            // මෙන්න මෙතන තමයි වැදගත්ම තැන:
-            // සමහර වෙලාවට res[0] ඇතුලේ කෙලින්ම structure_data තියෙනවා
-            let rawData = res[0].structure_data; 
-            
-            // rawData එකත් object එකක්ද කියලා බලමු
-            if (rawData) {
-                appData.items = rawData.items || [];
-                appData.brands = rawData.brands || [];
-                appData.models = rawData.models || [];
-                
-                console.log("Items loaded:", appData.items);
-                updateUI(); 
-            } else {
-                console.error("structure_data එක හිස්!");
-            }
-        } else {
-            console.warn("Database එකේ දත්ත නැහැ.");
+        if (error) throw error;
+
+        if (data && data.structure_data) {
+            appData = data.structure_data;
+            updateUI();
         }
     } catch (e) {
         console.error("Database connection error:", e);
     }
 }
 
-// මේක අලුතින්ම දාගන්න
-async function saveCategoriesToCloud(newCategoryName) {
+
+
+
+
+async function loadCategoriesFromCloud() {
     try {
-        console.log("Saving category:", newCategoryName);
-        
-        // 1. දැනට තියෙන දත්ත ගන්න
-        const { data: currentData, error: fetchError } = await sbClient
+        const { data, error } = await sbClient
             .from('app_categories')
             .select('structure_data')
             .eq('id', 'main_structure')
-            .single();
+            .maybeSingle(); // දෝෂ වළක්වා ගැනීමට මෙය පාවිච්චි කරන්න
 
-        if (fetchError) throw fetchError;
+        if (error) throw error;
 
-        // 2. JSON එකට අලුත් අයිතමය එකතු කරන්න
-        let updatedData = currentData.structure_data;
-        updatedData.items.push({ id: 'id_' + Date.now(), name: newCategoryName });
-
-        // 3. Database එකට Update කරන්න
-        const { error: updateError } = await sbClient
-            .from('app_categories')
-            .update({ structure_data: updatedData })
-            .eq('id', 'main_structure');
-
-        if (updateError) throw updateError;
-
-        alert("Category saved successfully!");
-        loadCategoriesFromCloud(); // UI එක refresh කරන්න
-    } catch (err) {
-        console.error("Save Error:", err.message);
-        alert("Error saving: " + err.message);
+        if (data && data.structure_data) {
+            appData = data.structure_data;
+            updateUI();
+        }
+    } catch (e) {
+        console.error("Database connection error:", e);
     }
 }
-
 
 
 
@@ -693,17 +685,23 @@ function openAddModal(type) {
 
 
         async function handleModalSave() {
-    const nameValue = document.getElementById('modal-input-field').value.trim();
-    if (!nameValue) return;
+    // 1. නම ගන්න ඕනේ මෙන්න මේ variable එකට
+    const nameInput = document.getElementById('category-name-input').value;
+    
+    if (!nameInput || nameInput.trim() === "") {
+        alert("කරුණාකර නමක් ඇතුළත් කරන්න!");
+        return;
+    }
 
+    // 2. මෙතන තමයි වැරැද්ද තිබ්බේ (nameValue වෙනුවට nameInput පාවිච්චි කරන්න)
     if (currentModalMode === 'add') {
         const newId = 'id_' + Date.now();
         if (activeMenuTarget.type === 'item') {
-            appData.items.push({ id: newId, name: nameValue });
+            appData.items.push({ id: newId, name: nameInput }); // nameInput දැම්මා
         } else if (activeMenuTarget.type === 'brand') {
-            appData.brands.push({ id: newId, name: nameValue, itemId: selectedItemId });
+            appData.brands.push({ id: newId, name: nameInput, itemId: selectedItemId });
         } else if (activeMenuTarget.type === 'model') {
-            appData.models.push({ id: newId, name: nameValue, brandId: selectedBrandId });
+            appData.models.push({ id: newId, name: nameInput, brandId: selectedBrandId });
         }
     } else if (currentModalMode === 'rename') {
         let itemObj = null;
@@ -711,14 +709,13 @@ function openAddModal(type) {
         else if (activeMenuTarget.type === 'brand') itemObj = appData.brands.find(b => b.id === activeMenuTarget.item.id);
         else if (activeMenuTarget.type === 'model') itemObj = appData.models.find(m => m.id === activeMenuTarget.item.id);
         
-        if (itemObj) itemObj.name = nameValue;
+        if (itemObj) itemObj.name = nameInput; // මෙතනත් nameInput දැම්මා
     }
 
-    // 💡 මෙන්න මේ වෙනස - 'await' දාන්න:
     try {
+        // දැන් දත්ත හරියට යයි
         await saveCategoriesToCloud(); 
         
-        // 💡 ඊට පස්සේ UI එක Refresh කරන්න:
         closeInputModal();
         
         if (activeMenuTarget.type === 'item') navigateTo('page-item');
@@ -726,14 +723,11 @@ function openAddModal(type) {
         else if (activeMenuTarget.type === 'model') navigateTo('page-model');
         
         showAlert('දත්ත සාර්ථකව යාවත්කාලීන කරන ලදී!', 'success');
-        
     } catch (error) {
         console.error("Save Error:", error);
-        showAlert('❌ දත්ත සේව් වුණේ නැහැ, නැවත උත්සාහ කරන්න!', 'error');
+        showAlert('❌ දත්ත සේව් වුණේ නැහැ!', 'error');
     }
 }
-
-
 
 
         // 1. Delete කරන ෆන්ක්ෂන් එක
