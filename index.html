@@ -376,6 +376,11 @@
 
         // 🛠️ FIX: Deep-Linking සහ ව්‍යුහාත්මක පෙරීම (Filtering) සහිත Navigation පද්ධතිය + Breadcrumb පාර පෙන්වීම
         function navigateTo(pageId) {
+
+            if (!window.isBackAction) {
+        history.pushState({ pageId: pageId }, "", "#" + pageId);
+    }
+    window.isBackAction = false;
             document.getElementById('custom-context-menu').classList.add('hidden');
             if(pageId === 'page-model') document.getElementById('model-search').value = ''; 
 
@@ -813,23 +818,21 @@
             document.getElementById('app-custom-alert').style.display = 'none';
         }
 
-// 🌍 Browser & Mobile Back Button Controller Engine
+// Browser එකේ back button එක එබූ විට ක්‍රියාත්මක වේ
 window.addEventListener('popstate', function(event) {
+    console.log("Back button එක ඔබන ලදී!");
+    
+    // මේකෙන් තමයි අපි කරන්නේ 'Back' කරන්නේ කියලා App එකට කියන්නේ
+    window.isBackAction = true; 
+
+    // History එකේ pageId එකක් තියෙනවා නම් ඒකට යන්න
     if (event.state && event.state.pageId) {
-        // ලොගින් පේජ් එකේ ඉද්දි ආයෙත් බැක් වෙන්න ඕන නැති නිසා
-        if (event.state.pageId === 'page-login') {
-            history.pushState({ pageId: 'page-login' }, "", "#page-login");
-            return;
-        }
-        window.isBackAction = true;
         navigateTo(event.state.pageId);
     } else {
-        // මුල්ම අවස්ථාවට ආවොත් හෝම් පේජ් එකට යවනවා
-        window.isBackAction = true;
+        // ඉතිහාසයේ මුකුත් නැත්නම් හෝම් එකට යන්න
         navigateTo('page-home');
     }
 });
-
 
     </script>
 </body>
