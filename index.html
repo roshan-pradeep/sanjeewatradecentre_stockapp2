@@ -226,12 +226,24 @@
         </div>
     </div>
 
-    <script>
-        // ☁️ Supabase Configuration
-        const SUPABASE_URL = "https://ttviyfggsmiaemtbawvg.supabase.co/rest/v1/";
-        const SUPABASE_KEY = "sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz";
-        
+    <div id="category-container"></div>
 
+    <script>
+
+        
+    
+    let sbClient;
+
+    // 2. Supabase පටන් ගන්න
+    const SUPABASE_URL = 'https://ttviyfggsmiaemtbawvg.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz';
+    
+    sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log("Supabase initialized!");
+         
+
+
+        let defaultColor = '#f97316';
         let currentRole = 'staff';       
         let currentLoginMode = 'staff';  
         let currentModelId = '';         
@@ -246,13 +258,40 @@
         let currentModalMode = 'add'; 
         let tempColorStockList = {}; // Temporary holding container for color configurations
 
+
+
+         async function initApp() {
+    console.log("App පටන් ගන්නවා...");
+    
+    // 1. Role එක බලන්න
+    const savedRole = localStorage.getItem('sanjeewa_role');
+    if (savedRole) currentRole = savedRole;
+    
+    setupAdminUI();
+
+    // 2. මෙතනදී sbClient එක අනිවාර්යයෙන්ම තියෙන්න ඕනේ
+    if (sbClient) {
+        await loadCategoriesFromCloud();
+    } else {
+        console.error("Supabase තවම සූදානම් නැහැ!");
+    }
+
+    // 3. Navigation
+    if (savedRole) {
+        navigateTo('page-home');
+    } else {
+        navigateTo('page-login');
+    }
+}
+
+
         // 🌐 Cloud Database Connector Engine (Cache බයිපාස් කරන විදිහට හැදුවා)
 async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = false) {
     const options = {
         method: method,
         headers: { 
-            "apikey": SUPABASE_KEY, 
-            "Authorization": `Bearer ${SUPABASE_KEY}`, 
+            "apikey": SUPABASE_ANON_KEY, 
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`, 
             "Content-Type": "application/json",
             "Cache-Control": "no-cache", // ⚡ මෙන්න මේක තමයි වැදගත්! පරණ ඩේටා ගන්න එපා කියන එක.
             "Pragma": "no-cache"
@@ -308,38 +347,12 @@ async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = f
     }
 }
 
-// Global variable එකක් විදියට උඩින්ම තියන්න
-let sbClient; 
-
-// ඊට පස්සේ මේක දුවන්න
-sbClient = supabase.createClient('URL', 'KEY');
-console.log("Supabase initialized!");
 
 
-        async function initApp() {
-    console.log("App පටන් ගන්නවා...");
-    
-    // 1. Role එක බලන්න
-    const savedRole = localStorage.getItem('sanjeewa_role');
-    if (savedRole) currentRole = savedRole;
-    
-    setupAdminUI();
 
-    // 2. මෙතනදී sbClient එක අනිවාර්යයෙන්ම තියෙන්න ඕනේ
-    if (sbClient) {
-        await loadCategoriesFromCloud();
-    } else {
-        console.error("Supabase තවම සූදානම් නැහැ!");
-    }
 
-    // 3. Navigation
-    if (savedRole) {
-        navigateTo('page-home');
-    } else {
-        navigateTo('page-login');
-    }
-}
 
+       
         function revealAdminMode() {
             document.getElementById('login-mode-container').classList.remove('hidden');
             switchLoginMode('admin');
@@ -479,8 +492,20 @@ console.log("Supabase initialized!");
         }
 
         // Dynamic Custom Button Generator Engine
-        function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
-            const container = document.getElementById(containerId); container.innerHTML = ''; 
+        function renderButtons(type, dataArray, containerId) {
+    const container = document.getElementById(containerId); 
+    
+    if (!container) {
+        console.error("Error: Element ID '" + containerId + "' හොයාගන්න බැහැ!");
+        return;
+    }
+
+    if (!dataArray || dataArray.length === 0) {
+        container.innerHTML = '<p>දත්ත නැත.</p>';
+        return;
+    }
+    
+    container.innerHTML = ''; 
             
             if(dataArray.length === 0) {
                 container.innerHTML = `<p class="col-span-2 text-center text-gray-400 py-6 text-sm italic">කිසිවක් සොයාගත නොහැක.</p>`;
@@ -490,7 +515,7 @@ console.log("Supabase initialized!");
             dataArray.forEach(item => {
                 const btn = document.createElement('button');
                 btn.innerText = item.name;
-                btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none no-select transition-all shadow-md`;
+                btn.style.backgroundColor = item.color || defaultColor;
                 
                 let pressTimer = null;
                 let isLongPress = false;
