@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         /* 📱 බටන් එකක් ලෝන්ග් ප්‍රෙස් කලාම (ඔබන් හිටියාම) පොඩි ඇනිමේෂන් එකක් එන්න දාපු ස්ටයිල් එක */
         .long-press-active { transform: scale(0.95); opacity: 0.8; transition: 0.1s; }
@@ -226,12 +226,19 @@
         </div>
     </div>
 
-    <script>
 
-        
+   
+    
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
         // මේ විදියට variable දෙක හදාගන්න (අගට කිසිම දෙයක් දාන්න එපා)
-const SUPABASE_URL = "https://ttviyfggsmiaemtbawvg.supabase.co";
-const SUPABASE_KEY = "sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz"; // අර නිල් පාටින් රවුම් කරපු එක
+const supabaseUrl = 'https://ttviyfggsmiaemtbawvg.supabase.co'; // ඔයාගේ URL එක
+    const supabaseKey = 'sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz'; // ඔයාගේ KEY එක මෙතන දාන්න
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+</script>
+
+<script>
 
 // මේ variable ටික අනිවාර්යයෙන්ම උඩින්ම දාන්න
 let currentRole = null;
@@ -241,6 +248,9 @@ let activeMenuTarget = null;
 let tempColorStockList = [];
 let appData = { items: [], brands: [], models: [] };
 let currentLoginMode = 'email'; // මේක තමයි මදි වුණේ!
+
+
+
 
 async function fetchSupabase(endpoint, method = 'GET', body = null) {
     // endpoint එකේ මුල '/' තියෙනවද බලන්න, නැත්තම් එකතු කරන්න
@@ -268,6 +278,10 @@ async function fetchSupabase(endpoint, method = 'GET', body = null) {
         return null;
     }
 }
+
+
+
+
        
 async function loadCategoriesFromCloud() {
     try {
@@ -292,11 +306,19 @@ async function loadCategoriesFromCloud() {
     }
 }
 
+
+
+
+
 // අනිවාර්යයෙන්ම මේ function එකක් තියෙන්න ඕනේ
 function updateUI() {
     console.log("UI Updated: දත්ත ලැබුණා.");
     // මෙතන තමයි ඔයාගේ HTML වලට දත්ත යවන්නේ
 }
+
+
+
+
 
         // 🚀 Initialization Lifecycle
         async function initApp() {
@@ -322,10 +344,17 @@ function updateUI() {
 };
 }
 
+
+
+
+
         function revealAdminMode() {
             document.getElementById('login-mode-container').classList.remove('hidden');
             switchLoginMode('admin');
         }
+
+
+
 
         function switchLoginMode(mode) {
             currentLoginMode = mode;
@@ -335,6 +364,9 @@ function updateUI() {
             document.getElementById('lbl-phone').innerText = mode === 'admin' ? "Admin Phone Number" : "Enter Registered Phone Number";
             document.getElementById('login-sub-title').innerText = mode === 'admin' ? "Admin Portal" : "Staff Portal";
         }
+
+
+
 
         async function handleSecureLogin() {
             const phone = document.getElementById('login-phone').value.trim();
@@ -365,6 +397,10 @@ function updateUI() {
             }
         }
 
+
+
+
+
         function handleLogout() {
             currentRole = 'staff'; currentLoginMode = 'staff';
             localStorage.removeItem('sanjeewa_role');
@@ -374,6 +410,10 @@ function updateUI() {
             setupAdminUI(); navigateTo('page-login');
         }
 
+
+
+
+
         function setupAdminUI() {
             const adminElements = ['admin-add-item', 'admin-add-brand', 'admin-add-model', 'admin-detail-controls', 'admin-staff-manager'];
             adminElements.forEach(id => {
@@ -381,6 +421,9 @@ function updateUI() {
             });
             document.querySelectorAll('.admin-tip').forEach(el => el.classList.toggle('hidden', currentRole !== 'admin'));
         }
+
+
+
 
         // 🛠️ FIX: WhatsApp ආරාධනා මොඩියුලය
         async function generateStaffLinkWhatsApp() {
@@ -398,6 +441,10 @@ function updateUI() {
             }
             window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, '_blank');
         }
+
+
+
+
 
         // 🛠️ Navigation Core Logic Engine (New Structured Layout Flow)
         function navigateTo(pageId) {
@@ -452,6 +499,10 @@ function updateUI() {
             }
         }
 
+
+
+
+
         // 🛠️ NEW: Item Realtime Live Search Logic
         function searchItems() {
             let query = document.getElementById('item-search').value.toLowerCase().trim();
@@ -459,12 +510,18 @@ function updateUI() {
             renderButtons('item', filteredItems, 'item-container', 'bg-orange-500');
         }
 
+
+
+
         // Model Realtime Live Search Logic
         function searchModels() {
             let query = document.getElementById('model-search').value.toLowerCase().trim();
             let filteredModels = appData.models.filter(m => m.brandId === selectedBrandId && m.name.toLowerCase().includes(query));
             renderButtons('model', filteredModels, 'model-container', 'bg-emerald-600');
         }
+
+
+
 
         // Dynamic Custom Button Generator Engine
         function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
@@ -521,6 +578,11 @@ function updateUI() {
             });
         }
 
+
+
+
+
+
         function showCustomContextMenu(x, y, type, item) {
             activeMenuTarget = { type: type, item: item };
             const menu = document.getElementById('custom-context-menu');
@@ -533,6 +595,10 @@ function updateUI() {
             const menu = document.getElementById('custom-context-menu');
             if(menu && !menu.contains(e.target)) menu.classList.add('hidden');
         });
+
+
+
+
 
         // Modal Box Controller Systems
 function openAddModal(type) {
@@ -555,6 +621,9 @@ function openAddModal(type) {
     if (modalContainer) modalContainer.classList.remove('hidden');
 }
 
+
+
+
         function triggerRename() {
             currentModalMode = 'rename';
             document.getElementById('modal-title').innerText = `Rename ${activeMenuTarget.type.toUpperCase()}`;
@@ -562,9 +631,14 @@ function openAddModal(type) {
             document.getElementById('custom-input-modal').classList.remove('hidden');
         }
 
+
+
+
         function closeInputModal() {
             document.getElementById('custom-input-modal').classList.add('hidden');
         }
+
+
 
         async function handleModalSave() {
     const nameValue = document.getElementById('modal-input-field').value.trim();
@@ -607,6 +681,9 @@ function openAddModal(type) {
     }
 }
 
+
+
+
         async function triggerDelete() {
             document.getElementById('custom-context-menu').classList.add('hidden');
             
@@ -641,6 +718,11 @@ function openAddModal(type) {
                 }
             });
         }
+
+
+
+
+
 
        // Live Realtime Dynamic Synchronizer Engine for Stock Profiles
 async function openProductDetailLive(modelItem) {
@@ -708,6 +790,8 @@ async function openProductDetailLive(modelItem) {
             });
         }
 
+
+
        // 💡 LIVE UPDATE LOGIC FUNCTION (මෙය පැරණි calculateCostPriceLive වෙනුවට භාවිතා වේ)
     function updateRetailAndCostLive() {
         const retailVal = document.getElementById('input-retail').value;
@@ -724,6 +808,8 @@ async function openProductDetailLive(modelItem) {
         document.getElementById('view-cost').innerText = netCost.toLocaleString('en-US', {minimumFractionDigits: 2});
     }
 
+
+
         function addColourStockToArray() {
             const color = document.getElementById('input-colour').value.trim();
             const qty = parseInt(document.getElementById('input-qty').value) || 0;
@@ -735,6 +821,8 @@ async function openProductDetailLive(modelItem) {
             document.getElementById('input-colour').value = '';
             document.getElementById('input-qty').value = '';
         }
+
+        
 
         // 💡 SYNC CORE RE-MAPPED FUNCTION
     async function syncProductToDatabase() {
@@ -778,19 +866,26 @@ async function openProductDetailLive(modelItem) {
 }
 
 
+
+
 async function saveCategoriesToCloud(newCategory) {
     try {
+        // උඩ හදපු global supabase variable එකමයි මෙතන පාවිච්චි වෙන්නේ
         const { data, error } = await supabase
-            .from('app_categories') // ඔයාගේ categories table එකේ නම මෙතනට දාන්න
+            .from('app_categories') 
             .insert([{ name: newCategory }]);
             
         if (error) throw error;
-        console.log("Category saved successfully!");
-        alert("Category saved!");
+        alert("Category saved successfully!");
     } catch (err) {
         console.error("Error saving category:", err.message);
+        alert("Error: " + err.message);
     }
 }
+
+
+
+
         function checkLowStockAlertSystem(modelName, colorsJson) {
             let lowItems = [];
             Object.keys(colorsJson).forEach(c => {
@@ -803,6 +898,11 @@ async function saveCategoriesToCloud(newCategory) {
                 document.getElementById('custom-stock-modal').style.display = 'flex';
             }
         }
+
+
+
+
+
 
         function closeStockModal() { document.getElementById('custom-stock-modal').style.display = 'none'; }
 
