@@ -278,28 +278,23 @@ function updateUI() {
     if (!container) return;
     container.innerHTML = '';
 
-    // දත්ත ටික එනවාද බලමු
-    console.log("updateUI ලෝඩ් වෙනවා. දත්ත:", appData.items);
-
     appData.items.forEach(item => {
-        // මෙතන අනිවාර්යයෙන්ම හඳුනාගන්න පුළුවන් හැම නමක්ම බලමු
-        const itemIdentifier = item.id || item.model_id || item.item_id || item._id; 
-
-        // Debugging සඳහා log එක
-        console.log("Item එකේ keys:", Object.keys(item), " | Found ID:", itemIdentifier);
+        // මෙතන අනිවාර්යයෙන්ම බලන්න 'model_id' කියන නම තියෙනවද කියලා
+        const itemIdentifier = item.model_id; // Database එකේ තියෙන්නේ model_id
 
         if (itemIdentifier) {
             const btn = document.createElement('button');
-            btn.innerText = "Delete " + (item.name || "No Name");
+            // නම සඳහා 'model_name' පාවිච්චි කරන්න
+            btn.innerText = "Delete " + (item.model_name || "No Name");
             btn.className = "bg-red-500 text-white p-2 m-1 rounded";
             
             btn.onclick = function() {
-                console.log("බොත්තම එබුවා, යන ID එක:", itemIdentifier);
+                console.log("Delete බොත්තම එබුවා. යවන ID එක:", itemIdentifier);
                 triggerDelete(itemIdentifier);
             };
             container.appendChild(btn);
         } else {
-            console.warn("මේ අයිතමයට අඳුනාගැනීමේ ID එකක් (ID/model_id/item_id) නැත! අයිතමය:", item);
+            console.warn("මේ අයිතමයට ID එකක් නැත:", item);
         }
     });
 }
@@ -738,43 +733,29 @@ async function deleteItemFromSupabase(itemId) {
 
 
 
-async function triggerDelete(itemId) {
-    // 1. මුලින්ම එන ID එක පරීක්ෂා කරමු
-    console.log("triggerDelete එකට ආපු ID එක:", itemId);
+async function deleteItemFromSupabase(itemId) {
+    try {
+        console.log("Supabase වෙතින් මකන්න යන ID එක:", itemId);
 
-    if (itemId === undefined || itemId === null || itemId === '' || itemId === 'undefined') {
-        console.error("ලැබුණු ID එක වැරදියි! ID එක:", itemId);
-        Swal.fire({
-            icon: 'error',
-            title: 'දෝෂයක්!',
-            text: 'මෙම අයිතමයට අදාළ ID එකක් නැත, මකන්න බැහැ.'
-        });
-        return; // මේ return එක වැදගත්, මේකෙන් වැඩේ නතර වෙනවා
-    }
+        const { data, error } = await supabase
+            .from('items_stock') // මෙතන හරියටම ටේබල් එකේ නම
+            .delete()
+            .eq('model_id', itemId); // මෙතන 'id' වෙනුවට 'model_id' වෙන්නම ඕනේ
 
-    // 2. SweetAlert හරහා තහවුරු කරගැනීම
-    const result = await Swal.fire({
-        title: 'මකා දමන්නද?',
-        text: "මෙම අයිතමය නැවත ලබාගත නොහැක!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'ඔව්, මකා දමන්න!',
-        cancelButtonText: 'එපා'
-    });
+        if (error) throw error;
 
-    // 3. පරිශීලකයා OK කළොත් විතරක් Supabase එකෙන් මකන්න
-    if (result.isConfirmed) {
-        try {
-            await deleteItemFromSupabase(itemId);
-        } catch (error) {
-            console.error("Delete අසාර්ථකයි:", error);
-        }
+        console.log("මකා දැමීම සාර්ථකයි!");
+        Swal.fire('සාර්ථකයි!', 'අයිතමය මකා දැමුවා.', 'success');
+        
+        // අයිතමය මැකුවට පස්සේ UI එකත් අලුත් කරමු
+        await loadDataFromSupabase(); // නැත්නම් කැමති නම් నేලින්ම updateUI() කරන්න
+        updateUI();
+
+    } catch (error) {
+        console.error("Supabase Delete Error:", error);
+        Swal.fire('දෝෂයක්!', 'මකා දැමීමට නොහැකි විය: ' + error.message, 'error');
     }
 }
-
-
 
 
 
