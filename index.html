@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sanjeewa Trade Centre - Stock App</title>
     
-    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
      
@@ -227,7 +227,9 @@
         </div>
     </div>
 
-
+<div id="success-msg" class="hidden bg-green-500 text-white p-4 rounded mb-4">
+    Category saved successfully!
+</div>
    
     
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -248,16 +250,21 @@
     let activeMenuTarget = null; 
     let currentModalMode = null;
 
-    // 3. initApp Function (මේකත් මෙතනමයි)
     function initApp() {
-        console.log("App initializing...");
-        // මෙතන අනිත් ෆන්ක්ෂන්ස් කෝල් කරන්න
-        loadCategoriesFromCloud();
+    console.log("App initializing...");
+
+    // 1. කලින් සේව් කරපු නමක් තියෙනවද බලන්න
+    let savedName = localStorage.getItem('temp_item_name');
+    if (savedName) {
+        console.log("Found saved name:", savedName);
+        // මෙතන ඔයාට අවශ්‍ය තැනට ඒ නම යවන්න (උදා: displayTitle(savedName))
     }
 
-    // 4. අනිත් ඔක්කොම ෆන්ක්ෂන්ස් (fetchSupabase, loadCategoriesFromCloud, etc.) මෙතන දාන්න
-    // ... උඹේ අනිත් functions ඔක්කොම මෙතන දාන්න ...
+    // 2. Cloud එකෙන් දත්ත ගන්න
+    loadCategoriesFromCloud();
+}
 
+    
 
     
 // 3. UI Update (එකම එක ෆන්ක්ෂන් එකක්)
@@ -669,41 +676,60 @@ function openAddModal(type) {
 
 
 
-        async function triggerDelete() {
-            document.getElementById('custom-context-menu').classList.add('hidden');
-            
-            Swal.fire({
-                title: 'මකා දැමීමට අවශ්‍යද?',
-                text: "මෙය ආපසු හැරවිය නොහැක!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'ඔව්, මකන්න!'
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    const targetId = activeMenuTarget.item.id;
-                    if(activeMenuTarget.type === 'item') {
-                        appData.items = appData.items.filter(i => i.id !== targetId);
-                        // Cascade deletion loops
-                        appData.brands = appData.brands.filter(b => b.itemId !== targetId);
-                    } else if(activeMenuTarget.type === 'brand') {
-                        appData.brands = appData.brands.filter(b => b.id !== targetId);
-                        appData.models = appData.models.filter(m => m.brandId !== targetId);
-                    } else if(activeMenuTarget.type === 'model') {
-                        appData.models = appData.models.filter(m => m.id !== targetId);
-                    }
+        // 1. Delete කරන ෆන්ක්ෂන් එක
+async function deleteItemFromSupabase(itemId) {
+    try {
+        // අ) දැනට තියෙන දත්ත ටික ගන්න
+        const { data: currentData, error: fetchError } = await sbClient
+            .from('app_categories')
+            .select('structure_data')
+            .eq('id', 'main_structure')
+            .single();
 
-                    await saveCategoriesToCloud();
-                    
-                    if(activeMenuTarget.type === 'item') navigateTo('page-item');
-                    if(activeMenuTarget.type === 'brand') navigateTo('page-brand');
-                    if(activeMenuTarget.type === 'model') navigateTo('page-model');
-                    showAlert('දත්ත සාර්ථකව මකා දමන ලදී.', 'success');
-                }
-            });
-        }
+        if (fetchError) throw fetchError;
 
+        // ආ) අදාල item එක අයින් කරන්න (filter)
+        let updatedData = currentData.structure_data;
+        updatedData.items = updatedData.items.filter(item => item.id !== itemId);
+
+        // ඇ) Database එක update කරන්න
+        const { error: updateError } = await sbClient
+            .from('app_categories')
+            .update({ structure_data: updatedData })
+            .eq('id', 'main_structure');
+
+        if (updateError) throw updateError;
+
+        alert("Item deleted successfully!");
+        loadCategoriesFromCloud(); // UI එක refresh කරන්න
+    } catch (err) {
+        console.error("Delete Error:", err.message);
+        alert("Error: " + err.message);
+    }
+}
+
+// 2. Trigger ෆන්ක්ෂන් එක (මේක තමයි උඹේ බොත්තමට සම්බන්ධ වෙන්නේ)
+async function triggerDelete(itemId) {
+    // ID එක හරියට එනවාද කියලා බලන්න
+    if (!itemId || itemId === 'undefined') {
+        console.error("Invalid Item ID");
+        return;
+    }
+
+    const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (result.isConfirmed) {
+        await deleteItemFromSupabase(itemId);
+    }
+}
 
 
 
@@ -855,7 +881,7 @@ async function openProductDetailLive(modelItem) {
 
 async function saveCategoriesToCloud(newCategoryName) {
     try {
-        // 1. මුලින්ම තියෙන දත්ත ටික ගන්න
+        // 1. මුලින්ම දැනට තියෙන structure_data එක ගන්න
         const { data: currentData, error: fetchError } = await sbClient
             .from('app_categories')
             .select('structure_data')
@@ -866,6 +892,8 @@ async function saveCategoriesToCloud(newCategoryName) {
 
         // 2. JSON දත්ත ටික අලුත් කරන්න
         let updatedData = currentData.structure_data;
+        
+        // අලුත් අයිතමය array එකට push කරන්න
         updatedData.items.push({ 
             id: 'id_' + Date.now(), 
             name: newCategoryName 
@@ -879,14 +907,25 @@ async function saveCategoriesToCloud(newCategoryName) {
 
         if (updateError) throw updateError;
 
-        alert("Category saved successfully!");
-        loadCategoriesFromCloud(); // දත්ත ටික ආයේ refresh කරන්න
+        console.log("Category saved successfully!");
+        
+        
+        // 4. UI එක Refresh කරන්න
+        loadCategoriesFromCloud(); 
     } catch (err) {
         console.error("Error updating category:", err.message);
         alert("Error: " + err.message);
     }
 }
 
+
+function showSuccess() {
+        const msg = document.getElementById('success-msg');
+        msg.classList.remove('hidden'); // පණිවිඩය පෙන්නන්න
+        setTimeout(() => {
+            msg.classList.add('hidden'); // තත්පර 3කින් පණිවිඩය මකන්න
+        }, 3000);
+    }
 
 
 
