@@ -271,7 +271,30 @@ async function initApp() {
 // මේක අනිවාර්යයෙන්ම දාන්න
 window.onload = initApp;
     
+// මේ විදියට Window එකට මේ ෆන්ක්ෂන් එක Assign කරන්න
+window.triggerDelete = async function(itemId) {
+    console.log("triggerDelete ක්‍රියාත්මකයි! ID:", itemId);
 
+    // SweetAlert එක වැඩ කරන්න ඕනේ නිසා Swal එක තියෙනවද බලමු
+    if (typeof Swal === 'undefined') {
+        console.error("SweetAlert Library එක නැත!");
+        return;
+    }
+
+    const result = await Swal.fire({
+        title: 'මකා දමන්නද?',
+        text: "මෙම අයිතමය නැවත ලබාගත නොහැක!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'ඔව්, මකා දමන්න!'
+    });
+
+    if (result.isConfirmed) {
+        await deleteItemFromSupabase(itemId);
+    }
+};
     
 function updateUI() {
     const container = document.getElementById('items-list');
@@ -708,54 +731,48 @@ function openAddModal(type) {
         // 1. Delete කරන ෆන්ක්ෂන් එක
 async function deleteItemFromSupabase(itemId) {
     try {
-        // අලුත් SDK ක්‍රමය: items_stock table එකෙන් මකනවා
-        const { error } = await sbClient
+        const { error } = await supabase
             .from('items_stock')
             .delete()
-            .eq('model_id', itemId); // හෝ ඔයාගේ table එකේ ID එක තියෙන column එක
+            .eq('model_id', itemId); // මේක තමයි වැදගත්, model_id එක හරියටම දාන්න
 
         if (error) throw error;
 
-        // UI එකෙන් අයින් කරනවා
-        appData.items = appData.items.filter(i => i.id !== itemId);
+        Swal.fire('සාර්ථකයි!', 'මකා දැමුවා.', 'success');
         
-        // Cloud එකට අලුත් අගය save කරනවා
-        await saveCategoriesToCloud();
-        
-        updateUI();
-        Swal.fire('සාර්ථකයි!', 'අයිතමය මකා දමන ලදී.', 'success');
-        
-    } catch (err) {
-        console.error("Delete Error:", err.message);
-        Swal.fire('දෝෂයක්!', 'මකා දැමීමට නොහැකි විය.', 'error');
-    }
-}
-
-
-
-async function deleteItemFromSupabase(itemId) {
-    try {
-        console.log("Supabase වෙතින් මකන්න යන ID එක:", itemId);
-
-        const { data, error } = await supabase
-            .from('items_stock') // මෙතන හරියටම ටේබල් එකේ නම
-            .delete()
-            .eq('model_id', itemId); // මෙතන 'id' වෙනුවට 'model_id' වෙන්නම ඕනේ
-
-        if (error) throw error;
-
-        console.log("මකා දැමීම සාර්ථකයි!");
-        Swal.fire('සාර්ථකයි!', 'අයිතමය මකා දැමුවා.', 'success');
-        
-        // අයිතමය මැකුවට පස්සේ UI එකත් අලුත් කරමු
-        await loadDataFromSupabase(); // නැත්නම් කැමති නම් నేලින්ම updateUI() කරන්න
-        updateUI();
-
+        // අන්තිමට UI එක අලුත් කරමු
+        await loadDataFromSupabase(); // දත්ත ටික ආයේ අරන්
+        updateUI(); // UI එක අලුත් කරන්න
     } catch (error) {
-        console.error("Supabase Delete Error:", error);
-        Swal.fire('දෝෂයක්!', 'මකා දැමීමට නොහැකි විය: ' + error.message, 'error');
+        console.error("Delete Error:", error);
+        Swal.fire('දෝෂයක්!', 'මකන්න බැහැ: ' + error.message, 'error');
     }
 }
+
+
+
+async function triggerDelete(itemId) {
+    console.log("triggerDelete එකට ආපු ID එක:", itemId);
+
+    if (!itemId) {
+        Swal.fire('දෝෂයක්!', 'ID එකක් නැත', 'error');
+        return;
+    }
+
+    const result = await Swal.fire({
+        title: 'මකා දමන්නද?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ඔව්, මකන්න!'
+    });
+
+    if (result.isConfirmed) {
+        // මෙතනින් තමයි අනිත් ෆන්ක්ෂන් එකට යන්නේ
+        await deleteItemFromSupabase(itemId);
+    }
+}
+
+
 
 
 
