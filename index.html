@@ -232,25 +232,35 @@
     
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-    // 1. Supabase Initialization
+    // 1. Supabase Initialization (මේක එකම එක සැරයයි!)
     const SUPABASE_URL = 'https://ttviyfggsmiaemtbawvg.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz';
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    console.log("Supabase initialized!");
+    
     // 2. Global Variables
-    let currentRole = null;
-    let selectedItemId = null;
-    let selectedBrandId = null;
-    let currentModelId = null; // මේක මදි වෙලා තිබ්බේ
-    let activeMenuTarget = null;
-    let tempColorStockList = {};
+    let currentRole = 'guest';
     let appData = { items: [], brands: [], models: [] };
-    let currentLoginMode = 'email';
 
-    // 3. UI Update (එකම එක ෆන්ක්ෂන් එකක්)
+    // 3. initApp Function (මේකත් මෙතනමයි)
+    function initApp() {
+        console.log("App initializing...");
+        // මෙතන අනිත් ෆන්ක්ෂන්ස් කෝල් කරන්න
+        loadCategoriesFromCloud();
+    }
+
+    // 4. අනිත් ඔක්කොම ෆන්ක්ෂන්ස් (fetchSupabase, loadCategoriesFromCloud, etc.) මෙතන දාන්න
+    // ... උඹේ අනිත් functions ඔක්කොම මෙතන දාන්න ...
+
+
+    
+// 3. UI Update (එකම එක ෆන්ක්ෂන් එකක්)
     function updateUI() {
         console.log("UI Updated: දත්ත ලැබුණා.");
     }
+
+
 
     // 4. Fetch Supabase
     async function fetchSupabase(endpoint, method = 'GET', body = null) {
@@ -312,14 +322,7 @@ async function loadCategoriesFromCloud() {
 
 
 
-        // 5. Init App
-    async function initApp() {
-        console.log("App initializing...");
-        await loadCategoriesFromCloud();
         
-        const lastPage = localStorage.getItem('lastPage') || 'page-home';
-        navigateTo(lastPage);
-    }
 
 
 
