@@ -16,7 +16,7 @@
         .no-select { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
     </style>
 </head>
-<body class="bg-gray-100 font-sans text-gray-800 no-select" onload="initApp()">
+<body class="bg-gray-100 font-sans text-gray-800 no-select" onload="window.addEventListener">
 
     <div id="custom-context-menu" class="hidden absolute bg-white shadow-2xl border rounded-xl py-2 w-40 z-50 transition-all">
         <button id="menu-rename-btn" onclick="triggerRename()" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 font-semibold flex items-center gap-2 text-blue-600">
@@ -273,35 +273,36 @@ window.onload = initApp;
     
 
     
-// 3. UI Update (එකම එක ෆන්ක්ෂන් එකක්)
-   function updateUI() {
+function updateUI() {
     const container = document.getElementById('items-list');
     if (!container) return;
     container.innerHTML = '';
 
-    // මෙතන log එක දාමු දත්ත හරියට තියෙනවද බලන්න
-    console.log("දැනට තියෙන Items ටික:", appData.items);
+    // දත්ත ටික එනවාද බලමු
+    console.log("updateUI ලෝඩ් වෙනවා. දත්ත:", appData.items);
 
     appData.items.forEach(item => {
-        // වැදගත්ම දේ: ID එක තියෙනවද බලන්න
-        if (item && item.id) {
-            console.log("Button හදනවා - ID:", item.id);
-            
+        // මෙතන අනිවාර්යයෙන්ම හඳුනාගන්න පුළුවන් හැම නමක්ම බලමු
+        const itemIdentifier = item.id || item.model_id || item.item_id || item._id; 
+
+        // Debugging සඳහා log එක
+        console.log("Item එකේ keys:", Object.keys(item), " | Found ID:", itemIdentifier);
+
+        if (itemIdentifier) {
             const btn = document.createElement('button');
-            btn.innerText = "Delete " + item.name;
+            btn.innerText = "Delete " + (item.name || "No Name");
             btn.className = "bg-red-500 text-white p-2 m-1 rounded";
             
             btn.onclick = function() {
-                console.log("Delete බොත්තම එබුවා. යවන ID එක:", item.id);
-                triggerDelete(item.id);
+                console.log("බොත්තම එබුවා, යන ID එක:", itemIdentifier);
+                triggerDelete(itemIdentifier);
             };
             container.appendChild(btn);
         } else {
-            console.warn("මේ අයිතමයේ ID එකක් නැහැ, ඒ නිසා බොත්තම හදන්නේ නැහැ:", item);
+            console.warn("මේ අයිතමයට අඳුනාගැනීමේ ID එකක් (ID/model_id/item_id) නැත! අයිතමය:", item);
         }
     });
 }
-
 
 
 
@@ -737,11 +738,18 @@ async function deleteItemFromSupabase(itemId) {
 
 
 
-// async function triggerDelete(itemId) {
-    // 1. මුලින්ම ID එක පරීක්ෂා කිරීම
-    if (!itemId) {
-        console.error("ID එකක් ලැබුණේ නැහැ!");
-        
+async function triggerDelete(itemId) {
+    // 1. මුලින්ම එන ID එක පරීක්ෂා කරමු
+    console.log("triggerDelete එකට ආපු ID එක:", itemId);
+
+    if (itemId === undefined || itemId === null || itemId === '' || itemId === 'undefined') {
+        console.error("ලැබුණු ID එක වැරදියි! ID එක:", itemId);
+        Swal.fire({
+            icon: 'error',
+            title: 'දෝෂයක්!',
+            text: 'මෙම අයිතමයට අදාළ ID එකක් නැත, මකන්න බැහැ.'
+        });
+        return; // මේ return එක වැදගත්, මේකෙන් වැඩේ නතර වෙනවා
     }
 
     // 2. SweetAlert හරහා තහවුරු කරගැනීම
@@ -756,11 +764,15 @@ async function deleteItemFromSupabase(itemId) {
         cancelButtonText: 'එපා'
     });
 
+    // 3. පරිශීලකයා OK කළොත් විතරක් Supabase එකෙන් මකන්න
     if (result.isConfirmed) {
-        // 3. Supabase එකෙන් මකා දැමීම
-        await deleteItemFromSupabase(itemId);
+        try {
+            await deleteItemFromSupabase(itemId);
+        } catch (error) {
+            console.error("Delete අසාර්ථකයි:", error);
+        }
     }
-
+}
 
 
 
@@ -969,9 +981,22 @@ window.addEventListener('load', function() {
     history.replaceState({ pageId: startPage }, "", "#" + startPage);
 });
 
-window.onload = function() {
-    initApp();
-};
+// 2. අන්තිමට initApp එක
+    async function initApp() {
+        console.log("App පටන් ගන්නවා...");
+        const cachedData = localStorage.getItem('app_data_cache');
+        if (cachedData) {
+            appData = JSON.parse(cachedData);
+            updateUI(); 
+        }
+        await loadCategoriesFromCloud();
+    }
+
+    // 3. මේක තමයි අන්තිම පේළිය විය යුත්තේ
+    window.addEventListener('DOMContentLoaded', (event) => {
+        initApp();
+    });
+
 
     </script>
 </body>
