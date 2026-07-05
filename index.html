@@ -97,6 +97,7 @@
             <h2 class="text-xl font-bold text-center flex-1">Select Item</h2>
             <button id="admin-add-item" onclick="openAddModal('item')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
         </div>
+        
         <div id="breadcrumb-item" class="text-xs bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg mb-3 font-semibold"></div>
         <p class="admin-tip text-center text-xs text-red-500 font-semibold mb-3 hidden">💡 PC: Right-Click | Mobile: Long Press to Edit/Delete</p>
         
@@ -250,15 +251,18 @@
     let activeMenuTarget = null; 
     let currentModalMode = null;
 
+
+
     function initApp() {
     console.log("App initializing...");
 
     // 1. කලින් සේව් කරපු නමක් තියෙනවද බලන්න
-    let savedName = localStorage.getItem('temp_item_name');
-    if (savedName) {
-        console.log("Found saved name:", savedName);
-        // මෙතන ඔයාට අවශ්‍ය තැනට ඒ නම යවන්න (උදා: displayTitle(savedName))
-    }
+    // පේජ් එක ලෝඩ් වෙද්දී කලින් තියෙන දත්ත පෙන්වන්න (UI එක පාලු නැති වෙන්න)
+let savedData = localStorage.getItem('my_app_data');
+if (savedData) {
+    appData = JSON.parse(savedData);
+    updateUI(); // දත්ත ටික ඉක්මනට UI එකට දාන්න
+}
 
     // 2. Cloud එකෙන් දත්ත ගන්න
     loadCategoriesFromCloud();
@@ -268,9 +272,28 @@
 
     
 // 3. UI Update (එකම එක ෆන්ක්ෂන් එකක්)
-    function updateUI() {
-        console.log("UI Updated: දත්ත ලැබුණා.");
-    }
+   function updateUI() {
+    const container = document.getElementById('items-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    appData.items.forEach(item => {
+        // අයිතමයේ නම සහ ID එක පේන්න ඕනේ
+        console.log("Button එකක් හදනවා: නම -", item.name, "ID -", item.id);
+
+        const btn = document.createElement('button');
+        btn.innerText = "Delete " + (item.name || "No Name");
+        btn.className = "bg-red-500 text-white p-2 m-1 rounded";
+        
+        // අනිවාර්යයෙන්ම item.id එක උඩ විදියට පාස් කරන්න
+        btn.onclick = function() {
+            triggerDelete(item.id);
+        };
+        
+        container.appendChild(btn);
+    });
+}
+
 
 
 
@@ -304,30 +327,67 @@
        
 async function loadCategoriesFromCloud() {
     try {
-        // ID එක හරියටම "main_structure" ද කියලා බලන්න
         const res = await fetchSupabase('/app_categories?id=eq.main_structure');
-        
         console.log("Supabase Data Response:", res); 
 
-        if (res && res.length > 0 && res[0].structure_data) {
-            let rawData = res[0].structure_data;
-            appData.items = rawData.items || [];
-            appData.brands = rawData.brands || [];
-            appData.models = rawData.models || [];
+        // දත්ත ඇවිල්ලා තියෙනවාද බලන්න
+        if (res && res.length > 0) {
+            // මෙන්න මෙතන තමයි වැදගත්ම තැන:
+            // සමහර වෙලාවට res[0] ඇතුලේ කෙලින්ම structure_data තියෙනවා
+            let rawData = res[0].structure_data; 
             
-            // දැන් පේජ් එක update කරන්න function එක call කරන්න
-            updateUI(); 
+            // rawData එකත් object එකක්ද කියලා බලමු
+            if (rawData) {
+                appData.items = rawData.items || [];
+                appData.brands = rawData.brands || [];
+                appData.models = rawData.models || [];
+                
+                console.log("Items loaded:", appData.items);
+                updateUI(); 
+            } else {
+                console.error("structure_data එක හිස්!");
+            }
         } else {
-            console.warn("Database එකේ structure_data එකක් නැහැ, හෝ ID එක වැරදියි.");
+            console.warn("Database එකේ දත්ත නැහැ.");
         }
     } catch (e) {
         console.error("Database connection error:", e);
     }
 }
 
+// මේක අලුතින්ම දාගන්න
+async function saveCategoriesToCloud(newCategoryName) {
+    try {
+        console.log("Saving category:", newCategoryName);
+        
+        // 1. දැනට තියෙන දත්ත ගන්න
+        const { data: currentData, error: fetchError } = await sbClient
+            .from('app_categories')
+            .select('structure_data')
+            .eq('id', 'main_structure')
+            .single();
 
+        if (fetchError) throw fetchError;
 
+        // 2. JSON එකට අලුත් අයිතමය එකතු කරන්න
+        let updatedData = currentData.structure_data;
+        updatedData.items.push({ id: 'id_' + Date.now(), name: newCategoryName });
 
+        // 3. Database එකට Update කරන්න
+        const { error: updateError } = await sbClient
+            .from('app_categories')
+            .update({ structure_data: updatedData })
+            .eq('id', 'main_structure');
+
+        if (updateError) throw updateError;
+
+        alert("Category saved successfully!");
+        loadCategoriesFromCloud(); // UI එක refresh කරන්න
+    } catch (err) {
+        console.error("Save Error:", err.message);
+        alert("Error saving: " + err.message);
+    }
+}
 
 
 
@@ -708,11 +768,17 @@ async function deleteItemFromSupabase(itemId) {
     }
 }
 
+
+
 // 2. Trigger ෆන්ක්ෂන් එක (මේක තමයි උඹේ බොත්තමට සම්බන්ධ වෙන්නේ)
 async function triggerDelete(itemId) {
-    // ID එක හරියට එනවාද කියලා බලන්න
-    if (!itemId || itemId === 'undefined') {
-        console.error("Invalid Item ID");
+    // 1. දත්ත පරීක්ෂාව
+    console.log("TriggerDelete ලැබුණු ID:", itemId);
+
+    // ID එක ඇත්තටම තියෙනවද කියලා බලන්න
+    if (!itemId || itemId === 'undefined' || itemId === null || itemId === '') {
+        console.error("Delete කරන බොත්තමේ ID එක වැරදියි!");
+        alert("මේ අයිතමයට අදාල ID එකක් නැත, මකන්න බැහැ!");
         return;
     }
 
@@ -727,6 +793,7 @@ async function triggerDelete(itemId) {
     });
 
     if (result.isConfirmed) {
+        // මෙතන අර මකන ෆන්ක්ෂන් එක කෝල් කරන්න
         await deleteItemFromSupabase(itemId);
     }
 }
@@ -879,42 +946,16 @@ async function openProductDetailLive(modelItem) {
 
 
 
-async function saveCategoriesToCloud(newCategoryName) {
-    try {
-        // 1. මුලින්ම දැනට තියෙන structure_data එක ගන්න
-        const { data: currentData, error: fetchError } = await sbClient
-            .from('app_categories')
-            .select('structure_data')
-            .eq('id', 'main_structure')
-            .single();
-
-        if (fetchError) throw fetchError;
-
-        // 2. JSON දත්ත ටික අලුත් කරන්න
-        let updatedData = currentData.structure_data;
-        
-        // අලුත් අයිතමය array එකට push කරන්න
-        updatedData.items.push({ 
-            id: 'id_' + Date.now(), 
-            name: newCategoryName 
-        });
-
-        // 3. Database එකට ආයේ update කරන්න
-        const { error: updateError } = await sbClient
-            .from('app_categories')
-            .update({ structure_data: updatedData })
-            .eq('id', 'main_structure');
-
-        if (updateError) throw updateError;
-
-        console.log("Category saved successfully!");
-        
-        
-        // 4. UI එක Refresh කරන්න
-        loadCategoriesFromCloud(); 
-    } catch (err) {
-        console.error("Error updating category:", err.message);
-        alert("Error: " + err.message);
+async function loadCategoriesFromCloud() {
+    const { data, error } = await sbClient
+        .from('app_categories')
+        .select('structure_data')
+        .eq('id', 'main_structure')
+        .single();
+    
+    if (data) {
+        appData = data.structure_data; // මෙතනින් තමයි global appData එක Update වෙන්නේ
+        updateUI(); // ඊට පස්සේ තමයි UI එක Update වෙන්න ඕනේ
     }
 }
 
