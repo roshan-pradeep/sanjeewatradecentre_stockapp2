@@ -303,7 +303,7 @@
 
 
 
-   // දත්ත ගන්න
+   // දත්ත ලෝඩ් කිරීමට
 async function loadCategoriesFromCloud() {
     try {
         const { data, error } = await sbClient
@@ -322,7 +322,11 @@ async function loadCategoriesFromCloud() {
     }
 }
 
-// දත්ත Save කරන්න
+
+
+
+
+// දත්ත Save කිරීමට
 async function saveCategoriesToCloud() {
     try {
         const { error } = await sbClient
@@ -340,55 +344,6 @@ async function saveCategoriesToCloud() {
 
 
        
-async function loadCategoriesFromCloud() {
-    try {
-        const { data, error } = await sbClient
-            .from('app_categories')
-            .select('structure_data')
-            .eq('id', 'main_structure')
-            .maybeSingle(); // දෝෂ වළක්වා ගැනීමට මෙය පාවිච්චි කරන්න
-
-        if (error) throw error;
-
-        if (data && data.structure_data) {
-            appData = data.structure_data;
-            updateUI();
-        }
-    } catch (e) {
-        console.error("Database connection error:", e);
-    }
-}
-
-
-
-
-
-async function loadCategoriesFromCloud() {
-    try {
-        const { data, error } = await sbClient
-            .from('app_categories')
-            .select('structure_data')
-            .eq('id', 'main_structure')
-            .maybeSingle(); // දෝෂ වළක්වා ගැනීමට මෙය පාවිච්චි කරන්න
-
-        if (error) throw error;
-
-        if (data && data.structure_data) {
-            appData = data.structure_data;
-            updateUI();
-        }
-    } catch (e) {
-        console.error("Database connection error:", e);
-    }
-}
-
-
-
-
-
-        
-
-
 
 
 
@@ -413,34 +368,46 @@ async function loadCategoriesFromCloud() {
 
 
         async function handleSecureLogin() {
-            const phone = document.getElementById('login-phone').value.trim();
-            const pass = document.getElementById('login-pass').value.trim();
+    const phone = document.getElementById('login-phone').value.trim();
+    const pass = document.getElementById('login-pass').value.trim();
 
-            if (!phone) { showAlert('කרוණාකර අංකය ඇතුළත් කරන්න!', 'error'); return; }
+    if (!phone) { showAlert('කරුණාකර අංකය ඇතුළත් කරන්න!', 'error'); return; }
 
-            const staffCheck = await fetchSupabase(`/allowed_staff?phone_number=eq.${phone}`);
-            const isRegisteredStaff = staffCheck && staffCheck.length > 0;
+    try {
+        // අලුත් SDK ක්‍රමය:
+        const { data: staffCheck, error } = await sbClient
+            .from('allowed_staff')
+            .select('*')
+            .eq('phone_number', phone);
 
-            if (currentLoginMode === 'admin') {
-                if (isRegisteredStaff) {
-                    showAlert("🚫 ඔබ Staff සාමාජිකයෙකු ලෙස හඳුනාගෙන ඇත! Staff මෝඩ් එකෙන් ලොග් වන්න.", "warning");
-                    switchLoginMode('staff');
-                    return;
-                }
-                if (phone === '0712345678' && pass === 'Admin@123') { 
-                    currentRole = 'admin';
-                    localStorage.setItem('sanjeewa_role', 'admin'); 
-                    setupAdminUI(); navigateTo('page-home');
-                } else { showAlert('ඇඩ්මින් දත්ත වැරදියයි!', 'error'); }
-            } else {
-                if (isRegisteredStaff) {
-                    currentRole = 'staff';
-                    localStorage.setItem('sanjeewa_role', 'staff');
-                    setupAdminUI(); navigateTo('page-home');
-                } else { showAlert('මෙම අංකය ලියාපදිංචි කර නොමැත!', 'error'); }
+        if (error) throw error;
+
+        const isRegisteredStaff = staffCheck && staffCheck.length > 0;
+
+        if (currentLoginMode === 'admin') {
+            if (isRegisteredStaff) {
+                showAlert("🚫 ඔබ Staff සාමාජිකයෙකු ලෙස හඳුනාගෙන ඇත! Staff මෝඩ් එකෙන් ලොග් වන්න.", "warning");
+                switchLoginMode('staff');
+                return;
             }
+            // Admin login - (මෙහි තවදුරටත් supabase පාවිච්චි නොකරන නිසා මේ ටික හොඳයි)
+            if (phone === '0712345678' && pass === 'Admin@123') { 
+                currentRole = 'admin';
+                localStorage.setItem('sanjeewa_role', 'admin'); 
+                setupAdminUI(); navigateTo('page-home');
+            } else { showAlert('ඇඩ්මින් දත්ත වැරදියයි!', 'error'); }
+        } else {
+            if (isRegisteredStaff) {
+                currentRole = 'staff';
+                localStorage.setItem('sanjeewa_role', 'staff');
+                setupAdminUI(); navigateTo('page-home');
+            } else { showAlert('මෙම අංකය ලියාපදිංචි කර නොමැත!', 'error'); }
         }
-
+    } catch (err) {
+        console.error("Login Error:", err.message);
+        showAlert('ලොගින් වීමේ දෝෂයක් සිදුවිය!', 'error');
+    }
+}
 
 
 
@@ -469,23 +436,33 @@ async function loadCategoriesFromCloud() {
 
 
 
-        // 🛠️ FIX: WhatsApp ආරාධනා මොඩියුලය
-        async function generateStaffLinkWhatsApp() {
-            const staffPhone = document.getElementById('new-staff-phone').value.trim();
-            if(!staffPhone) { showAlert('කරුණාකර දුරකථන අංකයක් ඇතුළත් කරන්න!', 'warning'); return; }
-            
-            await fetchSupabase('/allowed_staff', 'POST', { phone_number: staffPhone });
-            let currentUrl = window.location.href.split('?')[0];
-            const message = `Sanjeewa Trade Centre: ඔයාව Stock App එකට ඇතුළත් කළා. ඇප් ලින්ක් එක: ${currentUrl}`;
-            
-            // WhatsApp Click to Chat API Integration
-            let formattedPhone = staffPhone;
-            if(formattedPhone.startsWith('0')) {
-                formattedPhone = '94' + formattedPhone.substring(1);
-            }
-            window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, '_blank');
-        }
+        // 🛠️ FIX: WhatsApp ආරාධනා මොඩියුලය (අලුත් SDK ක්‍රමය)
+async function generateStaffLinkWhatsApp() {
+    const staffPhone = document.getElementById('new-staff-phone').value.trim();
+    if(!staffPhone) { showAlert('කරුණාකර දුරකථන අංකයක් ඇතුළත් කරන්න!', 'warning'); return; }
+    
+    try {
+        // අලුත් SDK ක්‍රමය:
+        const { error } = await sbClient
+            .from('allowed_staff')
+            .insert([{ phone_number: staffPhone }]); // POST වෙනුවට insert
 
+        if (error) throw error;
+
+        let currentUrl = window.location.href.split('?')[0];
+        const message = `Sanjeewa Trade Centre: ඔයාව Stock App එකට ඇතුළත් කළා. ඇප් ලින්ක් එක: ${currentUrl}`;
+        
+        let formattedPhone = staffPhone;
+        if(formattedPhone.startsWith('0')) {
+            formattedPhone = '94' + formattedPhone.substring(1);
+        }
+        window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, '_blank');
+        
+    } catch (err) {
+        console.error("WhatsApp Link Error:", err.message);
+        showAlert('❌ දත්ත සේව් කිරීමේ දෝෂයක්!', 'error');
+    }
+}
 
 
 
@@ -796,8 +773,7 @@ async function triggerDelete(itemId) {
 
 
 
-       // Live Realtime Dynamic Synchronizer Engine for Stock Profiles
-async function openProductDetailLive(modelItem) {
+       async function openProductDetailLive(modelItem) {
     currentModelId = modelItem.id;
     document.getElementById('detail-model-title').innerText = modelItem.name;
     
@@ -809,42 +785,47 @@ async function openProductDetailLive(modelItem) {
 
     navigateTo('page-detail');
 
-    // ⚡ [CACHE FIX] මෙතනදී අපි කලින් හදපු fetchSupabase එකෙන් අලුත්ම දත්ත ගන්නවා.
-    // fetchSupabase එක ඇතුලේ අපි _t=${new Date().getTime()} දාලා තියෙන නිසා අලුත්ම දත්ත එනවා.
-    const res = await fetchSupabase(`/items_stock?model_id=eq.${currentModelId}`);
-    
-    if(res && res.length > 0) {
-        const profile = res[0];
-        
-        // Data ආව ගමන් UI එක update වෙනවා
-        document.getElementById('product-img').src = profile.image_url || "https://via.placeholder.com/300?text=No+Image";
-        document.getElementById('view-retail').innerText = parseFloat(profile.retail_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
-        document.getElementById('view-discount').innerText = profile.discount || "0";
-        document.getElementById('view-cost').innerText = parseFloat(profile.cost_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
-        
-        // Admin inputs ටික පුරවනවා
-        document.getElementById('input-img-url').value = profile.image_url || '';
-        document.getElementById('input-retail').value = profile.retail_price || '';
-        document.getElementById('input-discount').value = profile.discount || '';
-        
-        tempColorStockList = profile.color_qty_json || {};
-        renderColorStockOutputs(tempColorStockList);
-        
-        // Low stock alert එක චෙක් කරනවා
-        if (typeof checkLowStockAlertSystem === 'function') {
-            checkLowStockAlertSystem(modelItem.name, tempColorStockList);
+    // ⚡ අලුත් SDK ක්‍රමය:
+    try {
+        const { data, error } = await sbClient
+            .from('items_stock')
+            .select('*')
+            .eq('model_id', currentModelId)
+            .maybeSingle(); // එක රිසල්ට් එකක් විතරක් ගන්න
+
+        if (error) throw error;
+
+        if (data) {
+            const profile = data;
+            
+            document.getElementById('product-img').src = profile.image_url || "https://via.placeholder.com/300?text=No+Image";
+            document.getElementById('view-retail').innerText = parseFloat(profile.retail_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
+            document.getElementById('view-discount').innerText = profile.discount || "0";
+            document.getElementById('view-cost').innerText = parseFloat(profile.cost_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
+            
+            document.getElementById('input-img-url').value = profile.image_url || '';
+            document.getElementById('input-retail').value = profile.retail_price || '';
+            document.getElementById('input-discount').value = profile.discount || '';
+            
+            tempColorStockList = profile.color_qty_json || {};
+            renderColorStockOutputs(tempColorStockList);
+            
+            if (typeof checkLowStockAlertSystem === 'function') {
+                checkLowStockAlertSystem(modelItem.name, tempColorStockList);
+            }
+        } else {
+            // Data නැත්නම්
+            document.getElementById('product-img').src = "https://via.placeholder.com/300?text=No+Image";
+            document.getElementById('view-retail').innerText = "0.00";
+            document.getElementById('view-cost').innerText = "0.00";
+            document.getElementById('view-qty-colors').innerHTML = "<span class='text-red-500'>No data found.</span>";
+            
+            document.getElementById('input-img-url').value = '';
+            document.getElementById('input-retail').value = '';
+            document.getElementById('input-discount').value = '';
         }
-    } else {
-        // Data නැත්නම් මෙහෙම පෙන්වනවා
-        document.getElementById('product-img').src = "https://via.placeholder.com/300?text=No+Image";
-        document.getElementById('view-retail').innerText = "0.00";
-        document.getElementById('view-cost').innerText = "0.00";
-        document.getElementById('view-qty-colors').innerHTML = "<span class='text-red-500'>No data found.</span>";
-        
-        // Inputs reset කරනවා
-        document.getElementById('input-img-url').value = '';
-        document.getElementById('input-retail').value = '';
-        document.getElementById('input-discount').value = '';
+    } catch (err) {
+        console.error("Detail Load Error:", err.message);
     }
 }
         function renderColorStockOutputs(colorsJson) {
