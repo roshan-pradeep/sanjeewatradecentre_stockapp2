@@ -4,11 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sanjeewa Trade Centre - Stock App</title>
-    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
-     
     <style>
         /* 📱 බටන් එකක් ලෝන්ග් ප්‍රෙස් කලාම (ඔබන් හිටියාම) පොඩි ඇනිමේෂන් එකක් එන්න දාපු ස්ටයිල් එක */
         .long-press-active { transform: scale(0.95); opacity: 0.8; transition: 0.1s; }
@@ -16,7 +15,7 @@
         .no-select { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
     </style>
 </head>
-<body class="bg-gray-100 font-sans text-gray-800 no-select" onload="window.addEventListener">
+<body class="bg-gray-100 font-sans text-gray-800 no-select" onload="initApp()">
 
     <div id="custom-context-menu" class="hidden absolute bg-white shadow-2xl border rounded-xl py-2 w-40 z-50 transition-all">
         <button id="menu-rename-btn" onclick="triggerRename()" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 font-semibold flex items-center gap-2 text-blue-600">
@@ -27,21 +26,16 @@
         </button>
     </div>
 
-
-
     <div id="custom-input-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-100">
             <h3 id="modal-title" class="text-lg font-bold text-gray-800 mb-4">Add New Item</h3>
-            <input type="text" id="category-name-input" class="border p-2 w-full" placeholder="Enter name...">
+            <input type="text" id="modal-input-field" placeholder="Enter name here..." class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4">
             <div class="flex gap-3 justify-end">
                 <button onclick="closeInputModal()" class="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-xl text-sm">Cancel</button>
                 <button id="modal-save-btn" onclick="handleModalSave()" class="px-5 py-2 bg-blue-600 text-white font-bold rounded-xl text-sm hover:bg-blue-700 transition">Save 💾</button>
             </div>
         </div>
     </div>
-
-
-
 
     <div id="page-login" class="flex flex-col items-center justify-center min-h-screen p-4">
         <div class="bg-white p-6 rounded-2xl shadow-lg w-full max-w-sm">
@@ -102,18 +96,13 @@
             <h2 class="text-xl font-bold text-center flex-1">Select Item</h2>
             <button id="admin-add-item" onclick="openAddModal('item')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
         </div>
-        
         <div id="breadcrumb-item" class="text-xs bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg mb-3 font-semibold"></div>
         <p class="admin-tip text-center text-xs text-red-500 font-semibold mb-3 hidden">💡 PC: Right-Click | Mobile: Long Press to Edit/Delete</p>
         
         <div class="mb-4">
             <input type="text" id="item-search" oninput="searchItems()" placeholder="Search Item (e.g. TV, Fridge)..." class="w-full p-3 border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
         </div>
-       <div id="items-list" class="grid grid-cols-2 gap-4"></div>
-   </div>
-    </div>
-
-    
+        <div id="item-container" class="grid grid-cols-2 gap-4"></div>
     </div>
 
     <div id="page-brand" class="hidden p-4 min-h-screen">
@@ -127,7 +116,6 @@
         <div id="brand-container" class="grid grid-cols-2 gap-4"></div>
     </div>
 
-   </div>
     <div id="page-model" class="hidden p-4 min-h-screen">
         <div class="flex justify-between items-center mb-2">
             <button onclick="navigateTo('page-brand')" class="text-blue-600 font-bold">⬅ Back</button>
@@ -144,14 +132,14 @@
 
     <div id="page-detail" class="hidden max-w-5xl mx-auto p-4 transition-all duration-300">
     <div id="breadcrumb-detail" class="text-xs text-gray-500 mb-4 bg-gray-50 p-3 rounded-xl border border-gray-100 font-medium"></div>
-     <button onclick="syncProductToDatabase()">Save Changes</button>
+
     <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
         
         <div class="md:col-span-5 bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center">
             <h3 id="detail-model-title" class="text-xl font-black text-gray-800 mb-4 text-center tracking-wide">Model Name</h3>
             
             <div class="w-full aspect-square max-w-[240px] bg-gray-50 rounded-2xl overflow-hidden border border-gray-200/60 mb-6 flex items-center justify-center shadow-inner relative group">
-                <img id="product-img" src="https://placehold.co/300?text=No+Image" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+                <img id="product-img" src="https://via.placeholder.com/300?text=No+Image" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
             </div>
 
             <div class="w-full space-y-3 bg-gradient-to-br from-gray-50 to-gray-100/50 p-4 rounded-2xl border border-gray-100">
@@ -238,149 +226,124 @@
         </div>
     </div>
 
-<div id="success-msg" class="hidden bg-green-500 text-white p-4 rounded mb-4">
-    Category saved successfully!
-</div>
-   
-    
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-    // 1. Supabase Initialization (මේක එකම එක සැරයයි!)
-    const SUPABASE_URL = 'https://ttviyfggsmiaemtbawvg.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz';
-    const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    <script>
+        // ☁️ Supabase Configuration
+        const SUPABASE_URL = "https://ttviyfggsmiaemtbawvg.supabase.co/rest/v1/";
+        const SUPABASE_KEY = "sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz";
+        
 
-    console.log("Supabase initialized!");
+        let currentRole = 'staff';       
+        let currentLoginMode = 'staff';  
+        let currentModelId = '';         
+        let liveDatabaseStock = {};      
+        
+        // 🛠️ Structural Variables (Company ඉවත් කර සකස් කරන ලදී)
+        let selectedItemId = '';
+        let selectedBrandId = '';
 
-    // 2. Global Variables
-    let currentRole = 'guest';
-    let appData = { items: [], brands: [], models: [] };
-    let selectedItemId = null; 
-    let selectedBrandId = null;
-    let currentModelId = null;
-    let activeMenuTarget = null; 
-    let currentModalMode = null;
+        let appData = { items: [], brands: [], models: [] };
+        let activeMenuTarget = { type: null, item: null }; 
+        let currentModalMode = 'add'; 
+        let tempColorStockList = {}; // Temporary holding container for color configurations
 
-
-
-   // මේ විදියට ඔක්කොම ෆන්ක්ෂන් පස්සේ තියන්න
-async function initApp() {
-    const cachedData = localStorage.getItem('app_data_cache');
-    if (cachedData) {
-        appData = JSON.parse(cachedData);
-        updateUI(); 
-    }
-    await loadCategoriesFromCloud();
-}
-
-// මේක අනිවාර්යයෙන්ම දාන්න
-window.onload = initApp;
-    
-// මේ විදියට Window එකට මේ ෆන්ක්ෂන් එක Assign කරන්න
-window.triggerDelete = async function(itemId) {
-    console.log("Makenna yanne me ID eka:", itemId);
-    if (!itemId) return;
-
-    const result = await Swal.fire({
-        title: 'Me item eka delete karannada?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Ow, delete karanna!'
-    });
-
-    if (result.isConfirmed) {
-        // Mehe sbClient kiyana eka hariyata use karanna
-        try {
-            const { error } = await sbClient
-                .from('items_stock')
-                .delete()
-                .eq('model_id', itemId); // Table eke thiyenne 'model_id'
-
-            if (error) throw error;
-            
-            Swal.fire('Success!', 'Item eka delete una.', 'success');
-            // Data aye load karanna
-            await loadDataFromSupabase(); 
-        } catch (err) {
-            Swal.fire('Error!', err.message, 'error');
+        // 🌐 Cloud Database Connector Engine (Cache බයිපාස් කරන විදිහට හැදුවා)
+async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = false) {
+    const options = {
+        method: method,
+        headers: { 
+            "apikey": SUPABASE_KEY, 
+            "Authorization": `Bearer ${SUPABASE_KEY}`, 
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache", // ⚡ මෙන්න මේක තමයි වැදගත්! පරණ ඩේටා ගන්න එපා කියන එක.
+            "Pragma": "no-cache"
         }
-    }
-};
-
-// UI eka update karanna
-function updateUI() {
-    const container = document.getElementById('items-list');
+    };
     
-    // මේකෙන් අර "අයියෝ" කියන Error එක නතර වෙනවා
-    if (!container) {
-        console.log("Container එක තවම ලෝඩ් වෙලා නෑ, ටිකක් ඉමු...");
-        return; 
+    if (isUpsert) {
+        options.headers["Prefer"] = "resolution=merge-duplicates"; 
     }
-    container.innerHTML = '';
-
-    appData.items.forEach(item => {
-        // Database eke thiyena colum name eka 'model_id'
-        const itemId = item.model_id; 
-        const itemName = item.model_name || "No Name";
-
-        const btn = document.createElement('button');
-        btn.innerText = "Delete " + itemName;
-        btn.className = "bg-red-500 text-white p-2 m-1 rounded";
-        btn.onclick = () => window.triggerDelete(itemId);
-        container.appendChild(btn);
-    });
-}
-
-
-   async function loadCategoriesFromCloud() {
+    
+    if (body) options.body = JSON.stringify(body);
+    
     try {
-        const { data, error } = await sbClient.from('items_stock').select('*');
-        if (error) throw error;
-
-        if (data) {
-            appData.items = data;
-            
-            // මේකෙන් කරන්නේ HTML එක හැදුනාට පස්සේ updateUI එක දුවන එක
-            setTimeout(() => {
-                updateUI();
-            }, 500); // මිලි තත්පර 500ක් ඉඳලා බලන්න
+        // GET රික්වෙස්ට් එකක් නම් අලුත්ම දත්ත ගන්න timestamp එකක් අමුණනවා (Cache බිඳින්න)
+        let url = `${SUPABASE_URL}/rest/v1${endpoint}`;
+        if (method === 'GET') {
+            const separator = url.includes('?') ? '&' : '?';
+            url += `${separator}_t=${new Date().getTime()}`;
         }
-    } catch (e) {
-        console.error("Load Error:", e.message);
+
+        const response = await fetch(url, options);
+        if (response.status === 201 || response.status === 204) return { success: true };
+        return await response.json();
+    } catch (err) { 
+        console.error("Supabase Fetch Error:", err);
+        return null; 
     }
 }
 
+        async function saveCategoriesToCloud() {
+            const payload = { id: "main_structure", structure_data: appData };
+            await fetchSupabase('/app_categories', 'POST', payload, true);
+        }
 
 
 
-// දත්ත Save කිරීමට
-async function saveCategoriesToCloud() {
+
+       async function loadCategoriesFromCloud() {
+    if (!sbClient) {
+        console.error("sbClient නැත!");
+        return;
+    }
     try {
-        const { error } = await sbClient
-            .from('app_categories')
-            .update({ structure_data: appData })
-            .eq('id', 'main_structure');
-
+        const { data, error } = await sbClient
+            .from('items_stock')
+            .select('*');
+        
         if (error) throw error;
-        console.log("Database update success!");
-    } catch (e) {
-        console.error("Save Error:", e.message);
+        
+        renderButtons('category', data, 'category-container'); 
+    } catch (err) {
+        console.error("Data ගත්තේ නැහැ:", err);
     }
 }
 
+// Global variable එකක් විදියට උඩින්ම තියන්න
+let sbClient; 
+
+// ඊට පස්සේ මේක දුවන්න
+sbClient = supabase.createClient('URL', 'KEY');
+console.log("Supabase initialized!");
 
 
-       
+        async function initApp() {
+    console.log("App පටන් ගන්නවා...");
+    
+    // 1. Role එක බලන්න
+    const savedRole = localStorage.getItem('sanjeewa_role');
+    if (savedRole) currentRole = savedRole;
+    
+    setupAdminUI();
 
+    // 2. මෙතනදී sbClient එක අනිවාර්යයෙන්ම තියෙන්න ඕනේ
+    if (sbClient) {
+        await loadCategoriesFromCloud();
+    } else {
+        console.error("Supabase තවම සූදානම් නැහැ!");
+    }
 
+    // 3. Navigation
+    if (savedRole) {
+        navigateTo('page-home');
+    } else {
+        navigateTo('page-login');
+    }
+}
 
         function revealAdminMode() {
             document.getElementById('login-mode-container').classList.remove('hidden');
             switchLoginMode('admin');
         }
-
-
-
 
         function switchLoginMode(mode) {
             currentLoginMode = mode;
@@ -391,53 +354,34 @@ async function saveCategoriesToCloud() {
             document.getElementById('login-sub-title').innerText = mode === 'admin' ? "Admin Portal" : "Staff Portal";
         }
 
-
-
-
         async function handleSecureLogin() {
-    const phone = document.getElementById('login-phone').value.trim();
-    const pass = document.getElementById('login-pass').value.trim();
+            const phone = document.getElementById('login-phone').value.trim();
+            const pass = document.getElementById('login-pass').value.trim();
 
-    if (!phone) { showAlert('කරුණාකර අංකය ඇතුළත් කරන්න!', 'error'); return; }
+            if (!phone) { showAlert('කרוණාකර අංකය ඇතුළත් කරන්න!', 'error'); return; }
 
-    try {
-        // අලුත් SDK ක්‍රමය:
-        const { data: staffCheck, error } = await sbClient
-            .from('allowed_staff')
-            .select('*')
-            .eq('phone_number', phone);
+            const staffCheck = await fetchSupabase(`/allowed_staff?phone_number=eq.${phone}`);
+            const isRegisteredStaff = staffCheck && staffCheck.length > 0;
 
-        if (error) throw error;
-
-        const isRegisteredStaff = staffCheck && staffCheck.length > 0;
-
-        if (currentLoginMode === 'admin') {
-            if (isRegisteredStaff) {
-                showAlert("🚫 ඔබ Staff සාමාජිකයෙකු ලෙස හඳුනාගෙන ඇත! Staff මෝඩ් එකෙන් ලොග් වන්න.", "warning");
-                switchLoginMode('staff');
-                return;
+            if (currentLoginMode === 'admin') {
+                if (isRegisteredStaff) {
+                    showAlert("🚫 ඔබ Staff සාමාජිකයෙකු ලෙස හඳුනාගෙන ඇත! Staff මෝඩ් එකෙන් ලොග් වන්න.", "warning");
+                    switchLoginMode('staff');
+                    return;
+                }
+                if (phone === '0712345678' && pass === 'Admin@123') { 
+                    currentRole = 'admin';
+                    localStorage.setItem('sanjeewa_role', 'admin'); 
+                    setupAdminUI(); navigateTo('page-home');
+                } else { showAlert('ඇඩ්මින් දත්ත වැරදියයි!', 'error'); }
+            } else {
+                if (isRegisteredStaff) {
+                    currentRole = 'staff';
+                    localStorage.setItem('sanjeewa_role', 'staff');
+                    setupAdminUI(); navigateTo('page-home');
+                } else { showAlert('මෙම අංකය ලියාපදිංචි කර නොමැත!', 'error'); }
             }
-            // Admin login - (මෙහි තවදුරටත් supabase පාවිච්චි නොකරන නිසා මේ ටික හොඳයි)
-            if (phone === '0712345678' && pass === 'Admin@123') { 
-                currentRole = 'admin';
-                localStorage.setItem('sanjeewa_role', 'admin'); 
-                setupAdminUI(); navigateTo('page-home');
-            } else { showAlert('ඇඩ්මින් දත්ත වැරදියයි!', 'error'); }
-        } else {
-            if (isRegisteredStaff) {
-                currentRole = 'staff';
-                localStorage.setItem('sanjeewa_role', 'staff');
-                setupAdminUI(); navigateTo('page-home');
-            } else { showAlert('මෙම අංකය ලියාපදිංචි කර නොමැත!', 'error'); }
         }
-    } catch (err) {
-        console.error("Login Error:", err.message);
-        showAlert('ලොගින් වීමේ දෝෂයක් සිදුවිය!', 'error');
-    }
-}
-
-
-
 
         function handleLogout() {
             currentRole = 'staff'; currentLoginMode = 'staff';
@@ -448,10 +392,6 @@ async function saveCategoriesToCloud() {
             setupAdminUI(); navigateTo('page-login');
         }
 
-
-
-
-
         function setupAdminUI() {
             const adminElements = ['admin-add-item', 'admin-add-brand', 'admin-add-model', 'admin-detail-controls', 'admin-staff-manager'];
             adminElements.forEach(id => {
@@ -460,101 +400,69 @@ async function saveCategoriesToCloud() {
             document.querySelectorAll('.admin-tip').forEach(el => el.classList.toggle('hidden', currentRole !== 'admin'));
         }
 
-
-
-
-        // 🛠️ FIX: WhatsApp ආරාධනා මොඩියුලය (අලුත් SDK ක්‍රමය)
-async function generateStaffLinkWhatsApp() {
-    const staffPhone = document.getElementById('new-staff-phone').value.trim();
-    if(!staffPhone) { showAlert('කරුණාකර දුරකථන අංකයක් ඇතුළත් කරන්න!', 'warning'); return; }
-    
-    try {
-        // අලුත් SDK ක්‍රමය:
-        const { error } = await sbClient
-            .from('allowed_staff')
-            .insert([{ phone_number: staffPhone }]); // POST වෙනුවට insert
-
-        if (error) throw error;
-
-        let currentUrl = window.location.href.split('?')[0];
-        const message = `Sanjeewa Trade Centre: ඔයාව Stock App එකට ඇතුළත් කළා. ඇප් ලින්ක් එක: ${currentUrl}`;
-        
-        let formattedPhone = staffPhone;
-        if(formattedPhone.startsWith('0')) {
-            formattedPhone = '94' + formattedPhone.substring(1);
+        // 🛠️ FIX: WhatsApp ආරාධනා මොඩියුලය
+        async function generateStaffLinkWhatsApp() {
+            const staffPhone = document.getElementById('new-staff-phone').value.trim();
+            if(!staffPhone) { showAlert('කරුණාකර දුරකථන අංකයක් ඇතුළත් කරන්න!', 'warning'); return; }
+            
+            await fetchSupabase('/allowed_staff', 'POST', { phone_number: staffPhone });
+            let currentUrl = window.location.href.split('?')[0];
+            const message = `Sanjeewa Trade Centre: ඔයාව Stock App එකට ඇතුළත් කළා. ඇප් ලින්ක් එක: ${currentUrl}`;
+            
+            // WhatsApp Click to Chat API Integration
+            let formattedPhone = staffPhone;
+            if(formattedPhone.startsWith('0')) {
+                formattedPhone = '94' + formattedPhone.substring(1);
+            }
+            window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, '_blank');
         }
-        window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, '_blank');
-        
-    } catch (err) {
-        console.error("WhatsApp Link Error:", err.message);
-        showAlert('❌ දත්ත සේව් කිරීමේ දෝෂයක්!', 'error');
-    }
-}
 
-
-
-
+        // 🛠️ Navigation Core Logic Engine (New Structured Layout Flow)
         function navigateTo(pageId) {
-    if (!window.isBackAction) {
-        history.pushState({ pageId: pageId }, "", "#" + pageId);
-    }
-    window.isBackAction = false;
-    
-    const contextMenu = document.getElementById('custom-context-menu');
-    if(contextMenu) contextMenu.classList.add('hidden');
-    
-    // සර්ච් බාර් පිරිසිදු කිරීම්
-    if(pageId === 'page-item') {
-        const el = document.getElementById('item-search');
-        if(el) el.value = '';
-    }
-    if(pageId === 'page-model') {
-        const el = document.getElementById('model-search');
-        if(el) el.value = '';
-    }
+            // navigateTo function එක ඇතුළේ මුලටම මේක දාන්න මචං:
+          if (!window.isBackAction) {
+              history.pushState({ pageId: pageId }, "", "#" + pageId);
+              }
+               window.isBackAction = false;
+            document.getElementById('custom-context-menu').classList.add('hidden');
+            
+            // සර්ච් බාර් පිරිසිදු කිරීම්
+            if(pageId === 'page-item') document.getElementById('item-search').value = ''; 
+            if(pageId === 'page-model') document.getElementById('model-search').value = ''; 
 
-    // පේජ් මාරු කිරීම
-    ['page-login', 'page-home', 'page-item', 'page-brand', 'page-model', 'page-detail'].forEach(p => {
-        const el = document.getElementById(p);
-        if(el) el.classList.add('hidden');
-    });
-    
-    const targetPage = document.getElementById(pageId);
-    if(targetPage) targetPage.classList.remove('hidden');
+            ['page-login', 'page-home', 'page-item', 'page-brand', 'page-model', 'page-detail'].forEach(p => {
+                const el = document.getElementById(p); if(el) el.classList.add('hidden');
+            });
+            document.getElementById(pageId).classList.remove('hidden');
 
-    if (typeof setupAdminUI === 'function') setupAdminUI();
+            setupAdminUI();
 
-    let itemName = (selectedItemId && appData.items.find(i => i.id === selectedItemId)) ? appData.items.find(i => i.id === selectedItemId).name : '';
-    let brandName = (selectedBrandId && appData.brands.find(b => b.id === selectedBrandId)) ? appData.brands.find(b => b.id === selectedBrandId).name : ''
+            let itemName = appData.items.find(i => i.id === selectedItemId)?.name || '';
+            let brandName = appData.brands.find(b => b.id === selectedBrandId)?.name || '';
 
-    // මෙතන අනිවාර්යයෙන්ම HTML එකේ තියෙන ID එකම දෙන්න:
-    
-    // 1. SELECT ITEM PAGE (දැන් 'items-list' පාවිච්චි කරමු)
-    if(pageId === 'page-item') {
-        const breadcrumb = document.getElementById('breadcrumb-item');
-        if(breadcrumb) breadcrumb.innerHTML = `📍 Location: <span class="text-orange-600 font-bold">Items Portfolio</span> /`;
-        renderButtons('item', appData.items || [], 'items-list', 'bg-orange-500');
-    }
-    
-    // 2. SELECT BRAND PAGE (මෙතනත් හරි ID එක දෙන්න)
-    if(pageId === 'page-brand') {
-        const breadcrumb = document.getElementById('breadcrumb-brand');
-        if(breadcrumb) breadcrumb.innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${itemName}</span> /`;
-        let filteredBrands = appData.brands.filter(b => b.itemId === selectedItemId);
-        renderButtons('brand', filteredBrands, 'brand-container', 'bg-blue-600');
-    }
-    
-    // 3. SELECT MODEL PAGE
-    if(pageId === 'page-model') {
-        const breadcrumb = document.getElementById('breadcrumb-model');
-        if(breadcrumb) breadcrumb.innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${itemName}</span> / <span class="text-blue-600 font-bold">${brandName}</span> /`;
-        let filteredModels = appData.models.filter(m => m.brandId === selectedBrandId);
-        renderButtons('model', filteredModels, 'model-container', 'bg-emerald-600');
-    }
-
-    localStorage.setItem('lastPage', pageId);
-}
-
+            // 1. SELECT ITEM PAGE
+            if(pageId === 'page-item') {
+                document.getElementById('breadcrumb-item').innerHTML = `📍 Location: <span class="text-orange-600 font-bold">Items Portfolio</span> /`;
+                renderButtons('item', appData.items || [], 'item-container', 'bg-orange-500');
+            }
+            // 2. SELECT BRAND PAGE (Filtered by Selected Item Connection)
+            if(pageId === 'page-brand') {
+                document.getElementById('breadcrumb-brand').innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${itemName}</span> /`;
+                let filteredBrands = appData.brands.filter(b => b.itemId === selectedItemId);
+                renderButtons('brand', filteredBrands, 'brand-container', 'bg-blue-600');
+            }
+            // 3. SELECT MODEL PAGE (Filtered by Selected Brand Connection)
+            if(pageId === 'page-model') {
+                document.getElementById('breadcrumb-model').innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${itemName}</span> / <span class="text-blue-600 font-bold">${brandName}</span> /`;
+                let filteredModels = appData.models.filter(m => m.brandId === selectedBrandId);
+                renderButtons('model', filteredModels, 'model-container', 'bg-emerald-600');
+            }
+            // 4. DETAILED SCREEN
+            if(pageId === 'page-detail') {
+                let modelName = appData.models.find(m => m.id === currentModelId)?.name || '';
+                document.getElementById('breadcrumb-detail').innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${itemName}</span> / <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-emerald-600 font-bold">${modelName}</span>`;
+            }
+        }
 
         // 🛠️ NEW: Item Realtime Live Search Logic
         function searchItems() {
@@ -563,9 +471,6 @@ async function generateStaffLinkWhatsApp() {
             renderButtons('item', filteredItems, 'item-container', 'bg-orange-500');
         }
 
-
-
-
         // Model Realtime Live Search Logic
         function searchModels() {
             let query = document.getElementById('model-search').value.toLowerCase().trim();
@@ -573,25 +478,9 @@ async function generateStaffLinkWhatsApp() {
             renderButtons('model', filteredModels, 'model-container', 'bg-emerald-600');
         }
 
-
-
-
         // Dynamic Custom Button Generator Engine
         function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
-    const container = document.getElementById(containerId);
-    
-    // 1. Container එක නැත්නම් වැඩේ නවත්වන්න
-    if (!container) {
-        console.warn("Container එක හම්බ වුනේ නැහැ:", containerId);
-        return;
-    }
-
-    // 2. දත්ත NULL හෝ හිස් නම් මේක පෙන්වන්න
-    if (!dataArray || dataArray.length === 0) {
-        container.innerHTML = `<p class="col-span-2 text-center text-gray-400 py-6 text-sm italic">කිසිවක් සොයාගත නොහැක.</p>`;
-        return;
-    }
-            container.innerHTML = '';
+            const container = document.getElementById(containerId); container.innerHTML = ''; 
             
             if(dataArray.length === 0) {
                 container.innerHTML = `<p class="col-span-2 text-center text-gray-400 py-6 text-sm italic">කිසිවක් සොයාගත නොහැක.</p>`;
@@ -600,7 +489,7 @@ async function generateStaffLinkWhatsApp() {
 
             dataArray.forEach(item => {
                 const btn = document.createElement('button');
-                btn.innerText = item ? item.name : 'Unknown';
+                btn.innerText = item.name;
                 btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none no-select transition-all shadow-md`;
                 
                 let pressTimer = null;
@@ -644,254 +533,156 @@ async function generateStaffLinkWhatsApp() {
             });
         }
 
+        function showCustomContextMenu(x, y, type, item) {
+            activeMenuTarget = { type: type, item: item };
+            const menu = document.getElementById('custom-context-menu');
+            menu.style.left = `${x}px`;
+            menu.style.top = `${y}px`;
+            menu.classList.remove('hidden');
+        }
 
-
-
-
-
-       function showCustomContextMenu(x, y, type, item) {
-    // 1. ආරක්ෂිතව target එක සෙට් කිරීම
-    if (!item) {
-        console.error("Error: Context menu එකට ලැබුණු item එක හිස්!");
-        return;
-    }
-    
-    activeMenuTarget = { type: type, item: item };
-    console.log("දැන් තෝරාගෙන තියෙන Item එක:", activeMenuTarget.item); // මේක Console එකේ පෙන්නනවද බලපන්!
-
-    const menu = document.getElementById('custom-context-menu');
-    if (menu) {
-        menu.style.left = `${x}px`;
-        menu.style.top = `${y}px`;
-        menu.classList.remove('hidden');
-    }
-}
-
-document.addEventListener('click', (e) => {
-    const menu = document.getElementById('custom-context-menu');
-    // Menu එකට පිටින් ක්ලික් කළොත් විතරක් හංගන්න
-    if (menu && !menu.contains(e.target)) {
-        menu.classList.add('hidden');
-    }
-});
-
-
-
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('custom-context-menu');
+            if(menu && !menu.contains(e.target)) menu.classList.add('hidden');
+        });
 
         // Modal Box Controller Systems
-function openAddModal(type) {
-    currentModalMode = 'add';
-    
-    // activeMenuTarget එක තියෙනවද බලන්න, නැත්නම් හදන්න
-    if (!activeMenuTarget) {
-        activeMenuTarget = {}; 
-    }
-    
-    activeMenuTarget.type = type;
-    
-    // මෙතන අනිත් ටිකත් අනිවාර්යයෙන්ම බලන්න (ID එකේ අකුරු වැරදිද කියලා)
-    const modalTitle = document.getElementById('modal-title');
-    const modalInput = document.getElementById('modal-input-field');
-    const modalContainer = document.getElementById('custom-input-modal');
-
-    if (modalTitle) modalTitle.innerText = `Add New ${type.toUpperCase()}`;
-    if (modalInput) modalInput.value = '';
-    if (modalContainer) modalContainer.classList.remove('hidden');
-}
-
-
-
-
-      function triggerRename() {
-    // 1. activeMenuTarget එකේ දත්ත තියෙනවද බලමු
-    if (!activeMenuTarget || !activeMenuTarget.item) {
-        console.error("අයියෝ! Rename කරන්න item එකක් තෝරලා නැහැ.");
-        return;
-    }
-
-    // උඹේ console එකේ පෙන්නුවේ model_id කියලා, ඒ නිසා ඒකම ගමු
-    const item = activeMenuTarget.item;
-    const idToUse = item.model_id; 
-    
-    console.log("Makenna yanne me ID eka:", idToUse);
-
-    // 2. Input field එක check කරමු
-    const inputField = document.getElementById('rename-input');
-    
-    if (inputField) {
-        inputField.value = item.model_name; // console එකේ තිබුනේ model_name
-    } else {
-        // Prompt එක පාවිච්චි කරනවා නම්
-        const newName = prompt("අලුත් නම මොකක්ද?", item.model_name);
-        
-        if (newName) {
-            console.log("Rename කරනවා ID:", idToUse, "අලුත් නම:", newName);
-            // මෙතනින් උඹේ Database update එක call කරන්න
-            // updateItemInDatabase(idToUse, newName); 
+        function openAddModal(type) {
+            currentModalMode = 'add';
+            activeMenuTarget.type = type;
+            document.getElementById('modal-title').innerText = `Add New ${type.toUpperCase()}`;
+            document.getElementById('modal-input-field').value = '';
+            document.getElementById('custom-input-modal').classList.remove('hidden');
         }
-    }
-}
 
-
-
+        function triggerRename() {
+            currentModalMode = 'rename';
+            document.getElementById('modal-title').innerText = `Rename ${activeMenuTarget.type.toUpperCase()}`;
+            document.getElementById('modal-input-field').value = activeMenuTarget.item.name;
+            document.getElementById('custom-input-modal').classList.remove('hidden');
+        }
 
         function closeInputModal() {
             document.getElementById('custom-input-modal').classList.add('hidden');
         }
 
-
-
         async function handleModalSave() {
-    // 1. නම ගන්න ඕනේ මෙන්න මේ variable එකට
-    const nameInput = document.getElementById('category-name-input').value;
-    
-    if (!nameInput || nameInput.trim() === "") {
-        alert("කරුණාකර නමක් ඇතුළත් කරන්න!");
-        return;
-    }
+            const nameValue = document.getElementById('modal-input-field').value.trim();
+            if(!nameValue) return;
 
-    // 2. මෙතන තමයි වැරැද්ද තිබ්බේ (nameValue වෙනුවට nameInput පාවිච්චි කරන්න)
-    if (currentModalMode === 'add') {
-        const newId = 'id_' + Date.now();
-        if (activeMenuTarget.type === 'item') {
-            appData.items.push({ id: newId, name: nameInput }); // nameInput දැම්මා
-        } else if (activeMenuTarget.type === 'brand') {
-            appData.brands.push({ id: newId, name: nameInput, itemId: selectedItemId });
-        } else if (activeMenuTarget.type === 'model') {
-            appData.models.push({ id: newId, name: nameInput, brandId: selectedBrandId });
+            if(currentModalMode === 'add') {
+                const newId = 'id_' + Date.now();
+                if(activeMenuTarget.type === 'item') {
+                    appData.items.push({ id: newId, name: nameValue });
+                } else if(activeMenuTarget.type === 'brand') {
+                    // 🛠️ Item එකට අදාළව Brand එක සේව් වේ
+                    appData.brands.push({ id: newId, name: nameValue, itemId: selectedItemId });
+                } else if(activeMenuTarget.type === 'model') {
+                    // Brand එකට අදාළව Model එක සේව් වේ
+                    appData.models.push({ id: newId, name: nameValue, brandId: selectedBrandId });
+                }
+            } else if(currentModalMode === 'rename') {
+                let itemObj = null;
+                if(activeMenuTarget.type === 'item') itemObj = appData.items.find(i => i.id === activeMenuTarget.item.id);
+                if(activeMenuTarget.type === 'brand') itemObj = appData.brands.find(b => b.id === activeMenuTarget.item.id);
+                if(activeMenuTarget.type === 'model') itemObj = appData.models.find(m => m.id === activeMenuTarget.item.id);
+                if(itemObj) itemObj.name = nameValue;
+            }
+
+            await saveCategoriesToCloud();
+            closeInputModal();
+            
+            // Refresh Active Interface Screen Template
+            if(activeMenuTarget.type === 'item') navigateTo('page-item');
+            if(activeMenuTarget.type === 'brand') navigateTo('page-brand');
+            if(activeMenuTarget.type === 'model') navigateTo('page-model');
+            showAlert('දත්ත සාර්ථකව යාවත්කාලීන කරන ලදී!', 'success');
         }
-    } else if (currentModalMode === 'rename') {
-        let itemObj = null;
-        if (activeMenuTarget.type === 'item') itemObj = appData.items.find(i => i.id === activeMenuTarget.item.id);
-        else if (activeMenuTarget.type === 'brand') itemObj = appData.brands.find(b => b.id === activeMenuTarget.item.id);
-        else if (activeMenuTarget.type === 'model') itemObj = appData.models.find(m => m.id === activeMenuTarget.item.id);
-        
-        if (itemObj) itemObj.name = nameInput; // මෙතනත් nameInput දැම්මා
-    }
 
-    try {
-        // දැන් දත්ත හරියට යයි
-        await saveCategoriesToCloud(); 
-        
-        closeInputModal();
-        
-        if (activeMenuTarget.type === 'item') navigateTo('page-item');
-        else if (activeMenuTarget.type === 'brand') navigateTo('page-brand');
-        else if (activeMenuTarget.type === 'model') navigateTo('page-model');
-        
-        showAlert('දත්ත සාර්ථකව යාවත්කාලීන කරන ලදී!', 'success');
-    } catch (error) {
-        console.error("Save Error:", error);
-        showAlert('❌ දත්ත සේව් වුණේ නැහැ!', 'error');
-    }
-}
+        async function triggerDelete() {
+            document.getElementById('custom-context-menu').classList.add('hidden');
+            
+            Swal.fire({
+                title: 'මකා දැමීමට අවශ්‍යද?',
+                text: "මෙය ආපසු හැරවිය නොහැක!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'ඔව්, මකන්න!'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    const targetId = activeMenuTarget.item.id;
+                    if(activeMenuTarget.type === 'item') {
+                        appData.items = appData.items.filter(i => i.id !== targetId);
+                        // Cascade deletion loops
+                        appData.brands = appData.brands.filter(b => b.itemId !== targetId);
+                    } else if(activeMenuTarget.type === 'brand') {
+                        appData.brands = appData.brands.filter(b => b.id !== targetId);
+                        appData.models = appData.models.filter(m => m.brandId !== targetId);
+                    } else if(activeMenuTarget.type === 'model') {
+                        appData.models = appData.models.filter(m => m.id !== targetId);
+                    }
 
+                    await saveCategoriesToCloud();
+                    
+                    if(activeMenuTarget.type === 'item') navigateTo('page-item');
+                    if(activeMenuTarget.type === 'brand') navigateTo('page-brand');
+                    if(activeMenuTarget.type === 'model') navigateTo('page-model');
+                    showAlert('දත්ත සාර්ථකව මකා දමන ලදී.', 'success');
+                }
+            });
+        }
 
-        // 1. Delete කරන ෆන්ක්ෂන් එක
-async function deleteItemFromSupabase(itemId) {
-    try {
-        console.log("Supabase වෙතින් මකන්න යන ID එක:", itemId);
-
-        // මෙතන supabase නෙවෙයි, sbClient වෙන්න ඕනේ
-        const { error } = await sbClient
-            .from('items_stock')
-            .delete()
-            .eq('model_id', itemId);
-
-        if (error) throw error;
-
-        console.log("මකා දැමීම සාර්ථකයි!");
-        Swal.fire('සාර්ථකයි!', 'අයිතමය මකා දැමුවා.', 'success');
-        
-        await loadDataFromSupabase();
-        updateUI();
-
-    } catch (error) {
-        console.error("Supabase Delete Error:", error);
-        Swal.fire('දෝෂයක්!', 'මකා දැමීමට නොහැකි විය: ' + error.message, 'error');
-    }
-}
-
-
-async function triggerDelete(itemId) {
-    console.log("triggerDelete එකට ආපු ID එක:", itemId);
-
-    if (!itemId) {
-        Swal.fire('දෝෂයක්!', 'ID එකක් නැත', 'error');
-        return;
-    }
-
-    const result = await Swal.fire({
-        title: 'මකා දමන්නද?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'ඔව්, මකන්න!'
-    });
-
-    if (result.isConfirmed) {
-        // මෙතනින් තමයි අනිත් ෆන්ක්ෂන් එකට යන්නේ
-        await deleteItemFromSupabase(itemId);
-    }
-}
-
-
-
-
-
-       async function openProductDetailLive(modelItem) {
+       // Live Realtime Dynamic Synchronizer Engine for Stock Profiles
+async function openProductDetailLive(modelItem) {
     currentModelId = modelItem.id;
     document.getElementById('detail-model-title').innerText = modelItem.name;
     
     // UI එක Loading විදිහට පෙන්වනවා
-    // මේ පේළිය වෙනස් කරන්න:
-    document.getElementById('product-img').src = "https://placehold.co/300?text=Loading+Data...";
+    document.getElementById('product-img').src = "https://via.placeholder.com/300?text=Loading+Data...";
     document.getElementById('view-retail').innerText = "---";
     document.getElementById('view-cost').innerText = "---";
     document.getElementById('view-qty-colors').innerHTML = "Loading data from server...";
 
     navigateTo('page-detail');
 
-    // ⚡ අලුත් SDK ක්‍රමය:
-    try {
-        const { data, error } = await sbClient
-            .from('items_stock')
-            .select('*')
-            .eq('model_id', currentModelId)
-            .maybeSingle(); // එක රිසල්ට් එකක් විතරක් ගන්න
-
-        if (error) throw error;
-
-        if (data) {
-            const profile = data;
-            
-            document.getElementById('product-img').src = profile.image_url || "https://placehold.co/300?text=No+Image";
-            document.getElementById('view-retail').innerText = parseFloat(profile.retail_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
-            document.getElementById('view-discount').innerText = profile.discount || "0";
-            document.getElementById('view-cost').innerText = parseFloat(profile.cost_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
-            
-            document.getElementById('input-img-url').value = profile.image_url || '';
-            document.getElementById('input-retail').value = profile.retail_price || '';
-            document.getElementById('input-discount').value = profile.discount || '';
-            
-            tempColorStockList = profile.color_qty_json || {};
-            renderColorStockOutputs(tempColorStockList);
-            
-            if (typeof checkLowStockAlertSystem === 'function') {
-                checkLowStockAlertSystem(modelItem.name, tempColorStockList);
-            }
-        } else {
-            // Data නැත්නම්
-            document.getElementById('product-img').src = "https://placehold.co/300?text=No+Image";
-            document.getElementById('view-retail').innerText = "0.00";
-            document.getElementById('view-cost').innerText = "0.00";
-            document.getElementById('view-qty-colors').innerHTML = "<span class='text-red-500'>No data found.</span>";
-            
-            document.getElementById('input-img-url').value = '';
-            document.getElementById('input-retail').value = '';
-            document.getElementById('input-discount').value = '';
+    // ⚡ [CACHE FIX] මෙතනදී අපි කලින් හදපු fetchSupabase එකෙන් අලුත්ම දත්ත ගන්නවා.
+    // fetchSupabase එක ඇතුලේ අපි _t=${new Date().getTime()} දාලා තියෙන නිසා අලුත්ම දත්ත එනවා.
+    const res = await fetchSupabase(`/product_stock?model_id=eq.${currentModelId}`);
+    
+    if(res && res.length > 0) {
+        const profile = res[0];
+        
+        // Data ආව ගමන් UI එක update වෙනවා
+        document.getElementById('product-img').src = profile.image_url || "https://via.placeholder.com/300?text=No+Image";
+        document.getElementById('view-retail').innerText = parseFloat(profile.retail_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
+        document.getElementById('view-discount').innerText = profile.discount || "0";
+        document.getElementById('view-cost').innerText = parseFloat(profile.cost_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
+        
+        // Admin inputs ටික පුරවනවා
+        document.getElementById('input-img-url').value = profile.image_url || '';
+        document.getElementById('input-retail').value = profile.retail_price || '';
+        document.getElementById('input-discount').value = profile.discount || '';
+        
+        tempColorStockList = profile.color_qty_json || {};
+        renderColorStockOutputs(tempColorStockList);
+        
+        // Low stock alert එක චෙක් කරනවා
+        if (typeof checkLowStockAlertSystem === 'function') {
+            checkLowStockAlertSystem(modelItem.name, tempColorStockList);
         }
-    } catch (err) {
-        console.error("Detail Load Error:", err.message);
+    } else {
+        // Data නැත්නම් මෙහෙම පෙන්වනවා
+        document.getElementById('product-img').src = "https://via.placeholder.com/300?text=No+Image";
+        document.getElementById('view-retail').innerText = "0.00";
+        document.getElementById('view-cost').innerText = "0.00";
+        document.getElementById('view-qty-colors').innerHTML = "<span class='text-red-500'>No data found.</span>";
+        
+        // Inputs reset කරනවා
+        document.getElementById('input-img-url').value = '';
+        document.getElementById('input-retail').value = '';
+        document.getElementById('input-discount').value = '';
     }
 }
         function renderColorStockOutputs(colorsJson) {
@@ -909,8 +700,6 @@ async function triggerDelete(itemId) {
             });
         }
 
-
-
        // 💡 LIVE UPDATE LOGIC FUNCTION (මෙය පැරණි calculateCostPriceLive වෙනුවට භාවිතා වේ)
     function updateRetailAndCostLive() {
         const retailVal = document.getElementById('input-retail').value;
@@ -927,8 +716,6 @@ async function triggerDelete(itemId) {
         document.getElementById('view-cost').innerText = netCost.toLocaleString('en-US', {minimumFractionDigits: 2});
     }
 
-
-
         function addColourStockToArray() {
             const color = document.getElementById('input-colour').value.trim();
             const qty = parseInt(document.getElementById('input-qty').value) || 0;
@@ -941,52 +728,47 @@ async function triggerDelete(itemId) {
             document.getElementById('input-qty').value = '';
         }
 
-        
+        // 💡 SYNC CORE RE-MAPPED FUNCTION
+    async function syncProductToDatabase() {
+    // 1. Inputs වලින් ඩේටා ටික නිවැරදිව ගන්නවා
+    const img = document.getElementById('input-img-url').value.trim();
+    const retail = parseFloat(document.getElementById('input-retail').value) || 0;
+    const discount = parseFloat(document.getElementById('input-discount').value) || 0;
+    const cost = retail - (retail * (discount / 100));
 
-       async function syncProductToDatabase() {
-    const payload = {
+    const recordPayload = {
         model_id: currentModelId,
-        image_url: document.getElementById('input-img-url').value,
-        retail_price: parseFloat(document.getElementById('input-retail').value || 0),
-        discount: parseFloat(document.getElementById('input-discount').value || 0),
-        cost_price: parseFloat(document.getElementById('view-cost').innerText.replace(/,/g, '') || 0),
+        image_url: img,
+        retail_price: retail,
+        discount: discount,
+        cost_price: cost,
         color_qty_json: tempColorStockList
     };
 
+    
+    // 3. ☁️ සර්වර් එකට දත්ත යවනවා (Cache නැතුව කෙලින්ම සර්වර් එකට)
     try {
-        const { data, error } = await sbClient
-            .from('items_stock')
-            .upsert(payload, { onConflict: 'model_id' });
-
-        if (error) throw error;
-
-        showAlert('✅ සාර්ථකව සේව් වුණා!', 'success');
-        console.log("Success:", data);
-
-        // --- මෙන්න මේ ටික මෙතනට දාපන් ---
-        await loadCategoriesFromCloud(); // දත්ත Database එකෙන් ආයෙත් අරන් අලුත් කරන්න
-        updateUI(); // UI එක අලුත් කරන්න
-        // ---------------------------------
-
+        await fetchSupabase('/product_stock', 'POST', recordPayload, true);
+        
+        // ⚡ වැදගත්ම වෙනස:
+        // දත්ත Save වුණාම, පේජ් එක මුල සිට Load කරන්න එපා (Navigate කරන්න එපා).
+        // ඒ වෙනුවට මේ විදියට කළාම Inputs මැකෙන්නේ නැහැ:
+        
+        const modelTitle = document.getElementById('detail-model-title').innerText;
+        if (typeof checkLowStockAlertSystem === 'function') {
+            checkLowStockAlertSystem(modelTitle, tempColorStockList);
+        }
+        
+        showAlert('✅ දත්ත සාර්ථකව Cloud එකට යැවුණා!', 'success');
+        
+        // අලුත් දත්ත Server එකෙන් එනකම් ඉන්න ඕනේ නැහැ, 
+        // මොකද අපි දැනටමත් inputs වල තියෙන දත්ත දන්නවා.
+        // එහෙම නැත්නම් පේජ් එක Refresh කරනවා නම්, Input fields වලට ආපහු දත්ත දාන්න ඕනේ.
     } catch (err) {
-        console.error("Supabase Sync Error:", err);
-        showAlert('❌ සේව් වුණේ නැහැ!', 'error');
+        console.error("Sync Error:", err);
+        showAlert('❌ කනෙක්ෂන් අවුලක්!', 'error');
     }
 }
-
-
-
-
-function showSuccess() {
-        const msg = document.getElementById('success-msg');
-        msg.classList.remove('hidden'); // පණිවිඩය පෙන්නන්න
-        setTimeout(() => {
-            msg.classList.add('hidden'); // තත්පර 3කින් පණිවිඩය මකන්න
-        }, 3000);
-    }
-
-
-
         function checkLowStockAlertSystem(modelName, colorsJson) {
             let lowItems = [];
             Object.keys(colorsJson).forEach(c => {
@@ -999,11 +781,6 @@ function showSuccess() {
                 document.getElementById('custom-stock-modal').style.display = 'flex';
             }
         }
-
-
-
-
-
 
         function closeStockModal() { document.getElementById('custom-stock-modal').style.display = 'none'; }
 
@@ -1042,24 +819,6 @@ window.addEventListener('load', function() {
     const startPage = localStorage.getItem('sanjeewa_role') ? 'page-home' : 'page-login';
     history.replaceState({ pageId: startPage }, "", "#" + startPage);
 });
-
-// 2. අන්තිමට initApp එක
-    async function initApp() {
-        console.log("App පටන් ගන්නවා...");
-        const cachedData = localStorage.getItem('app_data_cache');
-        if (cachedData) {
-            appData = JSON.parse(cachedData);
-            updateUI(); 
-        }
-        await loadCategoriesFromCloud();
-    }
-
-    // 3. මේක තමයි අන්තිම පේළිය විය යුත්තේ
-    window.addEventListener('DOMContentLoaded', (event) => {
-        initApp();
-    });
-
-
     </script>
 </body>
 </html>
