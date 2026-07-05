@@ -109,7 +109,11 @@
         <div class="mb-4">
             <input type="text" id="item-search" oninput="searchItems()" placeholder="Search Item (e.g. TV, Fridge)..." class="w-full p-3 border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
         </div>
-        <div id="item-container" class="grid grid-cols-2 gap-4"></div>
+       <div id="item-container" class="grid grid-cols-2 gap-4">
+   </div>
+    </div>
+
+    
     </div>
 
     <div id="page-brand" class="hidden p-4 min-h-screen">
@@ -123,6 +127,7 @@
         <div id="brand-container" class="grid grid-cols-2 gap-4"></div>
     </div>
 
+   </div>
     <div id="page-model" class="hidden p-4 min-h-screen">
         <div class="flex justify-between items-center mb-2">
             <button onclick="navigateTo('page-brand')" class="text-blue-600 font-bold">⬅ Back</button>
@@ -273,76 +278,79 @@ window.onload = initApp;
     
 // මේ විදියට Window එකට මේ ෆන්ක්ෂන් එක Assign කරන්න
 window.triggerDelete = async function(itemId) {
-    console.log("triggerDelete ක්‍රියාත්මකයි! ID:", itemId);
-
-    // SweetAlert එක වැඩ කරන්න ඕනේ නිසා Swal එක තියෙනවද බලමු
-    if (typeof Swal === 'undefined') {
-        console.error("SweetAlert Library එක නැත!");
-        return;
-    }
+    console.log("Makenna yanne me ID eka:", itemId);
+    if (!itemId) return;
 
     const result = await Swal.fire({
-        title: 'මකා දමන්නද?',
-        text: "මෙම අයිතමය නැවත ලබාගත නොහැක!",
+        title: 'Me item eka delete karannada?',
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'ඔව්, මකා දමන්න!'
+        confirmButtonText: 'Ow, delete karanna!'
     });
 
     if (result.isConfirmed) {
-        await deleteItemFromSupabase(itemId);
+        // Mehe sbClient kiyana eka hariyata use karanna
+        try {
+            const { error } = await sbClient
+                .from('items_stock')
+                .delete()
+                .eq('model_id', itemId); // Table eke thiyenne 'model_id'
+
+            if (error) throw error;
+            
+            Swal.fire('Success!', 'Item eka delete una.', 'success');
+            // Data aye load karanna
+            await loadDataFromSupabase(); 
+        } catch (err) {
+            Swal.fire('Error!', err.message, 'error');
+        }
     }
 };
-    
+
+// UI eka update karanna
 function updateUI() {
     const container = document.getElementById('items-list');
-    if (!container) return;
+    if (!container) {
+        console.error("අයියෝ! 'items-list' කියන ID එක තියෙන Container එක හොයාගන්න බැහැ. HTML එක බලන්න!");
+        return;
+    }
     container.innerHTML = '';
 
     appData.items.forEach(item => {
-        // මෙතන අනිවාර්යයෙන්ම බලන්න 'model_id' කියන නම තියෙනවද කියලා
-        const itemIdentifier = item.model_id; // Database එකේ තියෙන්නේ model_id
+        // Database eke thiyena colum name eka 'model_id'
+        const itemId = item.model_id; 
+        const itemName = item.model_name || "No Name";
 
-        if (itemIdentifier) {
-            const btn = document.createElement('button');
-            // නම සඳහා 'model_name' පාවිච්චි කරන්න
-            btn.innerText = "Delete " + (item.model_name || "No Name");
-            btn.className = "bg-red-500 text-white p-2 m-1 rounded";
-            
-            btn.onclick = function() {
-                console.log("Delete බොත්තම එබුවා. යවන ID එක:", itemIdentifier);
-                triggerDelete(itemIdentifier);
-            };
-            container.appendChild(btn);
-        } else {
-            console.warn("මේ අයිතමයට ID එකක් නැත:", item);
-        }
+        const btn = document.createElement('button');
+        btn.innerText = "Delete " + itemName;
+        btn.className = "bg-red-500 text-white p-2 m-1 rounded";
+        btn.onclick = () => window.triggerDelete(itemId);
+        container.appendChild(btn);
     });
 }
 
 
-
-   // දත්ත ලෝඩ් කිරීමට
-async function loadCategoriesFromCloud() {
+   async function loadCategoriesFromCloud() {
     try {
+        console.log("Database එකෙන් දත්ත ගන්නවා...");
+
+        // .eq() දාන්න එපා, මොකද උඹට ඕනේ ඔක්කොම ටික ගන්න නිසා
         const { data, error } = await sbClient
-            .from('app_categories')
-            .select('structure_data')
-            .eq('id', 'main_structure')
-            .maybeSingle();
+            .from('items_stock')
+            .select('*'); // ඔක්කොම Column ටික ගන්න
 
         if (error) throw error;
-        if (data && data.structure_data) {
-            appData = data.structure_data;
-            updateUI();
+
+        // දැන් data එකේ තියෙන්නේ ඔක්කොම Item ටික
+        if (data) {
+            appData.items = data; // ඒ ටික appData එකට දාගන්න
+            console.log("Load වුණු දත්ත:", appData.items);
+            updateUI(); // UI එක Update කරන්න
         }
     } catch (e) {
         console.error("Load Error:", e.message);
     }
 }
-
 
 
 
@@ -490,57 +498,63 @@ async function generateStaffLinkWhatsApp() {
 
         // 🛠️ Navigation Core Logic Engine (New Structured Layout Flow)
         function navigateTo(pageId) {
-            // navigateTo function එක ඇතුළේ මුලටම මේක දාන්න මචං:
-          if (!window.isBackAction) {
-              history.pushState({ pageId: pageId }, "", "#" + pageId);
-              }
-               window.isBackAction = false;
-            document.getElementById('custom-context-menu').classList.add('hidden');
-            
-            // සර්ච් බාර් පිරිසිදු කිරීම්
-            if(pageId === 'page-item') document.getElementById('item-search').value = ''; 
-            if(pageId === 'page-model') document.getElementById('model-search').value = ''; 
+    if (!window.isBackAction) {
+        history.pushState({ pageId: pageId }, "", "#" + pageId);
+    }
+    window.isBackAction = false;
+    
+    const contextMenu = document.getElementById('custom-context-menu');
+    if(contextMenu) contextMenu.classList.add('hidden');
+    
+    // සර්ච් බාර් පිරිසිදු කිරීම්
+    if(pageId === 'page-item') {
+        const el = document.getElementById('item-search');
+        if(el) el.value = '';
+    }
+    if(pageId === 'page-model') {
+        const el = document.getElementById('model-search');
+        if(el) el.value = '';
+    }
 
-            ['page-login', 'page-home', 'page-item', 'page-brand', 'page-model', 'page-detail'].forEach(p => {
-                const el = document.getElementById(p); if(el) el.classList.add('hidden');
-            });
-            document.getElementById(pageId).classList.remove('hidden');
+    // පේජ් මාරු කිරීම
+    ['page-login', 'page-home', 'page-item', 'page-brand', 'page-model', 'page-detail'].forEach(p => {
+        const el = document.getElementById(p);
+        if(el) el.classList.add('hidden');
+    });
+    
+    const targetPage = document.getElementById(pageId);
+    if(targetPage) targetPage.classList.remove('hidden');
 
-            setupAdminUI();
+    if (typeof setupAdminUI === 'function') setupAdminUI();
 
-            let itemName = (selectedItemId && appData.items.find(i => i.id === selectedItemId)) ? appData.items.find(i => i.id === selectedItemId).name : '';
-            let brandName = (selectedBrandId && appData.brands.find(b => b.id === selectedBrandId)) ? appData.brands.find(b => b.id === selectedBrandId).name : ''
+    let itemName = (selectedItemId && appData.items.find(i => i.id === selectedItemId)) ? appData.items.find(i => i.id === selectedItemId).name : '';
+    let brandName = (selectedBrandId && appData.brands.find(b => b.id === selectedBrandId)) ? appData.brands.find(b => b.id === selectedBrandId).name : ''
 
-            // 1. SELECT ITEM PAGE
-            if(pageId === 'page-item') {
-                document.getElementById('breadcrumb-item').innerHTML = `📍 Location: <span class="text-orange-600 font-bold">Items Portfolio</span> /`;
-                renderButtons('item', appData.items || [], 'item-container', 'bg-orange-500');
-            }
-            // 2. SELECT BRAND PAGE (Filtered by Selected Item Connection)
-            if(pageId === 'page-brand') {
-                document.getElementById('breadcrumb-brand').innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${itemName}</span> /`;
-                let filteredBrands = appData.brands.filter(b => b.itemId === selectedItemId);
-                renderButtons('brand', filteredBrands, 'brand-container', 'bg-blue-600');
-            }
-            // 3. SELECT MODEL PAGE (Filtered by Selected Brand Connection)
-            if(pageId === 'page-model') {
-                document.getElementById('breadcrumb-model').innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${itemName}</span> / <span class="text-blue-600 font-bold">${brandName}</span> /`;
-                let filteredModels = appData.models.filter(m => m.brandId === selectedBrandId);
-                renderButtons('model', filteredModels, 'model-container', 'bg-emerald-600');
-            }
-            // 4. DETAILED SCREEN
-            if(pageId === 'page-detail') {
-                let modelName = appData.models.find(m => m.id === currentModelId)?.name || '';
-                document.getElementById('breadcrumb-detail').innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${itemName}</span> / <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-emerald-600 font-bold">${modelName}</span>`;
-            
-            
-            }
+    // 1. SELECT ITEM PAGE
+    if(pageId === 'page-item') {
+        const breadcrumb = document.getElementById('breadcrumb-item');
+        if(breadcrumb) breadcrumb.innerHTML = `📍 Location: <span class="text-orange-600 font-bold">Items Portfolio</span> /`;
+        renderButtons('item', appData.items || [], 'item-container', 'bg-orange-500');
+    }
+    
+    // 2. SELECT BRAND PAGE
+    if(pageId === 'page-brand') {
+        const breadcrumb = document.getElementById('breadcrumb-brand');
+        if(breadcrumb) breadcrumb.innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${itemName}</span> /`;
+        let filteredBrands = appData.brands.filter(b => b.itemId === selectedItemId);
+        renderButtons('brand', filteredBrands, 'brand-container', 'bg-blue-600');
+    }
+    
+    // 3. SELECT MODEL PAGE
+    if(pageId === 'page-model') {
+        const breadcrumb = document.getElementById('breadcrumb-model');
+        if(breadcrumb) breadcrumb.innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${itemName}</span> / <span class="text-blue-600 font-bold">${brandName}</span> /`;
+        let filteredModels = appData.models.filter(m => m.brandId === selectedBrandId);
+        renderButtons('model', filteredModels, 'model-container', 'bg-emerald-600');
+    }
 
-            {localStorage.setItem('lastPage', pageId);
-
-            }
-        }
-
+    localStorage.setItem('lastPage', pageId);
+}
 
 
 
@@ -567,7 +581,13 @@ async function generateStaffLinkWhatsApp() {
 
         // Dynamic Custom Button Generator Engine
         function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
-            const container = document.getElementById(containerId); container.innerHTML = ''; 
+            const container = document.getElementById(containerId);
+            
+            if (!container) {
+        console.warn(`කන්ටේනර් එකක් හම්බුනේ නැහැ: ${containerId}. ටිකක් වෙලා ඉඳලා උත්සාහ කරන්න.`);
+        return; 
+    }
+            container.innerHTML = '';
             
             if(dataArray.length === 0) {
                 container.innerHTML = `<p class="col-span-2 text-center text-gray-400 py-6 text-sm italic">කිසිවක් සොයාගත නොහැක.</p>`;
@@ -731,24 +751,27 @@ function openAddModal(type) {
         // 1. Delete කරන ෆන්ක්ෂන් එක
 async function deleteItemFromSupabase(itemId) {
     try {
-        const { error } = await supabase
+        console.log("Supabase වෙතින් මකන්න යන ID එක:", itemId);
+
+        // මෙතන supabase නෙවෙයි, sbClient වෙන්න ඕනේ
+        const { error } = await sbClient
             .from('items_stock')
             .delete()
-            .eq('model_id', itemId); // මේක තමයි වැදගත්, model_id එක හරියටම දාන්න
+            .eq('model_id', itemId);
 
         if (error) throw error;
 
-        Swal.fire('සාර්ථකයි!', 'මකා දැමුවා.', 'success');
+        console.log("මකා දැමීම සාර්ථකයි!");
+        Swal.fire('සාර්ථකයි!', 'අයිතමය මකා දැමුවා.', 'success');
         
-        // අන්තිමට UI එක අලුත් කරමු
-        await loadDataFromSupabase(); // දත්ත ටික ආයේ අරන්
-        updateUI(); // UI එක අලුත් කරන්න
+        await loadDataFromSupabase();
+        updateUI();
+
     } catch (error) {
-        console.error("Delete Error:", error);
-        Swal.fire('දෝෂයක්!', 'මකන්න බැහැ: ' + error.message, 'error');
+        console.error("Supabase Delete Error:", error);
+        Swal.fire('දෝෂයක්!', 'මකා දැමීමට නොහැකි විය: ' + error.message, 'error');
     }
 }
-
 
 
 async function triggerDelete(itemId) {
