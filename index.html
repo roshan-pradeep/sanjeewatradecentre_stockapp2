@@ -230,12 +230,15 @@
    
     
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
-        // මේ විදියට variable දෙක හදාගන්න (අගට කිසිම දෙයක් දාන්න එපා)
-const supabaseUrl = 'https://ttviyfggsmiaemtbawvg.supabase.co'; // ඔයාගේ URL එක
-    const supabaseKey = 'sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz'; // ඔයාගේ KEY එක මෙතන දාන්න
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    // 1. URL සහ KEY මෙතනට දාන්න
+    const SUPABASE_URL = 'https://ttviyfggsmiaemtbawvg.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz'; // මෙතනට ඔයාගේ KEY එක දාන්න
+
+    // 2. Supabase client එක එක පාරක් විතරක් හදන්න
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    console.log("Supabase initialized successfully!");
 </script>
 
 <script>
