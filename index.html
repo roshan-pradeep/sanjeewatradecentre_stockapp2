@@ -649,19 +649,31 @@ async function generateStaffLinkWhatsApp() {
 
 
 
-        function showCustomContextMenu(x, y, type, item) {
-            activeMenuTarget = { type: type, item: item };
-            const menu = document.getElementById('custom-context-menu');
-            menu.style.left = `${x}px`;
-            menu.style.top = `${y}px`;
-            menu.classList.remove('hidden');
-        }
+       function showCustomContextMenu(x, y, type, item) {
+    // 1. ආරක්ෂිතව target එක සෙට් කිරීම
+    if (!item) {
+        console.error("Error: Context menu එකට ලැබුණු item එක හිස්!");
+        return;
+    }
+    
+    activeMenuTarget = { type: type, item: item };
+    console.log("දැන් තෝරාගෙන තියෙන Item එක:", activeMenuTarget.item); // මේක Console එකේ පෙන්නනවද බලපන්!
 
-        document.addEventListener('click', (e) => {
-            const menu = document.getElementById('custom-context-menu');
-            if(menu && !menu.contains(e.target)) menu.classList.add('hidden');
-        });
+    const menu = document.getElementById('custom-context-menu');
+    if (menu) {
+        menu.style.left = `${x}px`;
+        menu.style.top = `${y}px`;
+        menu.classList.remove('hidden');
+    }
+}
 
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('custom-context-menu');
+    // Menu එකට පිටින් ක්ලික් කළොත් විතරක් හංගන්න
+    if (menu && !menu.contains(e.target)) {
+        menu.classList.add('hidden');
+    }
+});
 
 
 
@@ -693,19 +705,20 @@ function openAddModal(type) {
         function triggerRename() {
     // 1. මුලින්ම බලමු menu එකේ මොන item එකද තියෙන්නේ කියලා
     if (!activeMenuTarget || !activeMenuTarget.item) {
-        console.warn("Rename කරන්න Item එකක් තෝරලා නෑ.");
+        console.error("අයියෝ! Rename කරන්න item එකක් තෝරලා නැහැ.");
         return;
     }
 
-    const item = activeMenuTarget.item;
+    const itemToRename = activeMenuTarget.item;
+    console.log("මේ ID එක තමයි rename කරන්න යන්නේ:", itemToRename.id);
     
     // 2. අර පරණ input එක හොයන්න කලින් පේජ් එකේ ඒක තියෙනවද කියලා check කරමු
     const inputField = document.getElementById('rename-input');
     
     if (inputField) {
-        // input එක තිබුනොත් විතරක් value එක දාන්න
-        inputField.value = item.name;
-    } else {
+        inputField.value = itemToRename.name;
+    }
+    else {
         // නැත්නම් නිකන්ම නමක් අහන්න prompt එකක් පාවිච්චි කරමු (මේක ලේසියි)
         const newName = prompt("අලුත් නම මොකක්ද?", item.name);
         if (newName) {
