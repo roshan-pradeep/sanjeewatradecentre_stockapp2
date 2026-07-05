@@ -12,9 +12,9 @@ self.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'LOW_STOCK') {
         const options = {
             body: event.data.body,
-            icon: 'image_3.png', // උඹේ අලුත් ලෝගෝ එක
+            icon: 'images/image_3.png', // උඹේ අලුත් ලෝගෝ එක
             vibrate: [200, 100, 200], // ෆෝන් එක වයිබ්‍රේට් වෙන්න
-            badge: 'image_3.png',
+            badge: 'images/image_3.png',
             data: { url: self.location.origin }
         };
 
