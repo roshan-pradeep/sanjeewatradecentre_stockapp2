@@ -855,8 +855,8 @@ async function openProductDetailLive(modelItem) {
 
 async function saveCategoriesToCloud(newCategory) {
     try {
-        // උඩ හදපු global supabase variable එකමයි මෙතන පාවිච්චි වෙන්නේ
-        const { data, error } = await supabase
+        // මෙතන 'supabase' වෙනුවට අලුතින් හදපු 'sbClient' එක පාවිච්චි කරන්න
+        const { data, error } = await sbClient
             .from('app_categories') 
             .insert([{ name: newCategory }]);
             
