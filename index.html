@@ -144,7 +144,7 @@
 
     <div id="page-detail" class="hidden max-w-5xl mx-auto p-4 transition-all duration-300">
     <div id="breadcrumb-detail" class="text-xs text-gray-500 mb-4 bg-gray-50 p-3 rounded-xl border border-gray-100 font-medium"></div>
-
+     <button onclick="syncProductToDatabase()">Save Changes</button>
     <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
         
         <div class="md:col-span-5 bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center">
@@ -702,28 +702,32 @@ function openAddModal(type) {
 
 
 
-        function triggerRename() {
-    // 1. මුලින්ම බලමු menu එකේ මොන item එකද තියෙන්නේ කියලා
+      function triggerRename() {
+    // 1. activeMenuTarget එකේ දත්ත තියෙනවද බලමු
     if (!activeMenuTarget || !activeMenuTarget.item) {
         console.error("අයියෝ! Rename කරන්න item එකක් තෝරලා නැහැ.");
         return;
     }
 
-    const itemToRename = activeMenuTarget.item;
-    console.log("මේ ID එක තමයි rename කරන්න යන්නේ:", itemToRename.id);
+    // උඹේ console එකේ පෙන්නුවේ model_id කියලා, ඒ නිසා ඒකම ගමු
+    const item = activeMenuTarget.item;
+    const idToUse = item.model_id; 
     
-    // 2. අර පරණ input එක හොයන්න කලින් පේජ් එකේ ඒක තියෙනවද කියලා check කරමු
+    console.log("Makenna yanne me ID eka:", idToUse);
+
+    // 2. Input field එක check කරමු
     const inputField = document.getElementById('rename-input');
     
     if (inputField) {
-        inputField.value = itemToRename.name;
-    }
-    else {
-        // නැත්නම් නිකන්ම නමක් අහන්න prompt එකක් පාවිච්චි කරමු (මේක ලේසියි)
-        const newName = prompt("අලුත් නම මොකක්ද?", item.name);
+        inputField.value = item.model_name; // console එකේ තිබුනේ model_name
+    } else {
+        // Prompt එක පාවිච්චි කරනවා නම්
+        const newName = prompt("අලුත් නම මොකක්ද?", item.model_name);
+        
         if (newName) {
-            console.log("Rename කරනවා:", item.id, "නම:", newName);
-            // මෙතනින් උඹේ database update කරන ෆන්ක්ෂන් එකට අලුත් නම යවන්න (උදා: updateItemName(item.id, newName))
+            console.log("Rename කරනවා ID:", idToUse, "අලුත් නම:", newName);
+            // මෙතනින් උඹේ Database update එක call කරන්න
+            // updateItemInDatabase(idToUse, newName); 
         }
     }
 }
@@ -939,7 +943,7 @@ async function triggerDelete(itemId) {
 
         
 
-        async function syncProductToDatabase() {
+       async function syncProductToDatabase() {
     const payload = {
         model_id: currentModelId,
         image_url: document.getElementById('input-img-url').value,
@@ -950,23 +954,25 @@ async function triggerDelete(itemId) {
     };
 
     try {
-        // අලුත් SDK ක්‍රමය: upsert පාවිච්චි කරන්න (මොකද මේක එක පාරක් තියෙන එකක් නම් ඒක update වෙනවා)
         const { data, error } = await sbClient
             .from('items_stock')
-            .upsert(payload, { onConflict: 'model_id' }); // model_id එක match වෙනවා නම් update වෙනවා
+            .upsert(payload, { onConflict: 'model_id' });
 
         if (error) throw error;
 
         showAlert('✅ සාර්ථකව සේව් වුණා!', 'success');
         console.log("Success:", data);
 
+        // --- මෙන්න මේ ටික මෙතනට දාපන් ---
+        await loadCategoriesFromCloud(); // දත්ත Database එකෙන් ආයෙත් අරන් අලුත් කරන්න
+        updateUI(); // UI එක අලුත් කරන්න
+        // ---------------------------------
+
     } catch (err) {
         console.error("Supabase Sync Error:", err);
         showAlert('❌ සේව් වුණේ නැහැ!', 'error');
     }
 }
-
-
 
 
 
