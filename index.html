@@ -37,7 +37,7 @@
         </div>
     </div>
 
-    <div id="page-login" class="flex flex-col items-center justify-center min-h-screen p-4">
+    <div id="page-login" class="hidden flex flex-col items-center justify-center min-h-screen p-4">
         <div class="bg-white p-6 rounded-2xl shadow-lg w-full max-w-sm">
             <h2 class="text-2xl font-bold text-center text-blue-600 mb-2">Sanjeewa Trade Centre</h2>
             <p id="login-sub-title" class="text-xs text-center text-gray-500 mb-6">Staff Portal</p>
@@ -139,7 +139,7 @@
             <h3 id="detail-model-title" class="text-xl font-black text-gray-800 mb-4 text-center tracking-wide">Model Name</h3>
             
             <div class="w-full aspect-square max-w-[240px] bg-gray-50 rounded-2xl overflow-hidden border border-gray-200/60 mb-6 flex items-center justify-center shadow-inner relative group">
-                <img id="product-img" src="https://via.placeholder.com/300?text=No+Image" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+                <img id="product-img" src="https://via.placehold.co/300?text=No+Image" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
             </div>
 
             <div class="w-full space-y-3 bg-gradient-to-br from-gray-50 to-gray-100/50 p-4 rounded-2xl border border-gray-100">
@@ -242,7 +242,7 @@
     console.log("Supabase initialized!");
          
 
-
+        let appData = { items: [], brands: [], models: [] };
         let defaultColor = '#f97316';
         let currentRole = 'staff';       
         let currentLoginMode = 'staff';  
@@ -253,7 +253,7 @@
         let selectedItemId = '';
         let selectedBrandId = '';
 
-        let appData = { items: [], brands: [], models: [] };
+        
         let activeMenuTarget = { type: null, item: null }; 
         let currentModalMode = 'add'; 
         let tempColorStockList = {}; // Temporary holding container for color configurations
@@ -263,27 +263,30 @@
          async function initApp() {
     console.log("App පටන් ගන්නවා...");
     
-    // 1. Role එක බලන්න
-    const savedRole = localStorage.getItem('sanjeewa_role');
-    if (savedRole) currentRole = savedRole;
-    
-    setupAdminUI();
+    try {
+        const savedRole = localStorage.getItem('sanjeewa_role');
+        if (savedRole) currentRole = savedRole;
+        
+        setupAdminUI();
 
-    // 2. මෙතනදී sbClient එක අනිවාර්යයෙන්ම තියෙන්න ඕනේ
-    if (sbClient) {
-        await loadCategoriesFromCloud();
-    } else {
-        console.error("Supabase තවම සූදානම් නැහැ!");
-    }
+        if (sbClient) {
+            console.log("දත්ත load කරනවා...");
+            await loadCategoriesFromCloud();
+        } else {
+            console.error("Supabase සූදානම් නැහැ!");
+        }
 
-    // 3. Navigation
-    if (savedRole) {
-        navigateTo('page-home');
-    } else {
-        navigateTo('page-login');
+        // Navigation එකේදී error එකක් එනවාද බලමු
+        console.log("Navigation එක පටන් ගන්නවා...");
+        if (savedRole) {
+            navigateTo('page-home');
+        } else {
+            navigateTo('page-login');
+        }
+    } catch (err) {
+        console.error("App පටන් ගන්න කොට error එකක් ආවා:", err);
     }
 }
-
 
         // 🌐 Cloud Database Connector Engine (Cache බයිපාස් කරන විදිහට හැදුවා)
 async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = false) {
@@ -329,19 +332,31 @@ async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = f
 
 
 
-       async function loadCategoriesFromCloud() {
+     async function loadCategoriesFromCloud() {
     if (!sbClient) {
         console.error("sbClient නැත!");
         return;
     }
     try {
+        console.log("Database එකෙන් දත්ත ගන්නවා...");
         const { data, error } = await sbClient
             .from('items_stock')
             .select('*');
         
         if (error) throw error;
         
-        renderButtons('category', data, 'category-container'); 
+        // 1. මෙතනදී දත්ත ටික appData එකට දාගන්න
+        // appData කියන එක global variable එකක් විදියට උඩින්ම තියෙන්න ඕනේ
+        if (typeof appData !== 'undefined') {
+            appData.items = data; 
+        } else {
+            console.warn("appData object එකක් හදලා නැහැ!");
+        }
+        
+        // 2. Button එක render කරන්න
+        renderButtons('category', data, 'category-container');
+        console.log("දත්ත සාර්ථකව load වුණා!");
+
     } catch (err) {
         console.error("Data ගත්තේ නැහැ:", err);
     }
@@ -367,34 +382,49 @@ async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = f
             document.getElementById('login-sub-title').innerText = mode === 'admin' ? "Admin Portal" : "Staff Portal";
         }
 
+
+
+
         async function handleSecureLogin() {
-            const phone = document.getElementById('login-phone').value.trim();
-            const pass = document.getElementById('login-pass').value.trim();
+    const phone = document.getElementById('login-phone').value.trim();
+    const pass = document.getElementById('login-pass').value.trim();
 
-            if (!phone) { showAlert('කרוණාකර අංකය ඇතුළත් කරන්න!', 'error'); return; }
+    if (!phone) { showAlert('කරුණාකර අංකය ඇතුළත් කරන්න!', 'error'); return; }
 
-            const staffCheck = await fetchSupabase(`/allowed_staff?phone_number=eq.${phone}`);
-            const isRegisteredStaff = staffCheck && staffCheck.length > 0;
+    // මෙන්න මෙතන තමයි වෙනස් වෙන්න ඕනේ
+    const { data: staffCheck, error } = await sbClient
+        .from('allowed_staff')
+        .select('*')
+        .eq('phone_number', phone);
 
-            if (currentLoginMode === 'admin') {
-                if (isRegisteredStaff) {
-                    showAlert("🚫 ඔබ Staff සාමාජිකයෙකු ලෙස හඳුනාගෙන ඇත! Staff මෝඩ් එකෙන් ලොග් වන්න.", "warning");
-                    switchLoginMode('staff');
-                    return;
-                }
-                if (phone === '0712345678' && pass === 'Admin@123') { 
-                    currentRole = 'admin';
-                    localStorage.setItem('sanjeewa_role', 'admin'); 
-                    setupAdminUI(); navigateTo('page-home');
-                } else { showAlert('ඇඩ්මින් දත්ත වැරදියයි!', 'error'); }
-            } else {
-                if (isRegisteredStaff) {
-                    currentRole = 'staff';
-                    localStorage.setItem('sanjeewa_role', 'staff');
-                    setupAdminUI(); navigateTo('page-home');
-                } else { showAlert('මෙම අංකය ලියාපදිංචි කර නොමැත!', 'error'); }
-            }
+    if (error) {
+        console.error("Supabase Error:", error);
+        showAlert('Login දෝෂයක් සිදුවිය!', 'error');
+        return;
+    }
+
+    const isRegisteredStaff = staffCheck && staffCheck.length > 0;
+
+    // දැන් උඹේ පරණ logic එකම මෙතන දාන්න
+    if (currentLoginMode === 'admin') {
+        if (isRegisteredStaff) {
+            showAlert("🚫 ඔබ Staff සාමාජිකයෙකු ලෙස හඳුනාගෙන ඇත!", "warning");
+            switchLoginMode('staff');
+            return;
         }
+        if (phone === '0712345678' && pass === 'Admin@123') { 
+            currentRole = 'admin';
+            localStorage.setItem('sanjeewa_role', 'admin'); 
+            setupAdminUI(); navigateTo('page-home');
+        } else { showAlert('ඇඩ්මින් දත්ත වැරදියයි!', 'error'); }
+    } else {
+        if (isRegisteredStaff) {
+            currentRole = 'staff';
+            localStorage.setItem('sanjeewa_role', 'staff');
+            setupAdminUI(); navigateTo('page-home');
+        } else { showAlert('මෙම අංකය ලියාපදිංචි කර නොමැත!', 'error'); }
+    }
+}
 
         function handleLogout() {
             currentRole = 'staff'; currentLoginMode = 'staff';
@@ -430,53 +460,70 @@ async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = f
             window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, '_blank');
         }
 
-        // 🛠️ Navigation Core Logic Engine (New Structured Layout Flow)
         function navigateTo(pageId) {
-            // navigateTo function එක ඇතුළේ මුලටම මේක දාන්න මචං:
-          if (!window.isBackAction) {
-              history.pushState({ pageId: pageId }, "", "#" + pageId);
-              }
-               window.isBackAction = false;
-            document.getElementById('custom-context-menu').classList.add('hidden');
-            
-            // සර්ච් බාර් පිරිසිදු කිරීම්
-            if(pageId === 'page-item') document.getElementById('item-search').value = ''; 
-            if(pageId === 'page-model') document.getElementById('model-search').value = ''; 
+    console.log("navigateTo run වෙනවා:", pageId);
 
-            ['page-login', 'page-home', 'page-item', 'page-brand', 'page-model', 'page-detail'].forEach(p => {
-                const el = document.getElementById(p); if(el) el.classList.add('hidden');
-            });
-            document.getElementById(pageId).classList.remove('hidden');
+    // 1. History සහ Context Menu
+    if (!window.isBackAction) {
+        history.pushState({ pageId: pageId }, "", "#" + pageId);
+    }
+    window.isBackAction = false;
+    
+    const contextMenu = document.getElementById('custom-context-menu');
+    if (contextMenu) contextMenu.classList.add('hidden');
 
-            setupAdminUI();
+    // 2. Page Switch කිරීම (Safe way)
+    const pages = ['page-login', 'page-home', 'page-item', 'page-brand', 'page-model', 'page-detail'];
+    pages.forEach(p => {
+        const el = document.getElementById(p);
+        if (el) el.classList.add('hidden');
+    });
 
-            let itemName = appData.items.find(i => i.id === selectedItemId)?.name || '';
-            let brandName = appData.brands.find(b => b.id === selectedBrandId)?.name || '';
+    const targetPage = document.getElementById(pageId);
+    if (targetPage) {
+        targetPage.classList.remove('hidden');
+    } else {
+        console.error("පේජ් එකක් හමු වුණේ නැහැ:", pageId);
+        return;
+    }
 
-            // 1. SELECT ITEM PAGE
-            if(pageId === 'page-item') {
-                document.getElementById('breadcrumb-item').innerHTML = `📍 Location: <span class="text-orange-600 font-bold">Items Portfolio</span> /`;
-                renderButtons('item', appData.items || [], 'item-container', 'bg-orange-500');
-            }
-            // 2. SELECT BRAND PAGE (Filtered by Selected Item Connection)
-            if(pageId === 'page-brand') {
-                document.getElementById('breadcrumb-brand').innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${itemName}</span> /`;
-                let filteredBrands = appData.brands.filter(b => b.itemId === selectedItemId);
-                renderButtons('brand', filteredBrands, 'brand-container', 'bg-blue-600');
-            }
-            // 3. SELECT MODEL PAGE (Filtered by Selected Brand Connection)
-            if(pageId === 'page-model') {
-                document.getElementById('breadcrumb-model').innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${itemName}</span> / <span class="text-blue-600 font-bold">${brandName}</span> /`;
-                let filteredModels = appData.models.filter(m => m.brandId === selectedBrandId);
-                renderButtons('model', filteredModels, 'model-container', 'bg-emerald-600');
-            }
-            // 4. DETAILED SCREEN
-            if(pageId === 'page-detail') {
-                let modelName = appData.models.find(m => m.id === currentModelId)?.name || '';
-                document.getElementById('breadcrumb-detail').innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${itemName}</span> / <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-emerald-600 font-bold">${modelName}</span>`;
-            }
-        }
+    setupAdminUI();
 
+    // 3. දත්ත පරීක්ෂාව (Undefined එන එක නවත්වන්න)
+    const items = appData?.items || [];
+    const brands = appData?.brands || [];
+    const models = appData?.models || [];
+
+    let itemName = items.find(i => i.id === selectedItemId)?.name || '';
+    let brandName = brands.find(b => b.id === selectedBrandId)?.name || '';
+
+    // 4. Page Logic (Safe Rendering)
+    if(pageId === 'page-item') {
+        const breadcrumb = document.getElementById('breadcrumb-item');
+        if(breadcrumb) breadcrumb.innerHTML = `📍 Location: <span class="text-orange-600 font-bold">Items Portfolio</span> /`;
+        renderButtons('item', items, 'item-container', 'bg-orange-500');
+    }
+
+    if(pageId === 'page-brand') {
+        const breadcrumb = document.getElementById('breadcrumb-brand');
+        if(breadcrumb) breadcrumb.innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${itemName}</span> /`;
+        let filteredBrands = brands.filter(b => b.itemId === selectedItemId);
+        renderButtons('brand', filteredBrands, 'brand-container', 'bg-blue-600');
+    }
+
+    if(pageId === 'page-model') {
+        const breadcrumb = document.getElementById('breadcrumb-model');
+        if(breadcrumb) breadcrumb.innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${itemName}</span> / <span class="text-blue-600 font-bold">${brandName}</span> /`;
+        let filteredModels = models.filter(m => m.brandId === selectedBrandId);
+        renderButtons('model', filteredModels, 'model-container', 'bg-emerald-600');
+    }
+
+    if(pageId === 'page-detail') {
+        let modelName = models.find(m => m.id === currentModelId)?.name || '';
+        const breadcrumb = document.getElementById('breadcrumb-detail');
+        if(breadcrumb) breadcrumb.innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${itemName}</span> / <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-emerald-600 font-bold">${modelName}</span>`;
+    }
+}
         // 🛠️ NEW: Item Realtime Live Search Logic
         function searchItems() {
             let query = document.getElementById('item-search').value.toLowerCase().trim();
@@ -490,6 +537,11 @@ async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = f
             let filteredModels = appData.models.filter(m => m.brandId === selectedBrandId && m.name.toLowerCase().includes(query));
             renderButtons('model', filteredModels, 'model-container', 'bg-emerald-600');
         }
+
+
+
+
+
 
         // Dynamic Custom Button Generator Engine
         function renderButtons(type, dataArray, containerId) {
@@ -665,7 +717,7 @@ async function openProductDetailLive(modelItem) {
     document.getElementById('detail-model-title').innerText = modelItem.name;
     
     // UI එක Loading විදිහට පෙන්වනවා
-    document.getElementById('product-img').src = "https://via.placeholder.com/300?text=Loading+Data...";
+    document.getElementById('product-img').src = "https://placehold.co/300?text=Loading+Data...";
     document.getElementById('view-retail').innerText = "---";
     document.getElementById('view-cost').innerText = "---";
     document.getElementById('view-qty-colors').innerHTML = "Loading data from server...";
@@ -680,7 +732,7 @@ async function openProductDetailLive(modelItem) {
         const profile = res[0];
         
         // Data ආව ගමන් UI එක update වෙනවා
-        document.getElementById('product-img').src = profile.image_url || "https://via.placeholder.com/300?text=No+Image";
+        document.getElementById('product-img').src = profile.image_url || "https://placehold.co/300?text=No+Image";
         document.getElementById('view-retail').innerText = parseFloat(profile.retail_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
         document.getElementById('view-discount').innerText = profile.discount || "0";
         document.getElementById('view-cost').innerText = parseFloat(profile.cost_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
@@ -699,7 +751,7 @@ async function openProductDetailLive(modelItem) {
         }
     } else {
         // Data නැත්නම් මෙහෙම පෙන්වනවා
-        document.getElementById('product-img').src = "https://via.placeholder.com/300?text=No+Image";
+        document.getElementById('product-img').src = "https://placehold.co/300?text=No+Image";
         document.getElementById('view-retail').innerText = "0.00";
         document.getElementById('view-cost').innerText = "0.00";
         document.getElementById('view-qty-colors').innerHTML = "<span class='text-red-500'>No data found.</span>";
