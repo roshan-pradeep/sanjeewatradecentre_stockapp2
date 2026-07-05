@@ -258,17 +258,18 @@
 
 
 
-    async function initApp() {
-    // 1. මුලින්ම localStorage එකේ තියෙන දත්ත පෙන්වන්න (අකුණු සැර වගේ එනවා)
+   // මේ විදියට ඔක්කොම ෆන්ක්ෂන් පස්සේ තියන්න
+async function initApp() {
     const cachedData = localStorage.getItem('app_data_cache');
     if (cachedData) {
         appData = JSON.parse(cachedData);
         updateUI(); 
     }
-
-    // 2. ඊට පස්සේ Cloud එකෙන් අලුත් දත්ත ගන්න
     await loadCategoriesFromCloud();
 }
+
+// මේක අනිවාර්යයෙන්ම දාන්න
+window.onload = initApp;
     
 
     
@@ -287,10 +288,11 @@
             console.log("Button හදනවා - ID:", item.id);
             
             const btn = document.createElement('button');
-            btn.innerText = "Delete " + (item.name || "No Name");
+            btn.innerText = "Delete " + item.name;
             btn.className = "bg-red-500 text-white p-2 m-1 rounded";
             
             btn.onclick = function() {
+                console.log("Delete බොත්තම එබුවා. යවන ID එක:", item.id);
                 triggerDelete(item.id);
             };
             container.appendChild(btn);
@@ -710,64 +712,55 @@ function openAddModal(type) {
         // 1. Delete කරන ෆන්ක්ෂන් එක
 async function deleteItemFromSupabase(itemId) {
     try {
-        // අ) දැනට තියෙන දත්ත ටික ගන්න
-        const { data: currentData, error: fetchError } = await sbClient
-            .from('app_categories')
-            .select('structure_data')
-            .eq('id', 'main_structure')
-            .single();
+        // අලුත් SDK ක්‍රමය: items_stock table එකෙන් මකනවා
+        const { error } = await sbClient
+            .from('items_stock')
+            .delete()
+            .eq('model_id', itemId); // හෝ ඔයාගේ table එකේ ID එක තියෙන column එක
 
-        if (fetchError) throw fetchError;
+        if (error) throw error;
 
-        // ආ) අදාල item එක අයින් කරන්න (filter)
-        let updatedData = currentData.structure_data;
-        updatedData.items = updatedData.items.filter(item => item.id !== itemId);
-
-        // ඇ) Database එක update කරන්න
-        const { error: updateError } = await sbClient
-            .from('app_categories')
-            .update({ structure_data: updatedData })
-            .eq('id', 'main_structure');
-
-        if (updateError) throw updateError;
-
-        alert("Item deleted successfully!");
-        loadCategoriesFromCloud(); // UI එක refresh කරන්න
+        // UI එකෙන් අයින් කරනවා
+        appData.items = appData.items.filter(i => i.id !== itemId);
+        
+        // Cloud එකට අලුත් අගය save කරනවා
+        await saveCategoriesToCloud();
+        
+        updateUI();
+        Swal.fire('සාර්ථකයි!', 'අයිතමය මකා දමන ලදී.', 'success');
+        
     } catch (err) {
         console.error("Delete Error:", err.message);
-        alert("Error: " + err.message);
+        Swal.fire('දෝෂයක්!', 'මකා දැමීමට නොහැකි විය.', 'error');
     }
 }
 
 
 
-// 2. Trigger ෆන්ක්ෂන් එක (මේක තමයි උඹේ බොත්තමට සම්බන්ධ වෙන්නේ)
-async function triggerDelete(itemId) {
-    // 1. දත්ත පරීක්ෂාව
-    console.log("TriggerDelete ලැබුණු ID:", itemId);
-
-    // ID එක ඇත්තටම තියෙනවද කියලා බලන්න
-    if (!itemId || itemId === 'undefined' || itemId === null || itemId === '') {
-        console.error("Delete කරන බොත්තමේ ID එක වැරදියි!");
-        alert("මේ අයිතමයට අදාල ID එකක් නැත, මකන්න බැහැ!");
-        return;
+// async function triggerDelete(itemId) {
+    // 1. මුලින්ම ID එක පරීක්ෂා කිරීම
+    if (!itemId) {
+        console.error("ID එකක් ලැබුණේ නැහැ!");
+        
     }
 
+    // 2. SweetAlert හරහා තහවුරු කරගැනීම
     const result = await Swal.fire({
-        title: 'Are you sure?',
-        text: "You won't be able to revert this!",
+        title: 'මකා දමන්නද?',
+        text: "මෙම අයිතමය නැවත ලබාගත නොහැක!",
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
         cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Yes, delete it!'
+        confirmButtonText: 'ඔව්, මකා දමන්න!',
+        cancelButtonText: 'එපා'
     });
 
     if (result.isConfirmed) {
-        // මෙතන අර මකන ෆන්ක්ෂන් එක කෝල් කරන්න
+        // 3. Supabase එකෙන් මකා දැමීම
         await deleteItemFromSupabase(itemId);
     }
-}
+
 
 
 
@@ -878,62 +871,36 @@ async function triggerDelete(itemId) {
 
         
 
-        // 💡 SYNC CORE RE-MAPPED FUNCTION
-    async function syncProductToDatabase() {
+        async function syncProductToDatabase() {
     const payload = {
-    model_id: currentModelId,
-    image_url: document.getElementById('input-img-url').value,
-    retail_price: parseFloat(document.getElementById('input-retail').value || 0),
-    discount: parseFloat(document.getElementById('input-discount').value || 0),
-    cost_price: parseFloat(document.getElementById('view-cost').innerText.replace(/,/g, '') || 0),
-    color_qty_json: tempColorStockList // මෙතන නම හරියටම Database එකේ තියෙන එකමද බලන්න
-};
+        model_id: currentModelId,
+        image_url: document.getElementById('input-img-url').value,
+        retail_price: parseFloat(document.getElementById('input-retail').value || 0),
+        discount: parseFloat(document.getElementById('input-discount').value || 0),
+        cost_price: parseFloat(document.getElementById('view-cost').innerText.replace(/,/g, '') || 0),
+        color_qty_json: tempColorStockList
+    };
 
     try {
-        // මෙතන අනිවාර්යයෙන්ම rest/v1 කියලා දාන්න
-        const url = `${SUPABASE_URL}/rest/v1/items_stock`;
-        
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                "apikey": SUPABASE_KEY,
-                "Authorization": `Bearer ${SUPABASE_KEY}`,
-                "Content-Type": "application/json",
-                "Prefer": "return=representation" // මේක පාවිච්චි කරන එක වඩා ආරක්ෂිතයි
-            },
-            body: JSON.stringify(payload)
-        });
+        // අලුත් SDK ක්‍රමය: upsert පාවිච්චි කරන්න (මොකද මේක එක පාරක් තියෙන එකක් නම් ඒක update වෙනවා)
+        const { data, error } = await sbClient
+            .from('items_stock')
+            .upsert(payload, { onConflict: 'model_id' }); // model_id එක match වෙනවා නම් update වෙනවා
 
-        const data = await response.json(); // එන උත්තරය බලන්න
+        if (error) throw error;
 
-        if (response.ok) {
-            showAlert('✅ සාර්ථකව සේව් වුණා!', 'success');
-            console.log("Success:", data);
-        } else {
-            console.error("Error status:", response.status, data);
-            showAlert('❌ සේව් වුණේ නැහැ! (Error ' + response.status + ')', 'error');
-        }
+        showAlert('✅ සාර්ථකව සේව් වුණා!', 'success');
+        console.log("Success:", data);
+
     } catch (err) {
-        console.error("Fetch Catch Error:", err);
-        showAlert('❌ සේව් කිරීමේදී දෝෂයක්!', 'error');
+        console.error("Supabase Sync Error:", err);
+        showAlert('❌ සේව් වුණේ නැහැ!', 'error');
     }
 }
 
 
 
 
-async function loadCategoriesFromCloud() {
-    const { data, error } = await sbClient
-        .from('app_categories')
-        .select('structure_data')
-        .eq('id', 'main_structure')
-        .single();
-    
-    if (data) {
-        appData = data.structure_data; // මෙතනින් තමයි global appData එක Update වෙන්නේ
-        updateUI(); // ඊට පස්සේ තමයි UI එක Update වෙන්න ඕනේ
-    }
-}
 
 
 function showSuccess() {
@@ -1002,6 +969,9 @@ window.addEventListener('load', function() {
     history.replaceState({ pageId: startPage }, "", "#" + startPage);
 });
 
+window.onload = function() {
+    initApp();
+};
 
     </script>
 </body>
