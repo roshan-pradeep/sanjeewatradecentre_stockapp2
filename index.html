@@ -74,7 +74,7 @@
         </h1>
         
         <div class="w-full max-w-md space-y-4">
-            <button onclick="navigateTo('page-brand')" class="w-full bg-orange-500 text-white py-6 rounded-2xl text-xl font-bold shadow-md hover:bg-orange-600 transition">
+            <button onclick="navigateTo('page-item')" class="w-full bg-orange-500 text-white py-6 rounded-2xl text-xl font-bold shadow-md hover:bg-orange-600 transition">
                 Trade Centre
             </button>
             <button onclick="showAlert('Furniture Section එක ළඟදීම...', 'warning')" class="w-full bg-teal-600 text-white py-6 rounded-2xl text-xl font-bold shadow-md hover:bg-teal-700 transition">
@@ -91,7 +91,7 @@
 
     <div id="page-brand" class="hidden p-4 min-h-screen">
     <div class="flex justify-between items-center mb-2">
-        <button onclick="navigateTo('page-home')" class="text-blue-600 font-bold">⬅ Back</button>
+        <button onclick="navigateTo('page-item')" class="text-blue-600 font-bold">⬅ Back</button>
         <h2 class="text-xl font-bold text-center flex-1">Select Brand</h2>
         <button id="admin-add-brand" onclick="openAddModal('brand')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
     </div>
@@ -102,7 +102,7 @@
 
     <div id="page-item" class="hidden p-4 min-h-screen">
     <div class="flex justify-between items-center mb-2">
-        <button onclick="navigateTo('page-brand')" class="text-blue-600 font-bold">⬅ Back</button>
+        <button onclick="navigateTo('page-home')" class="text-blue-600 font-bold">⬅ Back</button>
         <h2 class="text-xl font-bold text-center flex-1">Select Item</h2>
         <button id="admin-add-item" onclick="openAddModal('item')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
     </div>
@@ -114,7 +114,7 @@
 
     <div id="page-model" class="hidden p-4 min-h-screen">
     <div class="flex justify-between items-center mb-2">
-        <button onclick="navigateTo('page-item')" class="text-blue-600 font-bold">⬅ Back</button>
+        <button onclick="navigateTo('page-brand')" class="text-blue-600 font-bold">⬅ Back</button>
         <h2 class="text-xl font-bold text-center flex-1">Select Model</h2>
         <button id="admin-add-model" onclick="openAddModal('model')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
     </div>
@@ -201,6 +201,9 @@
         @keyframes alertShow { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
+
+
+
 
 
 
@@ -308,6 +311,10 @@
             document.getElementById('login-sub-title').innerText = mode === 'admin' ? "Admin Portal" : "Staff Portal";
         }
 
+
+
+
+
         // 🔒 සුරක්ෂිත ආරක්ෂක පද්ධතිය (Login Authentication & Verification)
         async function handleSecureLogin() {
             const phone = document.getElementById('login-phone').value.trim();
@@ -338,6 +345,7 @@
                     setupAdminUI(); navigateTo('page-home');
                 } else { showAlert('මෙම අංකය ලියාපදිංචි කර නොමැත!', 'error'); }
             }
+            navigateTo('page-home');
         }
 
         // 🚪 ඇප් එකෙන් සාර්ථකව පිටවීම (Logout)
@@ -370,10 +378,9 @@
             window.location.href = `sms:${staffPhone}${isIOS ? '&' : '?'}body=${encodeURIComponent(message)}`;
         }
 
+        
 
-
-       // මේ විදියට function එකේ definition එක හදන්න
-function navigateTo(pageId, addToHistory = true) {
+      function navigateTo(pageId, addToHistory = true) {
     document.getElementById('custom-context-menu').classList.add('hidden');
     if(pageId === 'page-model') document.getElementById('model-search').value = ''; 
 
@@ -422,64 +429,65 @@ function navigateTo(pageId, addToHistory = true) {
         document.getElementById('breadcrumb-detail').innerHTML = `📍 Location: <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-gray-700 font-bold">${itemName}</span> / <span class="text-emerald-600 font-bold">${modelName}</span>`;
     }
 }
+
+
+
+
+
         // 🎛️ ලබාදෙන දත්ත ලැයිස්තුව අනුව ඩයිනමික් ලෙස බටන්ස් නිර්මාණය කර තිරයට දමන ප්‍රධාන එන්ජිම
-        function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
-            const container = document.getElementById(containerId); container.innerHTML = ''; 
+function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
+    const container = document.getElementById(containerId); 
+    container.innerHTML = ''; 
+    
+    dataArray.forEach(item => {
+        const btn = document.createElement('button');
+        btn.innerText = item.name;
+        btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none no-select transition-all shadow-md`;
+        
+        let pressTimer = null;
+        let isLongPress = false;
+
+        // PC එකේදී Right Click හසුරුවනය
+        btn.addEventListener('contextmenu', (e) => {
+            if (currentRole === 'admin') { e.preventDefault(); showCustomContextMenu(e.clientX, e.clientY, type, item); }
+        });
+
+        // Mobile වලදී Long Press හසුරුවනය
+        const startPress = (e) => {
+            if (currentRole !== 'admin') return;
+            isLongPress = false; btn.classList.add('long-press-active');
+            let x = e.clientX || (e.touches && e.touches[0].clientX);
+            let y = e.clientY || (e.touches && e.touches[0].clientY);
+            pressTimer = setTimeout(() => { isLongPress = true; showCustomContextMenu(x, y, type, item); }, 700);
+        };
+        const endPress = () => { clearTimeout(pressTimer); btn.classList.remove('long-press-active'); };
+
+        btn.addEventListener('touchstart', startPress);
+        btn.addEventListener('touchend', (e) => { endPress(); if (isLongPress) e.preventDefault(); });
+        btn.addEventListener('touchcancel', endPress);
+        btn.addEventListener('mousedown', (e) => { if(e.button === 0) startPress(e); });
+        btn.addEventListener('mouseup', endPress); btn.addEventListener('mouseleave', endPress);
+
+        // බටන් එක ක්ලික් කිරීමේදී සිදුවන දේ (පියවරෙන් පියවර ගමන් කිරීම)
+        btn.addEventListener('click', () => {
+            if (isLongPress) return;
             
-            dataArray.forEach(item => {
-                const btn = document.createElement('button');
-                btn.innerText = item.name;
-                btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none no-select transition-all shadow-md`;
-                
-                let pressTimer = null;
-                let isLongPress = false;
-
-                // PC එකේදී Right Click හසුරුවනය (Context Menu)
-                btn.addEventListener('contextmenu', (e) => {
-                    if (currentRole === 'admin') { e.preventDefault(); showCustomContextMenu(e.clientX, e.clientY, type, item); }
-                });
-
-                // Mobile වලදී බටන් එක ඔබාගෙන සිටීම (Long Press - තත්පර 0.7) හසුරුවන ක්‍රියාවලිය
-                const startPress = (e) => {
-                    if (currentRole !== 'admin') return;
-                    isLongPress = false; btn.classList.add('long-press-active');
-                    let x = e.clientX || (e.touches && e.touches[0].clientX);
-                    let y = e.clientY || (e.touches && e.touches[0].clientY);
-                    pressTimer = setTimeout(() => { isLongPress = true; showCustomContextMenu(x, y, type, item); }, 700);
-                };
-                const endPress = () => { clearTimeout(pressTimer); btn.classList.remove('long-press-active'); };
-
-                btn.addEventListener('touchstart', startPress);
-                btn.addEventListener('touchend', (e) => { endPress(); if (isLongPress) e.preventDefault(); });
-                btn.addEventListener('touchcancel', endPress);
-                btn.addEventListener('mousedown', (e) => { if(e.button === 0) startPress(e); });
-                btn.addEventListener('mouseup', endPress); btn.addEventListener('mouseleave', endPress);
-
-                // බටන් එක සාමාන්‍ය පරිදි ක්ලික් කිරීමේදී සිදුවන දේ
-                btn.addEventListener('click', () => {
-                    if (isLongPress) return;
-                    
-                    // 🛠️ FIX: ක්ලික් කරන බටන් එකේ ID එක ඊළඟ මට්ටමට යාමට පෙර ගෝලීයව සේව් කර ගැනීම
-                    if(type === 'company') {
-                        selectedCompanyId = item.id;
-                        navigateTo('page-brand');
-                    }
-                    else if(type === 'brand') {
-                        selectedBrandId = item.id;
-                        navigateTo('page-item');
-                    }
-                    else if(type === 'item') {
-                        selectedItemId = item.id;
-                        navigateTo('page-model');
-                    }
-                    else if(type === 'model') {
-                        openProductDetailLive(item);
-                    }
-                });
-                container.appendChild(btn);
-            });
-        }
-
+            // 🛠️ Item -> Brand -> Model පාර
+    if(type === 'item') {
+        selectedItemId = item.id;
+        navigateTo('page-brand'); // Item එකෙන් පස්සේ Brand එකට
+    }
+    else if(type === 'brand') {
+        selectedBrandId = item.id;
+        navigateTo('page-model'); // Brand එකෙන් පස්සේ Model එකට
+    }
+    else if(type === 'model') {
+        openProductDetailLive(item); // Model එකෙන් පස්සේ Detail එකට
+    }
+        });
+        container.appendChild(btn);
+    });
+}
         // 🖥️ Right-Click මෙනුව නියමිත ස්ථානයේ පෙන්වීම
         function showCustomContextMenu(x, y, type, item) {
             activeMenuTarget = { type: type, item: item };
