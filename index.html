@@ -7,6 +7,10 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
+
+
+
+
     <style>
         /* 📱 බටන් එකක් ලෝන්ග් ප්‍රෙස් කලාම (ඔබන් හිටියාම) පොඩි ඇනිමේෂන් එකක් එන්න දාපු ස්ටයිල් එක */
         .long-press-active { transform: scale(0.95); opacity: 0.8; transition: 0.1s; }
@@ -14,6 +18,10 @@
         .no-select { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
     </style>
 </head>
+
+
+
+
 <body class="bg-gray-100 font-sans text-gray-800 no-select">
 
     <div id="custom-context-menu" class="hidden absolute bg-white shadow-2xl border rounded-xl py-2 w-40 z-50 transition-all">
@@ -25,6 +33,10 @@
         </button>
     </div>
 
+
+
+
+
     <div id="custom-input-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-100">
             <h3 id="modal-title" class="text-lg font-bold text-gray-800 mb-4">Add New Item</h3>
@@ -35,6 +47,10 @@
             </div>
         </div>
     </div>
+
+
+
+
 
     <div id="page-login" class="flex flex-col items-center justify-center min-h-screen p-4">
         <div class="bg-white p-6 rounded-2xl shadow-lg w-full max-w-sm">
@@ -51,6 +67,9 @@
                 <input type="tel" id="login-phone" placeholder="07xxxxxxxx" class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
 
+
+
+
             <div id="admin-password-field" class="mb-4 hidden">
                 <label class="block text-sm font-medium mb-1">Password</label>
                 <input type="password" id="login-pass" placeholder="******" class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -61,6 +80,10 @@
             <button onclick="revealAdminMode()" class="w-full text-center text-xs text-gray-400 mt-4 hover:underline">Admin Login</button>
         </div>
     </div>
+
+
+
+
 
     <div id="page-home" class="hidden min-h-screen flex flex-col items-center justify-center p-4 relative">
         <button onclick="handleLogout()" class="absolute top-4 right-4 bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow">Logout 🚪</button>
@@ -74,13 +97,17 @@
         </h1>
         
         <div class="w-full max-w-md space-y-4">
-            <button onclick="navigateTo('page-company')" class="w-full bg-orange-500 text-white py-6 rounded-2xl text-xl font-bold shadow-md hover:bg-orange-600 transition">
+            <button onclick="navigateTo('page-item')" class="w-full bg-orange-500 text-white py-6 rounded-2xl text-xl font-bold shadow-md hover:bg-orange-600 transition">
                 Trade Centre
             </button>
             <button onclick="showAlert('Furniture Section එක ළඟදීම...', 'warning')" class="w-full bg-teal-600 text-white py-6 rounded-2xl text-xl font-bold shadow-md hover:bg-teal-700 transition">
                 Furniture
             </button>
         </div>
+
+
+
+
 
         <div id="admin-staff-manager" class="hidden w-full max-w-md mt-8 p-4 bg-white rounded-2xl shadow border">
             <h3 class="font-bold text-gray-700 mb-1 text-sm">Invite Staff Members (SMS)</h3>
@@ -89,30 +116,13 @@
         </div>
     </div>
 
-    <div id="page-company" class="hidden p-4 min-h-screen">
-        <div class="flex justify-between items-center mb-4">
+
+
+
+
+   <div id="page-item" class="hidden p-4 min-h-screen">
+        <div class="flex justify-between items-center mb-2">
             <button onclick="navigateTo('page-home')" class="text-blue-600 font-bold">⬅ Back</button>
-            <h2 class="text-xl font-bold text-center flex-1">Select Company</h2>
-            <button id="admin-add-company" onclick="openAddModal('company')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
-        </div>
-        <p class="admin-tip text-center text-xs text-red-500 font-semibold mb-4 hidden">💡 PC: Right-Click | Mobile: Long Press to Edit/Delete</p>
-        <div id="company-container" class="grid grid-cols-2 gap-4"></div>
-    </div>
-
-    <div id="page-brand" class="hidden p-4 min-h-screen">
-        <div class="flex justify-between items-center mb-2">
-            <button onclick="navigateTo('page-company')" class="text-blue-600 font-bold">⬅ Back</button>
-            <h2 class="text-xl font-bold text-center flex-1">Select Brand</h2>
-            <button id="admin-add-brand" onclick="openAddModal('brand')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
-        </div>
-        <div id="breadcrumb-brand" class="text-xs bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg mb-3 font-semibold"></div>
-        <p class="admin-tip text-center text-xs text-red-500 font-semibold mb-4 hidden">💡 PC: Right-Click | Mobile: Long Press to Edit/Delete</p>
-        <div id="brand-container" class="grid grid-cols-2 gap-4"></div>
-    </div>
-
-    <div id="page-item" class="hidden p-4 min-h-screen">
-        <div class="flex justify-between items-center mb-2">
-            <button onclick="navigateTo('page-brand')" class="text-blue-600 font-bold">⬅ Back</button>
             <h2 class="text-xl font-bold text-center flex-1">Select Item</h2>
             <button id="admin-add-item" onclick="openAddModal('item')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
         </div>
@@ -121,9 +131,32 @@
         <div id="item-container" class="grid grid-cols-2 gap-4"></div>
     </div>
 
-    <div id="page-model" class="hidden p-4 min-h-screen">
+
+
+    
+
+
+
+
+    <div id="page-brand" class="hidden p-4 min-h-screen">
         <div class="flex justify-between items-center mb-2">
             <button onclick="navigateTo('page-item')" class="text-blue-600 font-bold">⬅ Back</button>
+            <h2 class="text-xl font-bold text-center flex-1">Select Brand</h2>
+            <button id="admin-add-brand" onclick="openAddModal('brand')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
+        </div>
+        <div id="breadcrumb-brand" class="text-xs bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg mb-3 font-semibold"></div>
+        <p class="admin-tip text-center text-xs text-red-500 font-semibold mb-4 hidden">💡 PC: Right-Click | Mobile: Long Press to Edit/Delete</p>
+        <div id="brand-container" class="grid grid-cols-2 gap-4"></div>
+    </div>
+
+
+
+
+
+
+    <div id="page-model" class="hidden p-4 min-h-screen">
+        <div class="flex justify-between items-center mb-2">
+            <button onclick="navigateTo('page-brand')" class="text-blue-600 font-bold">⬅ Back</button>
             <h2 class="text-xl font-bold text-center flex-1">Select Model</h2>
             <button id="admin-add-model" onclick="openAddModal('model')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
         </div>
@@ -134,6 +167,10 @@
         </div>
         <div id="model-container" class="grid grid-cols-2 gap-4"></div>
     </div>
+
+
+
+
 
     <div id="page-detail" class="hidden p-4 min-h-screen bg-white">
         <div class="flex justify-between items-center mb-2 border-b pb-2">
@@ -147,6 +184,8 @@
                 <div class="w-full h-64 bg-gray-200 rounded-2xl flex items-center justify-center overflow-hidden border">
                     <img id="product-img" src="https://via.placeholder.com/300?text=No+Image" alt="Product Image" class="object-contain h-full w-full">
                 </div>
+
+
                 <div class="p-4 bg-gray-50 rounded-xl space-y-2 border">
                     <p class="text-lg"><strong>Retail Price:</strong> රු. <span id="view-retail">0.00</span></p>
                     <p class="text-lg text-red-600"><strong>Discount:</strong> <span id="view-discount">0</span>%</p>
@@ -363,6 +402,10 @@
             document.querySelectorAll('.admin-tip').forEach(el => el.classList.toggle('hidden', currentRole !== 'admin'));
         }
 
+
+
+
+
         // ✉️ නව සේවකයින් සඳහා පද්ධතියට ලියාපදිංචි වීමට SMS එකක් යවන මොඩියුලය
         async function generateStaffLink() {
             const staffPhone = document.getElementById('new-staff-phone').value.trim();
@@ -374,54 +417,70 @@
             window.location.href = `sms:${staffPhone}${isIOS ? '&' : '?'}body=${encodeURIComponent(message)}`;
         }
 
-        // 🛠️ FIX: Deep-Linking සහ ව්‍යුහාත්මක පෙරීම (Filtering) සහිත Navigation පද්ධතිය + Breadcrumb පාර පෙන්වීම
-        function navigateTo(pageId) {
 
-            if (!window.isBackAction) {
+
+
+
+
+        // 🛠️ FIX: Deep-Linking සහ ව්‍යුහාත්මක පෙරීම (Filtering) සහිත Navigation පද්ධතිය + Breadcrumb පාර පෙන්වීම
+       function navigateTo(pageId) {
+    // 1. History සහ Navigation සැකසුම්
+    if (!window.isBackAction) {
         history.pushState({ pageId: pageId }, "", "#" + pageId);
     }
     window.isBackAction = false;
-            document.getElementById('custom-context-menu').classList.add('hidden');
-            if(pageId === 'page-model') document.getElementById('model-search').value = ''; 
 
-            ['page-login', 'page-home', 'page-company', 'page-brand', 'page-item', 'page-model', 'page-detail'].forEach(p => document.getElementById(p).classList.add('hidden'));
-            document.getElementById(pageId).classList.remove('hidden');
+    // 2. UI පිරිසිදු කිරීම
+    document.getElementById('custom-context-menu')?.classList.add('hidden');
+    if (pageId === 'page-model') document.getElementById('model-search').value = '';
 
-            setupAdminUI();
+    // 3. පේජ් පෙන්වීම/වැසීම
+    const allPages = ['page-login', 'page-home', 'page-item', 'page-brand', 'page-model', 'page-detail'];
+    allPages.forEach(p => {
+        const el = document.getElementById(p);
+        if (el) el.classList.add('hidden');
+    });
 
-            // 🛑 හැම පේජ් එකකටම අදාළ මව් නාමයන් සොයාගන්නා ලොජික් එක
-            let compName = appData.companys.find(c => c.id === selectedCompanyId)?.name || '';
-            let brandName = appData.brands.find(b => b.id === selectedBrandId)?.name || '';
-            let itemName = appData.items.find(i => i.id === selectedItemId)?.name || '';
+    const targetPage = document.getElementById(pageId);
+    if (targetPage) targetPage.classList.remove('hidden');
 
-            // 1. සමාගම් පේජ් එකට යද්දී සේරම සමාගම් පෙන්වයි
-            if(pageId === 'page-company') {
-                renderButtons('company', appData.companys || [], 'company-container', 'bg-orange-600');
-            }
-            // 2. බ්‍රෑන්ඩ් පේජ් එකට යද්දී ක්ලික් කළ Company එකට අයිති බ්‍රෑන්ඩ් විතරක් පෙන්නන්න Filter කරයි
-            if(pageId === 'page-brand') {
-                document.getElementById('breadcrumb-brand').innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${compName}</span> /`;
-                let filteredBrands = appData.brands.filter(b => b.companyId === selectedCompanyId);
-                renderButtons('brand', filteredBrands, 'brand-container', 'bg-blue-600');
-            }
-            // 3. අයිටම් පේජ් එකට යද්දී ක්ලික් කළ Brand එකට අයිති අයිටම් විතරක් පෙන්වයි
-            if(pageId === 'page-item') {
-                document.getElementById('breadcrumb-item').innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${compName}</span> / <span class="text-blue-600 font-bold">${brandName}</span> /`;
-                let filteredItems = appData.items.filter(i => i.brandId === selectedBrandId);
-                renderButtons('item', filteredItems, 'item-container', 'bg-gray-700');
-            }
-            // 4. මොඩල් පේජ් එකට යද්දී ක්ලික් කළ Item එකට අයිති මොඩල්ස් විතරක් පෙන්වයි
-            if(pageId === 'page-model') {
-                document.getElementById('breadcrumb-model').innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${compName}</span> / <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-gray-700 font-bold">${itemName}</span> /`;
-                let filteredModels = appData.models.filter(m => m.itemId === selectedItemId);
-                renderButtons('model', filteredModels, 'model-container', 'bg-emerald-600');
-            }
-            // 5. ඩීටේල් පේජ් එකේදීත් සම්පූර්ණ පාර උඩින්ම පෙන්වයි
-            if(pageId === 'page-detail') {
-                let modelName = appData.models.find(m => m.id === currentModelId)?.name || '';
-                document.getElementById('breadcrumb-detail').innerHTML = `📍 Location: <span class="text-orange-600 font-bold">${compName}</span> / <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-gray-700 font-bold">${itemName}</span> / <span class="text-emerald-600 font-bold">${modelName}</span>`;
-            }
-        }
+    setupAdminUI();
+
+    // 4. දත්ත නාමයන් සොයාගැනීම (Breadcrumb සඳහා)
+    const itemName = appData.items?.find(i => i.id === selectedItemId)?.name || '';
+    const brandName = appData.brands?.find(b => b.id === selectedBrandId)?.name || '';
+    const modelName = appData.models?.find(m => m.id === currentModelId)?.name || '';
+
+    // 5. Navigation Flow Logic (Item -> Brand -> Model -> Detail)
+    
+    // අයිටම් පේජ් එක (පළමු පේජ් එක)
+    if (pageId === 'page-item') {
+        renderButtons('item', appData.items || [], 'item-container', 'bg-gray-700');
+    }
+
+    // බ්‍රෑන්ඩ් පේජ් එක (අයිටම් එකට අදාළ බ්‍රෑන්ඩ්)
+    if (pageId === 'page-brand') {
+        document.getElementById('breadcrumb-brand').innerHTML = `📍 Location: <span class="text-gray-700 font-bold">${itemName}</span> /`;
+        let filteredBrands = appData.brands.filter(b => b.itemId === selectedItemId);
+        renderButtons('brand', filteredBrands, 'brand-container', 'bg-blue-600');
+    }
+
+    // මොඩල් පේජ් එක (බ්‍රෑන්ඩ් එකට අදාළ මොඩල්)
+    if (pageId === 'page-model') {
+        document.getElementById('breadcrumb-model').innerHTML = `📍 Location: <span class="text-gray-700 font-bold">${itemName}</span> / <span class="text-blue-600 font-bold">${brandName}</span> /`;
+        let filteredModels = appData.models.filter(m => m.brandId === selectedBrandId);
+        renderButtons('model', filteredModels, 'model-container', 'bg-emerald-600');
+    }
+
+    // ඩීටේල් පේජ් එක (අවසාන විස්තරය)
+    if (pageId === 'page-detail') {
+        document.getElementById('breadcrumb-detail').innerHTML = `📍 Location: <span class="text-gray-700 font-bold">${itemName}</span> / <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-emerald-600 font-bold">${modelName}</span>`;
+    }
+}
+
+
+
+
 
         // 🎛️ ලබාදෙන දත්ත ලැයිස්තුව අනුව ඩයිනමික් ලෙස බටන්ස් නිර්මාණය කර තිරයට දමන ප්‍රධාන එන්ජිම
         function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
@@ -817,23 +876,6 @@
         function closeAppAlert() {
             document.getElementById('app-custom-alert').style.display = 'none';
         }
-
-// Browser එකේ back button එක එබූ විට ක්‍රියාත්මක වේ
-window.addEventListener('popstate', function(event) {
-    console.log("Back button එක ඔබන ලදී!");
-    
-    // මේකෙන් තමයි අපි කරන්නේ 'Back' කරන්නේ කියලා App එකට කියන්නේ
-    window.isBackAction = true; 
-
-    // History එකේ pageId එකක් තියෙනවා නම් ඒකට යන්න
-    if (event.state && event.state.pageId) {
-        navigateTo(event.state.pageId);
-    } else {
-        // ඉතිහාසයේ මුකුත් නැත්නම් හෝම් එකට යන්න
-        navigateTo('page-home');
-    }
-});
-
     </script>
 </body>
 </html>
