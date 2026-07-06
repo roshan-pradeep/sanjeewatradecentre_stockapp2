@@ -262,14 +262,19 @@
         let liveDatabaseStock = {};      // ක්ලවුඩ් එකෙන් කියවා ගන්නා සම්පූර්ණ තොග දත්ත ගබඩා වන ඔබ්ජෙක්ට් එක
         
         // 🛠️ FIX: Deep-Linking පද්ධතිය සඳහා දැනටසිලෙක්ට් කර ඇති Parent ID මතක තබා ගන්නා Variables
-        let selectedCompanyId = '';
+        
         let selectedBrandId = '';
         let selectedItemId = '';
 
         // 🗂️ බටන් ව්‍යුහය තාවකාලිකව රඳවා ගන්නා ප්‍රධාන මව් ව්‍යුහය
-        let appData = { companys: [], brands: [], items: [], models: [] };
+        let appData = { items: [], brands: [],  models: [] };
         let activeMenuTarget = { type: null, item: null }; // Right click හෝ Long Press මඟින් සිලෙක්ට් වන බටන් එකේ දත්ත
         let currentModalMode = 'add'; // පොප්-අප් එක ක්‍රියාත්මක වන මෝඩ් එක (add / rename)
+
+
+
+
+
 
         // 🌐 SUPABASE සන්නිවේදන කේන්ද්‍රය (Fetch API මඟින් දත්ත යැවීම සහ ලබා ගැනීම)
         async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = false) {
@@ -298,42 +303,39 @@
             await fetchSupabase('/app_categories', 'POST', payload, true);
         }
 
-        // ☁️ ඇප් එක ස්ටාර්ට් වෙද්දීම ඩේටාබේස් එකෙන් බටන් ව්‍යුහය කියවා ගන්නා ලොජික් එක
+
+
+
+
+
         async function loadCategoriesFromCloud() {
-            const res = await fetchSupabase('/app_categories?id=eq.main_structure&order=id.desc');
-            if (res && res.length > 0 && res[0].structure_data) {
-                let rawData = res[0].structure_data;
-                
-                // පරණ 'companies' සහ අලුත් 'companys' කී දෙකම එකට එකතු කර ආරක්ෂා කරගන්නා ලොජික් එක
-                let clearCompanys = [];
-                if (rawData.companies && Array.isArray(rawData.companies)) clearCompanys = [...rawData.companies];
-                if (rawData.companys && Array.isArray(rawData.companys)) clearCompanys = [...rawData.companys];
-
-                // ඩුප්ලිකේට් සමාගම් අයින් කිරීම (Data Cleaning)
-                let uniqueCompanys = [];
-                let map = new Map();
-                for (const item of clearCompanys) {
-                    if(!map.has(item.id)){
-                        map.set(item.id, true);
-                        uniqueCompanys.push(item);
-                    }
-                }
-
-                appData.companys = uniqueCompanys.length > 0 ? uniqueCompanys : [{ id: 'c1', name: 'Damro' }, { id: 'c2', name: 'Singer' }];
-                appData.brands = rawData.brands || [];
-                appData.items = rawData.items || [];
-                appData.models = rawData.models || [];
-            } else {
-                // ඩේටාබේස් එක මුළුමනින්ම හිස් නම් ඩිෆෝල්ට් සමාගම් දෙකක් දමා ඇප් එක ආරම්භ කිරීම
-                appData = {
-                    companys: [{ id: 'c1', name: 'Damro' }, { id: 'c2', name: 'Singer' }],
-                    brands: [],
-                    items: [],
-                    models: []
-                };
-                await saveCategoriesToCloud();
-            }
+    const res = await fetchSupabase('/app_categories?id=eq.main_structure&order=id.desc');
+    
+    if (res && res.length > 0 && res[0].structure_data) {
+        let rawData = res[0].structure_data;
+        
+        // 1. company අයින් කරලා, අත්‍යවශ්‍ය දත්ත ටික විතරක් assign කිරීම
+        appData.items = rawData.items || [];
+        appData.brands = rawData.brands || [];
+        appData.models = rawData.models || [];
+        
+        // 2. අත්‍යවශ්‍ය නම් Default values ටිකක් තියාගන්න (පරණ data නැතිනම්)
+        if (appData.items.length === 0) {
+            appData.items = [{ id: 'i1', name: 'Refrigerators' }, { id: 'i2', name: 'Washing Machines' }];
         }
+    } else {
+        // ඩේටාබේස් එකේ මුකුත් නැත්නම් Default දත්ත දාන්න
+        appData = {
+            items: [{ id: 'i1', name: 'Refrigerators' }, { id: 'i2', name: 'Washing Machines' }],
+            brands: [],
+            models: []
+        };
+        await saveCategoriesToCloud();
+    }
+}
+
+
+
 
         // 🤫 රහස් ඇඩ්මින් ලොගින් ෆීල්ඩ් එක එලියට දමන ෆන්ෂන් එක
         function revealAdminMode() {
@@ -350,6 +352,10 @@
             document.getElementById('lbl-phone').innerText = mode === 'admin' ? "Admin Phone Number" : "Enter Registered Phone Number";
             document.getElementById('login-sub-title').innerText = mode === 'admin' ? "Admin Portal" : "Staff Portal";
         }
+
+
+
+
 
         // 🔒 සුරක්ෂිත ආරක්ෂක පද්ධතිය (Login Authentication & Verification)
         async function handleSecureLogin() {
@@ -384,23 +390,23 @@
         }
 
         // 🚪 ඇප් එකෙන් සාර්ථකව පිටවීම (Logout)
-        function handleLogout() {
-            currentRole = 'staff'; currentLoginMode = 'staff';
-            localStorage.removeItem('sanjeewa_role');
-            document.getElementById('login-mode-container').classList.add('hidden');
-            switchLoginMode('staff');
-            document.getElementById('login-phone').value = ''; document.getElementById('login-pass').value = '';
-            setupAdminUI(); navigateTo('page-login');
-        }
-
-        // 🛡️ යූසර්ගේ බලතල (Admin / Staff) අනුව Add Buttons පෙන්වීම හෝ සැඟවීම
-        function setupAdminUI() {
-            const adminElements = ['admin-add-company', 'admin-add-brand', 'admin-add-item', 'admin-add-model', 'admin-detail-controls', 'admin-staff-manager'];
-            adminElements.forEach(id => {
-                const el = document.getElementById(id); if(el) el.classList.toggle('hidden', currentRole !== 'admin');
-            });
-            document.querySelectorAll('.admin-tip').forEach(el => el.classList.toggle('hidden', currentRole !== 'admin'));
-        }
+function handleLogout() {
+    currentRole = 'staff'; 
+    currentLoginMode = 'staff';
+    localStorage.removeItem('sanjeewa_role');
+    
+    // UI පිරිසිදු කිරීම
+    document.getElementById('login-mode-container').classList.add('hidden');
+    switchLoginMode('staff');
+    
+    // Login fields පිරිසිදු කිරීම
+    document.getElementById('login-phone').value = ''; 
+    document.getElementById('login-pass').value = '';
+    
+    // Admin UI සහ Navigation සැකසීම
+    setupAdminUI(); 
+    navigateTo('page-login');
+}
 
 
 
@@ -482,67 +488,67 @@
 
 
 
-        // 🎛️ ලබාදෙන දත්ත ලැයිස්තුව අනුව ඩයිනමික් ලෙස බටන්ස් නිර්මාණය කර තිරයට දමන ප්‍රධාන එන්ජිම
         function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
-            const container = document.getElementById(containerId); container.innerHTML = ''; 
+    const container = document.getElementById(containerId); 
+    container.innerHTML = ''; 
+    
+    dataArray.forEach(item => {
+        const btn = document.createElement('button');
+        btn.innerText = item.name;
+        btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none no-select transition-all shadow-md`;
+        
+        let pressTimer = null;
+        let isLongPress = false;
+
+        // Context Menu / Long Press Logic (එහෙමමයි)
+        btn.addEventListener('contextmenu', (e) => {
+            if (currentRole === 'admin') { e.preventDefault(); showCustomContextMenu(e.clientX, e.clientY, type, item); }
+        });
+
+        const startPress = (e) => {
+            if (currentRole !== 'admin') return;
+            isLongPress = false; btn.classList.add('long-press-active');
+            let x = e.clientX || (e.touches && e.touches[0].clientX);
+            let y = e.clientY || (e.touches && e.touches[0].clientY);
+            pressTimer = setTimeout(() => { isLongPress = true; showCustomContextMenu(x, y, type, item); }, 700);
+        };
+        const endPress = () => { clearTimeout(pressTimer); btn.classList.remove('long-press-active'); };
+
+        btn.addEventListener('touchstart', startPress);
+        btn.addEventListener('touchend', (e) => { endPress(); if (isLongPress) e.preventDefault(); });
+        btn.addEventListener('touchcancel', endPress);
+        btn.addEventListener('mousedown', (e) => { if(e.button === 0) startPress(e); });
+        btn.addEventListener('mouseup', endPress); btn.addEventListener('mouseleave', endPress);
+
+        // 🛠️ අලුත් Navigation Logic (Item -> Brand -> Model)
+        btn.addEventListener('click', () => {
+            if (isLongPress) return;
             
-            dataArray.forEach(item => {
-                const btn = document.createElement('button');
-                btn.innerText = item.name;
-                btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none no-select transition-all shadow-md`;
-                
-                let pressTimer = null;
-                let isLongPress = false;
+            if (type === 'item') {
+                selectedItemId = item.id;
+                navigateTo('page-brand'); // අයිටම් එකෙන් බ්‍රෑන්ඩ් එකට
+            }
+            else if (type === 'brand') {
+                selectedBrandId = item.id;
+                navigateTo('page-model'); // බ්‍රෑන්ඩ් එකෙන් මොඩල් එකට
+            }
+            else if (type === 'model') {
+                currentModelId = item.id; // මෙතනදී modelId එක සේව් කරලා
+                openProductDetailLive(item); // ඩීටේල් පේජ් එකට යනවා
+            }
+        });
+        container.appendChild(btn);
+    });
+}
 
-                // PC එකේදී Right Click හසුරුවනය (Context Menu)
-                btn.addEventListener('contextmenu', (e) => {
-                    if (currentRole === 'admin') { e.preventDefault(); showCustomContextMenu(e.clientX, e.clientY, type, item); }
-                });
 
-                // Mobile වලදී බටන් එක ඔබාගෙන සිටීම (Long Press - තත්පර 0.7) හසුරුවන ක්‍රියාවලිය
-                const startPress = (e) => {
-                    if (currentRole !== 'admin') return;
-                    isLongPress = false; btn.classList.add('long-press-active');
-                    let x = e.clientX || (e.touches && e.touches[0].clientX);
-                    let y = e.clientY || (e.touches && e.touches[0].clientY);
-                    pressTimer = setTimeout(() => { isLongPress = true; showCustomContextMenu(x, y, type, item); }, 700);
-                };
-                const endPress = () => { clearTimeout(pressTimer); btn.classList.remove('long-press-active'); };
 
-                btn.addEventListener('touchstart', startPress);
-                btn.addEventListener('touchend', (e) => { endPress(); if (isLongPress) e.preventDefault(); });
-                btn.addEventListener('touchcancel', endPress);
-                btn.addEventListener('mousedown', (e) => { if(e.button === 0) startPress(e); });
-                btn.addEventListener('mouseup', endPress); btn.addEventListener('mouseleave', endPress);
 
-                // බටන් එක සාමාන්‍ය පරිදි ක්ලික් කිරීමේදී සිදුවන දේ
-                btn.addEventListener('click', () => {
-                    if (isLongPress) return;
-                    
-                    // 🛠️ FIX: ක්ලික් කරන බටන් එකේ ID එක ඊළඟ මට්ටමට යාමට පෙර ගෝලීයව සේව් කර ගැනීම
-                    if(type === 'company') {
-                        selectedCompanyId = item.id;
-                        navigateTo('page-brand');
-                    }
-                    else if(type === 'brand') {
-                        selectedBrandId = item.id;
-                        navigateTo('page-item');
-                    }
-                    else if(type === 'item') {
-                        selectedItemId = item.id;
-                        navigateTo('page-model');
-                    }
-                    else if(type === 'model') {
-                        openProductDetailLive(item);
-                    }
-                });
-                container.appendChild(btn);
-            });
-        }
+
 
         // 🖥️ Right-Click මෙනුව නියමිත ස්ථානයේ පෙන්වීම
         function showCustomContextMenu(x, y, type, item) {
-            activeMenuTarget = { type: type, item: item };
+            activeMenuTarget = { type: type, item: null };
             const menu = document.getElementById('custom-context-menu');
             menu.style.left = `${x}px`;
             menu.style.top = `${y}px`;
@@ -555,77 +561,90 @@
             if(!menu.contains(e.target)) menu.classList.add('hidden');
         });
 
+
+
+
         // 🎨 SweetAlert2: අලුතින් බටන් එකක් සාදන ලස්සන ඩාර්ක් පොප්-අප් එක
         function openAddModal(type) {
-            currentModalMode = 'add';
-            activeMenuTarget = { type: type, item: null };
+    currentModalMode = 'add';
+    activeMenuTarget = { type: type, item: null };
 
-            Swal.fire({
-                title: `➕ Add New ${type.toUpperCase()}`,
-                input: 'text',
-                inputPlaceholder: `Enter ${type} name here...`,
-                showCancelButton: true,
-                confirmButtonColor: '#2563eb',
-                cancelButtonColor: '#64748b',
-                background: '#1e293b',
-                color: '#fff',
-                inputValidator: (value) => {
-                    if (!value) return 'You need to write a name!';
-                }
-            }).then(async (result) => {
-                if (result.value) {
-                    const inputValue = result.value.trim();
-                    let arrayKey = `${type}s`;
-                    
-                    // 🛠️ FIX: අලුත් බටන් එකක් හැදෙද්දී ඒක දැනට ඉන්න Parent ID එකට ලින්ක් කිරීම
-                    let newItem = { id: 'id_' + Date.now(), name: inputValue };
-                    if (type === 'brand') newItem.companyId = selectedCompanyId;
-                    if (type === 'item') newItem.brandId = selectedBrandId;
-                    if (type === 'model') newItem.itemId = selectedItemId;
-
-                    appData[arrayKey].push(newItem);
-                    await saveCategoriesToCloud(); // ක්ලවුඩ් සින්ක්
-                    navigateTo(`page-${type}`);
-                }
-            });
+    Swal.fire({
+        title: `➕ Add New ${type.toUpperCase()}`,
+        input: 'text',
+        inputPlaceholder: `Enter ${type} name here...`,
+        showCancelButton: true,
+        confirmButtonColor: '#2563eb',
+        cancelButtonColor: '#64748b',
+        background: '#1e293b',
+        color: '#fff',
+        inputValidator: (value) => {
+            if (!value) return 'You need to write a name!';
         }
+    }).then(async (result) => {
+        if (result.value) {
+            const inputValue = result.value.trim();
+            let arrayKey = `${type}s`;
+            
+            // අලුත් අයිටම් එකේ දත්ත සකස් කිරීම
+            let newItem = { id: 'id_' + Date.now(), name: inputValue };
+
+            // අලුත් ව්‍යුහයට අනුව ලින්ක් කිරීම:
+            // Brand එකක් නම් -> Item ID එකට ලින්ක් වේ
+            // Model එකක් නම් -> Brand ID එකට ලින්ක් වේ
+            if (type === 'brand') newItem.itemId = selectedItemId;
+            if (type === 'model') newItem.brandId = selectedBrandId;
+
+            appData[arrayKey].push(newItem);
+            await saveCategoriesToCloud();
+            navigateTo(`page-${type}`);
+        }
+    });
+}
+
+
+
 
         // ✏️ SweetAlert2: නම වෙනස් කිරීමට (Rename) අදාළ සුපිරි ඩාර්ක් පොප්-අප් එක
         document.getElementById('menu-rename-btn').addEventListener('click', () => {
-            currentModalMode = 'rename';
-            const target = activeMenuTarget;
-            document.getElementById('custom-context-menu').classList.add('hidden');
-            
-            if(target.item) {
-                Swal.fire({
-                    title: `✏️ Rename "${target.item.name}"`,
-                    input: 'text',
-                    inputValue: target.item.name,
-                    showCancelButton: true,
-                    confirmButtonColor: '#2563eb',
-                    cancelButtonColor: '#64748b',
-                    background: '#1e293b',
+    currentModalMode = 'rename';
+    const target = activeMenuTarget;
+    document.getElementById('custom-context-menu').classList.add('hidden');
+    
+    if(target.item) {
+        Swal.fire({
+            title: `✏️ Rename "${target.item.name}"`,
+            input: 'text',
+            inputValue: target.item.name,
+            showCancelButton: true,
+            confirmButtonColor: '#2563eb',
+            cancelButtonColor: '#64748b',
+            background: '#1e293b',
+            color: '#fff',
+            inputValidator: (value) => {
+                if (!value) return 'Field cannot be left blank!';
+            }
+        }).then(async (result) => {
+            if (result.value) {
+                target.item.name = result.value.trim();
+                await saveCategoriesToCloud();
+                Swal.fire({ 
+                    title: 'Updated! 🎉', 
+                    text: 'නම සාර්ථකව වෙනස් කළා!', 
+                    icon: 'success', 
+                    background: '#1e293b', 
                     color: '#fff',
-                    inputValidator: (value) => {
-                        if (!value) return 'Field cannot be left blank!';
-                    }
-                }).then(async (result) => {
-                    if (result.value) {
-                        target.item.name = result.value.trim();
-                        await saveCategoriesToCloud();
-                        Swal.fire({ 
-                            title: 'Updated! 🎉', 
-                            text: 'නම සාර්ථකව වෙනස් කළා!', 
-                            icon: 'success', 
-                            background: '#1e293b', 
-                            color: '#fff',
-                            confirmButtonColor: '#2563eb'
-                        });
-                        navigateTo(`page-${target.type}`);
-                    }
+                    confirmButtonColor: '#2563eb'
                 });
+                navigateTo(`page-${target.type}`);
             }
         });
+    }
+});
+
+
+
+
 
         function closeInputModal() {
             document.getElementById('custom-input-modal').classList.add('hidden');
@@ -666,12 +685,22 @@
             }
         });
 
+
+
+
+
+
         // 🔍 සර්ච් බාර් එක ඇතුළේ මොඩල්ස් සර්ච් කරද්දී, දැනට ඉන්න Item එකට අදාළ මොඩල්ස් විතරක් ෆිල්ටර් වීම
         function searchModels() {
             const query = document.getElementById('model-search').value.toLowerCase();
             const filtered = appData.models.filter(m => m.itemId === selectedItemId && m.name.toLowerCase().includes(query));
             renderButtons('model', filtered, 'model-container', 'bg-emerald-600');
         }
+
+
+
+
+
 
         // ☁️ `items_stock` ටේබල් එකෙන් තොග, මිල ගණන් සහ පින්තූර ලින්ක් කියවා ගැනීම
         async function loadAllStockFromCloud() {
@@ -685,6 +714,8 @@
                 });
             }
         }
+
+
 
         // 📊 යම් නිශ්චිත මොඩල් එකක් ක්ලික් කළ විට එහි විස්තර ලයිව් ලෝඩ් කර පෙන්වීම
         async function openProductDetailLive(modelItem) {
@@ -701,6 +732,9 @@
             navigateTo('page-detail'); // 📍 Breadcrumb ලෝඩ් වෙන්න කලින් Navigation එකට යන්න ඕනේ
         }
 
+
+
+
         // 🧮 වට්ටම් (Discount) සහ අවසාන ශුද්ධ මිල (Net Cost Price) ලයිව් ගණනය කිරීමේ සූත්‍රය
         function calculateCostPriceLive() {
             const retail = parseFloat(document.getElementById('input-retail').value) || 0;
@@ -714,6 +748,8 @@
             document.getElementById('view-cost').innerText = cost.toLocaleString();
         }
 
+
+
         // 🎨 තොග ලැයිස්තුවට (Stock Object) තාවකාලිකව වර්ණ සහ ප්‍රමාණයන් ඇතුළත් කිරීම
         function addColourStockToArray() {
             const colour = document.getElementById('input-colour').value.trim();
@@ -723,6 +759,13 @@
             document.getElementById('input-colour').value = ''; document.getElementById('input-qty').value = '';
             updateDetailViewUI();
         }
+
+
+
+
+
+
+
 
         // ☁️ සකස් කළ මුළු නිෂ්පාදන තොරතුරු පැතිකඩම Supabase එකට ස්ථිරවම Save (Sync) කිරීම
         async function syncProductToDatabase() {
@@ -750,6 +793,11 @@
                 sc.innerHTML += `<p class="flex justify-between border-b py-1"><span>🎨 ${c}:</span> <strong>${p.stock[c]} Pcs</strong></p>`;
             });
         }
+
+
+
+
+
 
         // 🔔 තොග 5ට වඩා අඩු (Low Stock) අයිතම පරීක්ෂා කිරීම - [FIXED: පරණ මැකූ ඒවා අයින් කර ඇත]
         function checkLowStockNotifications() {
@@ -809,6 +857,11 @@
             }
         }
 
+
+
+
+
+
         function closeStockModal() {
             document.getElementById('custom-stock-modal').style.display = 'none';
         }
@@ -843,6 +896,11 @@
             // 6. ඇප් එක ක්‍රියාත්මක වී තත්පර 2කින් Low Stock ඇඟවීම් පරීක්ෂා කිරීම
             setTimeout(checkLowStockNotifications, 2000); 
         }
+
+
+
+
+        
 
         // 🔔 සාමාන්‍ය මැසේජ් පෙන්වීමට යොදාගන්නා පොදු ඇලර්ට් ෆන්ෂන් එක
         function showAlert(message, type = 'success') {
