@@ -7,10 +7,6 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
-
-
-
-
     <style>
         /* 📱 බටන් එකක් ලෝන්ග් ප්‍රෙස් කලාම (ඔබන් හිටියාම) පොඩි ඇනිමේෂන් එකක් එන්න දාපු ස්ටයිල් එක */
         .long-press-active { transform: scale(0.95); opacity: 0.8; transition: 0.1s; }
@@ -18,10 +14,6 @@
         .no-select { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
     </style>
 </head>
-
-
-
-
 <body class="bg-gray-100 font-sans text-gray-800 no-select">
 
     <div id="custom-context-menu" class="hidden absolute bg-white shadow-2xl border rounded-xl py-2 w-40 z-50 transition-all">
@@ -33,10 +25,6 @@
         </button>
     </div>
 
-
-
-
-
     <div id="custom-input-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-100">
             <h3 id="modal-title" class="text-lg font-bold text-gray-800 mb-4">Add New Item</h3>
@@ -47,10 +35,6 @@
             </div>
         </div>
     </div>
-
-
-
-
 
     <div id="page-login" class="flex flex-col items-center justify-center min-h-screen p-4">
         <div class="bg-white p-6 rounded-2xl shadow-lg w-full max-w-sm">
@@ -67,9 +51,6 @@
                 <input type="tel" id="login-phone" placeholder="07xxxxxxxx" class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
 
-
-
-
             <div id="admin-password-field" class="mb-4 hidden">
                 <label class="block text-sm font-medium mb-1">Password</label>
                 <input type="password" id="login-pass" placeholder="******" class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -80,10 +61,6 @@
             <button onclick="revealAdminMode()" class="w-full text-center text-xs text-gray-400 mt-4 hover:underline">Admin Login</button>
         </div>
     </div>
-
-
-
-
 
     <div id="page-home" class="hidden min-h-screen flex flex-col items-center justify-center p-4 relative">
         <button onclick="handleLogout()" class="absolute top-4 right-4 bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow">Logout 🚪</button>
@@ -97,17 +74,13 @@
         </h1>
         
         <div class="w-full max-w-md space-y-4">
-            <button onclick="navigateTo('page-item')" class="w-full bg-orange-500 text-white py-6 rounded-2xl text-xl font-bold shadow-md hover:bg-orange-600 transition">
+            <button onclick="navigateTo('page-brand')" class="w-full bg-orange-500 text-white py-6 rounded-2xl text-xl font-bold shadow-md hover:bg-orange-600 transition">
                 Trade Centre
             </button>
             <button onclick="showAlert('Furniture Section එක ළඟදීම...', 'warning')" class="w-full bg-teal-600 text-white py-6 rounded-2xl text-xl font-bold shadow-md hover:bg-teal-700 transition">
                 Furniture
             </button>
         </div>
-
-
-
-
 
         <div id="admin-staff-manager" class="hidden w-full max-w-md mt-8 p-4 bg-white rounded-2xl shadow border">
             <h3 class="font-bold text-gray-700 mb-1 text-sm">Invite Staff Members (SMS)</h3>
@@ -116,61 +89,41 @@
         </div>
     </div>
 
-
-
-
-
-   <div id="page-item" class="hidden p-4 min-h-screen">
-        <div class="flex justify-between items-center mb-2">
-            <button onclick="navigateTo('page-home')" class="text-blue-600 font-bold">⬅ Back</button>
-            <h2 class="text-xl font-bold text-center flex-1">Select Item</h2>
-            <button id="admin-add-item" onclick="openAddModal('item')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
-        </div>
-        <div id="breadcrumb-item" class="text-xs bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg mb-3 font-semibold"></div>
-        <p class="admin-tip text-center text-xs text-red-500 font-semibold mb-4 hidden">💡 PC: Right-Click | Mobile: Long Press to Edit/Delete</p>
-        <div id="item-container" class="grid grid-cols-2 gap-4"></div>
+    <div id="page-brand" class="hidden p-4 min-h-screen">
+    <div class="flex justify-between items-center mb-2">
+        <button onclick="navigateTo('page-home')" class="text-blue-600 font-bold">⬅ Back</button>
+        <h2 class="text-xl font-bold text-center flex-1">Select Brand</h2>
+        <button id="admin-add-brand" onclick="openAddModal('brand')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
     </div>
-
-
+    <div id="brand-container" class="grid grid-cols-2 gap-4"></div>
+</div>
 
     
 
-
-
-
-    <div id="page-brand" class="hidden p-4 min-h-screen">
-        <div class="flex justify-between items-center mb-2">
-            <button onclick="navigateTo('page-item')" class="text-blue-600 font-bold">⬅ Back</button>
-            <h2 class="text-xl font-bold text-center flex-1">Select Brand</h2>
-            <button id="admin-add-brand" onclick="openAddModal('brand')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
-        </div>
-        <div id="breadcrumb-brand" class="text-xs bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg mb-3 font-semibold"></div>
-        <p class="admin-tip text-center text-xs text-red-500 font-semibold mb-4 hidden">💡 PC: Right-Click | Mobile: Long Press to Edit/Delete</p>
-        <div id="brand-container" class="grid grid-cols-2 gap-4"></div>
+    <div id="page-item" class="hidden p-4 min-h-screen">
+    <div class="flex justify-between items-center mb-2">
+        <button onclick="navigateTo('page-brand')" class="text-blue-600 font-bold">⬅ Back</button>
+        <h2 class="text-xl font-bold text-center flex-1">Select Item</h2>
+        <button id="admin-add-item" onclick="openAddModal('item')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
     </div>
-
-
-
+    <div id="breadcrumb-item" class="text-xs bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg mb-3 font-semibold"></div>
+    <div id="item-container" class="grid grid-cols-2 gap-4"></div>
+</div>
 
 
 
     <div id="page-model" class="hidden p-4 min-h-screen">
-        <div class="flex justify-between items-center mb-2">
-            <button onclick="navigateTo('page-brand')" class="text-blue-600 font-bold">⬅ Back</button>
-            <h2 class="text-xl font-bold text-center flex-1">Select Model</h2>
-            <button id="admin-add-model" onclick="openAddModal('model')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
-        </div>
-        <div id="breadcrumb-model" class="text-xs bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg mb-3 font-semibold"></div>
-        <p class="admin-tip text-center text-xs text-red-500 font-semibold mb-4 hidden">💡 PC: Right-Click | Mobile: Long Press to Edit/Delete</p>
-        <div class="mb-4">
-            <input type="text" id="model-search" oninput="searchModels()" placeholder="Search Model..." class="w-full p-3 border rounded-xl shadow-sm">
-        </div>
-        <div id="model-container" class="grid grid-cols-2 gap-4"></div>
+    <div class="flex justify-between items-center mb-2">
+        <button onclick="navigateTo('page-item')" class="text-blue-600 font-bold">⬅ Back</button>
+        <h2 class="text-xl font-bold text-center flex-1">Select Model</h2>
+        <button id="admin-add-model" onclick="openAddModal('model')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
     </div>
-
-
-
-
+    <div id="breadcrumb-model" class="text-xs bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg mb-3 font-semibold"></div>
+    <div class="mb-4">
+        <input type="text" id="model-search" oninput="searchModels()" placeholder="Search Model..." class="w-full p-3 border rounded-xl shadow-sm">
+    </div>
+    <div id="model-container" class="grid grid-cols-2 gap-4"></div>
+</div>
 
     <div id="page-detail" class="hidden p-4 min-h-screen bg-white">
         <div class="flex justify-between items-center mb-2 border-b pb-2">
@@ -182,10 +135,8 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-4">
                 <div class="w-full h-64 bg-gray-200 rounded-2xl flex items-center justify-center overflow-hidden border">
-                    <img id="product-img" src="https://via.placeholder.com/300?text=No+Image" alt="Product Image" class="object-contain h-full w-full">
+                    <img id="product-img" src="https://placehold.co/300x300?text=No+Image" alt="Product Image" class="object-contain h-full w-full">
                 </div>
-
-
                 <div class="p-4 bg-gray-50 rounded-xl space-y-2 border">
                     <p class="text-lg"><strong>Retail Price:</strong> රු. <span id="view-retail">0.00</span></p>
                     <p class="text-lg text-red-600"><strong>Discount:</strong> <span id="view-discount">0</span>%</p>
@@ -251,6 +202,12 @@
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
 
+
+
+
+
+
+
     <script>
         // ☁️ Supabase සම්බන්ධතා දත්ත (Project URL සහ Secret Anon Key)
         const SUPABASE_URL = "https://ttviyfggsmiaemtbawvg.supabase.co";
@@ -262,19 +219,14 @@
         let liveDatabaseStock = {};      // ක්ලවුඩ් එකෙන් කියවා ගන්නා සම්පූර්ණ තොග දත්ත ගබඩා වන ඔබ්ජෙක්ට් එක
         
         // 🛠️ FIX: Deep-Linking පද්ධතිය සඳහා දැනටසිලෙක්ට් කර ඇති Parent ID මතක තබා ගන්නා Variables
-        
+        let selectedCompanyId = '';
         let selectedBrandId = '';
         let selectedItemId = '';
 
         // 🗂️ බටන් ව්‍යුහය තාවකාලිකව රඳවා ගන්නා ප්‍රධාන මව් ව්‍යුහය
-        let appData = { items: [], brands: [],  models: [] };
+        let appData = { companys: [], brands: [], items: [], models: [] };
         let activeMenuTarget = { type: null, item: null }; // Right click හෝ Long Press මඟින් සිලෙක්ට් වන බටන් එකේ දත්ත
         let currentModalMode = 'add'; // පොප්-අප් එක ක්‍රියාත්මක වන මෝඩ් එක (add / rename)
-
-
-
-
-
 
         // 🌐 SUPABASE සන්නිවේදන කේන්ද්‍රය (Fetch API මඟින් දත්ත යැවීම සහ ලබා ගැනීම)
         async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = false) {
@@ -303,39 +255,42 @@
             await fetchSupabase('/app_categories', 'POST', payload, true);
         }
 
-
-
-
-
-
+        // ☁️ ඇප් එක ස්ටාර්ට් වෙද්දීම ඩේටාබේස් එකෙන් බටන් ව්‍යුහය කියවා ගන්නා ලොජික් එක
         async function loadCategoriesFromCloud() {
-    const res = await fetchSupabase('/app_categories?id=eq.main_structure&order=id.desc');
-    
-    if (res && res.length > 0 && res[0].structure_data) {
-        let rawData = res[0].structure_data;
-        
-        // 1. company අයින් කරලා, අත්‍යවශ්‍ය දත්ත ටික විතරක් assign කිරීම
-        appData.items = rawData.items || [];
-        appData.brands = rawData.brands || [];
-        appData.models = rawData.models || [];
-        
-        // 2. අත්‍යවශ්‍ය නම් Default values ටිකක් තියාගන්න (පරණ data නැතිනම්)
-        if (appData.items.length === 0) {
-            appData.items = [{ id: 'i1', name: 'Refrigerators' }, { id: 'i2', name: 'Washing Machines' }];
+            const res = await fetchSupabase('/app_categories?id=eq.main_structure&order=id.desc');
+            if (res && res.length > 0 && res[0].structure_data) {
+                let rawData = res[0].structure_data;
+                
+                // පරණ 'companies' සහ අලුත් 'companys' කී දෙකම එකට එකතු කර ආරක්ෂා කරගන්නා ලොජික් එක
+                let clearCompanys = [];
+                if (rawData.companies && Array.isArray(rawData.companies)) clearCompanys = [...rawData.companies];
+                if (rawData.companys && Array.isArray(rawData.companys)) clearCompanys = [...rawData.companys];
+
+                // ඩුප්ලිකේට් සමාගම් අයින් කිරීම (Data Cleaning)
+                let uniqueCompanys = [];
+                let map = new Map();
+                for (const item of clearCompanys) {
+                    if(!map.has(item.id)){
+                        map.set(item.id, true);
+                        uniqueCompanys.push(item);
+                    }
+                }
+
+                appData.companys = uniqueCompanys.length > 0 ? uniqueCompanys : [{ id: 'c1', name: 'Damro' }, { id: 'c2', name: 'Singer' }];
+                appData.brands = rawData.brands || [];
+                appData.items = rawData.items || [];
+                appData.models = rawData.models || [];
+            } else {
+                // ඩේටාබේස් එක මුළුමනින්ම හිස් නම් ඩිෆෝල්ට් සමාගම් දෙකක් දමා ඇප් එක ආරම්භ කිරීම
+                appData = {
+                    companys: [{ id: 'c1', name: 'Damro' }, { id: 'c2', name: 'Singer' }],
+                    brands: [],
+                    items: [],
+                    models: []
+                };
+                await saveCategoriesToCloud();
+            }
         }
-    } else {
-        // ඩේටාබේස් එකේ මුකුත් නැත්නම් Default දත්ත දාන්න
-        appData = {
-            items: [{ id: 'i1', name: 'Refrigerators' }, { id: 'i2', name: 'Washing Machines' }],
-            brands: [],
-            models: []
-        };
-        await saveCategoriesToCloud();
-    }
-}
-
-
-
 
         // 🤫 රහස් ඇඩ්මින් ලොගින් ෆීල්ඩ් එක එලියට දමන ෆන්ෂන් එක
         function revealAdminMode() {
@@ -352,10 +307,6 @@
             document.getElementById('lbl-phone').innerText = mode === 'admin' ? "Admin Phone Number" : "Enter Registered Phone Number";
             document.getElementById('login-sub-title').innerText = mode === 'admin' ? "Admin Portal" : "Staff Portal";
         }
-
-
-
-
 
         // 🔒 සුරක්ෂිත ආරක්ෂක පද්ධතිය (Login Authentication & Verification)
         async function handleSecureLogin() {
@@ -390,27 +341,23 @@
         }
 
         // 🚪 ඇප් එකෙන් සාර්ථකව පිටවීම (Logout)
-function handleLogout() {
-    currentRole = 'staff'; 
-    currentLoginMode = 'staff';
-    localStorage.removeItem('sanjeewa_role');
-    
-    // UI පිරිසිදු කිරීම
-    document.getElementById('login-mode-container').classList.add('hidden');
-    switchLoginMode('staff');
-    
-    // Login fields පිරිසිදු කිරීම
-    document.getElementById('login-phone').value = ''; 
-    document.getElementById('login-pass').value = '';
-    
-    // Admin UI සහ Navigation සැකසීම
-    setupAdminUI(); 
-    navigateTo('page-login');
-}
+        function handleLogout() {
+            currentRole = 'staff'; currentLoginMode = 'staff';
+            localStorage.removeItem('sanjeewa_role');
+            document.getElementById('login-mode-container').classList.add('hidden');
+            switchLoginMode('staff');
+            document.getElementById('login-phone').value = ''; document.getElementById('login-pass').value = '';
+            setupAdminUI(); navigateTo('page-login');
+        }
 
-
-
-
+        // 🛡️ යූසර්ගේ බලතල (Admin / Staff) අනුව Add Buttons පෙන්වීම හෝ සැඟවීම
+        function setupAdminUI() {
+            const adminElements = ['admin-add-company', 'admin-add-brand', 'admin-add-item', 'admin-add-model', 'admin-detail-controls', 'admin-staff-manager'];
+            adminElements.forEach(id => {
+                const el = document.getElementById(id); if(el) el.classList.toggle('hidden', currentRole !== 'admin');
+            });
+            document.querySelectorAll('.admin-tip').forEach(el => el.classList.toggle('hidden', currentRole !== 'admin'));
+        }
 
         // ✉️ නව සේවකයින් සඳහා පද්ධතියට ලියාපදිංචි වීමට SMS එකක් යවන මොඩියුලය
         async function generateStaffLink() {
@@ -425,130 +372,117 @@ function handleLogout() {
 
 
 
+       // මේ විදියට function එකේ definition එක හදන්න
+function navigateTo(pageId, addToHistory = true) {
+    document.getElementById('custom-context-menu').classList.add('hidden');
+    if(pageId === 'page-model') document.getElementById('model-search').value = ''; 
 
-
-
-        // 🛠️ FIX: Deep-Linking සහ ව්‍යුහාත්මක පෙරීම (Filtering) සහිත Navigation පද්ධතිය + Breadcrumb පාර පෙන්වීම
-       function navigateTo(pageId) {
-    // 1. History සහ Navigation සැකසුම්
-    if (!window.isBackAction) {
-        history.pushState({ pageId: pageId }, "", "#" + pageId);
-    }
-    window.isBackAction = false;
-
-    // 2. UI පිරිසිදු කිරීම
-    document.getElementById('custom-context-menu')?.classList.add('hidden');
-    if (pageId === 'page-model') document.getElementById('model-search').value = '';
-
-    // 3. පේජ් පෙන්වීම/වැසීම
-    const allPages = ['page-login', 'page-home', 'page-item', 'page-brand', 'page-model', 'page-detail'];
-    allPages.forEach(p => {
+    ['page-login', 'page-home', 'page-brand', 'page-item', 'page-model', 'page-detail'].forEach(p => {
         const el = document.getElementById(p);
-        if (el) el.classList.add('hidden');
+        if(el) el.classList.add('hidden');
     });
 
-    const targetPage = document.getElementById(pageId);
-    if (targetPage) targetPage.classList.remove('hidden');
+    const target = document.getElementById(pageId);
+    if(target) target.classList.remove('hidden');
 
     setupAdminUI();
 
-    // 4. දත්ත නාමයන් සොයාගැනීම (Breadcrumb සඳහා)
-    const itemName = appData.items?.find(i => i.id === selectedItemId)?.name || '';
-    const brandName = appData.brands?.find(b => b.id === selectedBrandId)?.name || '';
-    const modelName = appData.models?.find(m => m.id === currentModelId)?.name || '';
-
-    // 5. Navigation Flow Logic (Item -> Brand -> Model -> Detail)
-    
-    // අයිටම් පේජ් එක (පළමු පේජ් එක)
-    if (pageId === 'page-item') {
-        renderButtons('item', appData.items || [], 'item-container', 'bg-gray-700');
+    // Browser History එකට එකතු කිරීම
+    if (addToHistory) {
+        history.pushState({ pageId: pageId }, null, "");
     }
 
-    // බ්‍රෑන්ඩ් පේජ් එක (අයිටම් එකට අදාළ බ්‍රෑන්ඩ්)
-    if (pageId === 'page-brand') {
-        document.getElementById('breadcrumb-brand').innerHTML = `📍 Location: <span class="text-gray-700 font-bold">${itemName}</span> /`;
-        let filteredBrands = appData.brands.filter(b => b.itemId === selectedItemId);
-        renderButtons('brand', filteredBrands, 'brand-container', 'bg-blue-600');
+
+    // 3. මව් නාමයන් හොයාගන්න
+    let brandName = appData.brands.find(b => b.id === selectedBrandId)?.name || '';
+    let itemName = appData.items.find(i => i.id === selectedItemId)?.name || '';
+
+    // 4. බ්‍රෑන්ඩ් පේජ් එක (දැන් මේක තමයි මුල්ම පියවර)
+    if(pageId === 'page-brand') {
+        renderButtons('brand', appData.brands || [], 'brand-container', 'bg-blue-600');
     }
 
-    // මොඩල් පේජ් එක (බ්‍රෑන්ඩ් එකට අදාළ මොඩල්)
-    if (pageId === 'page-model') {
-        document.getElementById('breadcrumb-model').innerHTML = `📍 Location: <span class="text-gray-700 font-bold">${itemName}</span> / <span class="text-blue-600 font-bold">${brandName}</span> /`;
-        let filteredModels = appData.models.filter(m => m.brandId === selectedBrandId);
+    // 5. අයිටම් පේජ් එක (ක්ලික් කළ බ්‍රෑන්ඩ් එකට අයිති අයිටම් විතරක් පෙන්වයි)
+    if(pageId === 'page-item') {
+        document.getElementById('breadcrumb-item').innerHTML = `📍 Location: <span class="text-blue-600 font-bold">${brandName}</span> /`;
+        let filteredItems = appData.items.filter(i => i.brandId === selectedBrandId);
+        renderButtons('item', filteredItems, 'item-container', 'bg-gray-700');
+    }
+
+    // 6. මොඩල් පේජ් එක (ක්ලික් කළ අයිටම් එකට අයිති මොඩල් විතරක් පෙන්වයි)
+    if(pageId === 'page-model') {
+        document.getElementById('breadcrumb-model').innerHTML = `📍 Location: <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-gray-700 font-bold">${itemName}</span> /`;
+        let filteredModels = appData.models.filter(m => m.itemId === selectedItemId);
         renderButtons('model', filteredModels, 'model-container', 'bg-emerald-600');
     }
 
-    // ඩීටේල් පේජ් එක (අවසාන විස්තරය)
-    if (pageId === 'page-detail') {
-        document.getElementById('breadcrumb-detail').innerHTML = `📍 Location: <span class="text-gray-700 font-bold">${itemName}</span> / <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-emerald-600 font-bold">${modelName}</span>`;
+    // 7. ඩීටේල් පේජ් එක
+    if(pageId === 'page-detail') {
+        let modelName = appData.models.find(m => m.id === currentModelId)?.name || '';
+        document.getElementById('breadcrumb-detail').innerHTML = `📍 Location: <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-gray-700 font-bold">${itemName}</span> / <span class="text-emerald-600 font-bold">${modelName}</span>`;
     }
 }
-
-
-
-
-
+        // 🎛️ ලබාදෙන දත්ත ලැයිස්තුව අනුව ඩයිනමික් ලෙස බටන්ස් නිර්මාණය කර තිරයට දමන ප්‍රධාන එන්ජිම
         function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
-    const container = document.getElementById(containerId); 
-    container.innerHTML = ''; 
-    
-    dataArray.forEach(item => {
-        const btn = document.createElement('button');
-        btn.innerText = item.name;
-        btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none no-select transition-all shadow-md`;
-        
-        let pressTimer = null;
-        let isLongPress = false;
-
-        // Context Menu / Long Press Logic (එහෙමමයි)
-        btn.addEventListener('contextmenu', (e) => {
-            if (currentRole === 'admin') { e.preventDefault(); showCustomContextMenu(e.clientX, e.clientY, type, item); }
-        });
-
-        const startPress = (e) => {
-            if (currentRole !== 'admin') return;
-            isLongPress = false; btn.classList.add('long-press-active');
-            let x = e.clientX || (e.touches && e.touches[0].clientX);
-            let y = e.clientY || (e.touches && e.touches[0].clientY);
-            pressTimer = setTimeout(() => { isLongPress = true; showCustomContextMenu(x, y, type, item); }, 700);
-        };
-        const endPress = () => { clearTimeout(pressTimer); btn.classList.remove('long-press-active'); };
-
-        btn.addEventListener('touchstart', startPress);
-        btn.addEventListener('touchend', (e) => { endPress(); if (isLongPress) e.preventDefault(); });
-        btn.addEventListener('touchcancel', endPress);
-        btn.addEventListener('mousedown', (e) => { if(e.button === 0) startPress(e); });
-        btn.addEventListener('mouseup', endPress); btn.addEventListener('mouseleave', endPress);
-
-        // 🛠️ අලුත් Navigation Logic (Item -> Brand -> Model)
-        btn.addEventListener('click', () => {
-            if (isLongPress) return;
+            const container = document.getElementById(containerId); container.innerHTML = ''; 
             
-            if (type === 'item') {
-                selectedItemId = item.id;
-                navigateTo('page-brand'); // අයිටම් එකෙන් බ්‍රෑන්ඩ් එකට
-            }
-            else if (type === 'brand') {
-                selectedBrandId = item.id;
-                navigateTo('page-model'); // බ්‍රෑන්ඩ් එකෙන් මොඩල් එකට
-            }
-            else if (type === 'model') {
-                currentModelId = item.id; // මෙතනදී modelId එක සේව් කරලා
-                openProductDetailLive(item); // ඩීටේල් පේජ් එකට යනවා
-            }
-        });
-        container.appendChild(btn);
-    });
-}
+            dataArray.forEach(item => {
+                const btn = document.createElement('button');
+                btn.innerText = item.name;
+                btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none no-select transition-all shadow-md`;
+                
+                let pressTimer = null;
+                let isLongPress = false;
 
+                // PC එකේදී Right Click හසුරුවනය (Context Menu)
+                btn.addEventListener('contextmenu', (e) => {
+                    if (currentRole === 'admin') { e.preventDefault(); showCustomContextMenu(e.clientX, e.clientY, type, item); }
+                });
 
+                // Mobile වලදී බටන් එක ඔබාගෙන සිටීම (Long Press - තත්පර 0.7) හසුරුවන ක්‍රියාවලිය
+                const startPress = (e) => {
+                    if (currentRole !== 'admin') return;
+                    isLongPress = false; btn.classList.add('long-press-active');
+                    let x = e.clientX || (e.touches && e.touches[0].clientX);
+                    let y = e.clientY || (e.touches && e.touches[0].clientY);
+                    pressTimer = setTimeout(() => { isLongPress = true; showCustomContextMenu(x, y, type, item); }, 700);
+                };
+                const endPress = () => { clearTimeout(pressTimer); btn.classList.remove('long-press-active'); };
 
+                btn.addEventListener('touchstart', startPress);
+                btn.addEventListener('touchend', (e) => { endPress(); if (isLongPress) e.preventDefault(); });
+                btn.addEventListener('touchcancel', endPress);
+                btn.addEventListener('mousedown', (e) => { if(e.button === 0) startPress(e); });
+                btn.addEventListener('mouseup', endPress); btn.addEventListener('mouseleave', endPress);
 
-
+                // බටන් එක සාමාන්‍ය පරිදි ක්ලික් කිරීමේදී සිදුවන දේ
+                btn.addEventListener('click', () => {
+                    if (isLongPress) return;
+                    
+                    // 🛠️ FIX: ක්ලික් කරන බටන් එකේ ID එක ඊළඟ මට්ටමට යාමට පෙර ගෝලීයව සේව් කර ගැනීම
+                    if(type === 'company') {
+                        selectedCompanyId = item.id;
+                        navigateTo('page-brand');
+                    }
+                    else if(type === 'brand') {
+                        selectedBrandId = item.id;
+                        navigateTo('page-item');
+                    }
+                    else if(type === 'item') {
+                        selectedItemId = item.id;
+                        navigateTo('page-model');
+                    }
+                    else if(type === 'model') {
+                        openProductDetailLive(item);
+                    }
+                });
+                container.appendChild(btn);
+            });
+        }
 
         // 🖥️ Right-Click මෙනුව නියමිත ස්ථානයේ පෙන්වීම
         function showCustomContextMenu(x, y, type, item) {
-            activeMenuTarget = { type: type, item: null };
+            activeMenuTarget = { type: type, item: item };
             const menu = document.getElementById('custom-context-menu');
             menu.style.left = `${x}px`;
             menu.style.top = `${y}px`;
@@ -561,90 +495,77 @@ function handleLogout() {
             if(!menu.contains(e.target)) menu.classList.add('hidden');
         });
 
-
-
-
         // 🎨 SweetAlert2: අලුතින් බටන් එකක් සාදන ලස්සන ඩාර්ක් පොප්-අප් එක
         function openAddModal(type) {
-    currentModalMode = 'add';
-    activeMenuTarget = { type: type, item: null };
+            currentModalMode = 'add';
+            activeMenuTarget = { type: type, item: null };
 
-    Swal.fire({
-        title: `➕ Add New ${type.toUpperCase()}`,
-        input: 'text',
-        inputPlaceholder: `Enter ${type} name here...`,
-        showCancelButton: true,
-        confirmButtonColor: '#2563eb',
-        cancelButtonColor: '#64748b',
-        background: '#1e293b',
-        color: '#fff',
-        inputValidator: (value) => {
-            if (!value) return 'You need to write a name!';
+            Swal.fire({
+                title: `➕ Add New ${type.toUpperCase()}`,
+                input: 'text',
+                inputPlaceholder: `Enter ${type} name here...`,
+                showCancelButton: true,
+                confirmButtonColor: '#2563eb',
+                cancelButtonColor: '#64748b',
+                background: '#1e293b',
+                color: '#fff',
+                inputValidator: (value) => {
+                    if (!value) return 'You need to write a name!';
+                }
+            }).then(async (result) => {
+                if (result.value) {
+                    const inputValue = result.value.trim();
+                    let arrayKey = `${type}s`;
+                    
+                    // 🛠️ FIX: අලුත් බටන් එකක් හැදෙද්දී ඒක දැනට ඉන්න Parent ID එකට ලින්ක් කිරීම
+                    let newItem = { id: 'id_' + Date.now(), name: inputValue };
+                    if (type === 'brand') newItem.companyId = selectedCompanyId;
+                    if (type === 'item') newItem.brandId = selectedBrandId;
+                    if (type === 'model') newItem.itemId = selectedItemId;
+
+                    appData[arrayKey].push(newItem);
+                    await saveCategoriesToCloud(); // ක්ලවුඩ් සින්ක්
+                    navigateTo(`page-${type}`);
+                }
+            });
         }
-    }).then(async (result) => {
-        if (result.value) {
-            const inputValue = result.value.trim();
-            let arrayKey = `${type}s`;
-            
-            // අලුත් අයිටම් එකේ දත්ත සකස් කිරීම
-            let newItem = { id: 'id_' + Date.now(), name: inputValue };
-
-            // අලුත් ව්‍යුහයට අනුව ලින්ක් කිරීම:
-            // Brand එකක් නම් -> Item ID එකට ලින්ක් වේ
-            // Model එකක් නම් -> Brand ID එකට ලින්ක් වේ
-            if (type === 'brand') newItem.itemId = selectedItemId;
-            if (type === 'model') newItem.brandId = selectedBrandId;
-
-            appData[arrayKey].push(newItem);
-            await saveCategoriesToCloud();
-            navigateTo(`page-${type}`);
-        }
-    });
-}
-
-
-
 
         // ✏️ SweetAlert2: නම වෙනස් කිරීමට (Rename) අදාළ සුපිරි ඩාර්ක් පොප්-අප් එක
         document.getElementById('menu-rename-btn').addEventListener('click', () => {
-    currentModalMode = 'rename';
-    const target = activeMenuTarget;
-    document.getElementById('custom-context-menu').classList.add('hidden');
-    
-    if(target.item) {
-        Swal.fire({
-            title: `✏️ Rename "${target.item.name}"`,
-            input: 'text',
-            inputValue: target.item.name,
-            showCancelButton: true,
-            confirmButtonColor: '#2563eb',
-            cancelButtonColor: '#64748b',
-            background: '#1e293b',
-            color: '#fff',
-            inputValidator: (value) => {
-                if (!value) return 'Field cannot be left blank!';
-            }
-        }).then(async (result) => {
-            if (result.value) {
-                target.item.name = result.value.trim();
-                await saveCategoriesToCloud();
-                Swal.fire({ 
-                    title: 'Updated! 🎉', 
-                    text: 'නම සාර්ථකව වෙනස් කළා!', 
-                    icon: 'success', 
-                    background: '#1e293b', 
+            currentModalMode = 'rename';
+            const target = activeMenuTarget;
+            document.getElementById('custom-context-menu').classList.add('hidden');
+            
+            if(target.item) {
+                Swal.fire({
+                    title: `✏️ Rename "${target.item.name}"`,
+                    input: 'text',
+                    inputValue: target.item.name,
+                    showCancelButton: true,
+                    confirmButtonColor: '#2563eb',
+                    cancelButtonColor: '#64748b',
+                    background: '#1e293b',
                     color: '#fff',
-                    confirmButtonColor: '#2563eb'
+                    inputValidator: (value) => {
+                        if (!value) return 'Field cannot be left blank!';
+                    }
+                }).then(async (result) => {
+                    if (result.value) {
+                        target.item.name = result.value.trim();
+                        await saveCategoriesToCloud();
+                        Swal.fire({ 
+                            title: 'Updated! 🎉', 
+                            text: 'නම සාර්ථකව වෙනස් කළා!', 
+                            icon: 'success', 
+                            background: '#1e293b', 
+                            color: '#fff',
+                            confirmButtonColor: '#2563eb'
+                        });
+                        navigateTo(`page-${target.type}`);
+                    }
                 });
-                navigateTo(`page-${target.type}`);
             }
         });
-    }
-});
-
-
-
-
 
         function closeInputModal() {
             document.getElementById('custom-input-modal').classList.add('hidden');
@@ -685,22 +606,12 @@ function handleLogout() {
             }
         });
 
-
-
-
-
-
         // 🔍 සර්ච් බාර් එක ඇතුළේ මොඩල්ස් සර්ච් කරද්දී, දැනට ඉන්න Item එකට අදාළ මොඩල්ස් විතරක් ෆිල්ටර් වීම
         function searchModels() {
             const query = document.getElementById('model-search').value.toLowerCase();
             const filtered = appData.models.filter(m => m.itemId === selectedItemId && m.name.toLowerCase().includes(query));
             renderButtons('model', filtered, 'model-container', 'bg-emerald-600');
         }
-
-
-
-
-
 
         // ☁️ `items_stock` ටේබල් එකෙන් තොග, මිල ගණන් සහ පින්තූර ලින්ක් කියවා ගැනීම
         async function loadAllStockFromCloud() {
@@ -714,8 +625,6 @@ function handleLogout() {
                 });
             }
         }
-
-
 
         // 📊 යම් නිශ්චිත මොඩල් එකක් ක්ලික් කළ විට එහි විස්තර ලයිව් ලෝඩ් කර පෙන්වීම
         async function openProductDetailLive(modelItem) {
@@ -732,9 +641,6 @@ function handleLogout() {
             navigateTo('page-detail'); // 📍 Breadcrumb ලෝඩ් වෙන්න කලින් Navigation එකට යන්න ඕනේ
         }
 
-
-
-
         // 🧮 වට්ටම් (Discount) සහ අවසාන ශුද්ධ මිල (Net Cost Price) ලයිව් ගණනය කිරීමේ සූත්‍රය
         function calculateCostPriceLive() {
             const retail = parseFloat(document.getElementById('input-retail').value) || 0;
@@ -748,8 +654,6 @@ function handleLogout() {
             document.getElementById('view-cost').innerText = cost.toLocaleString();
         }
 
-
-
         // 🎨 තොග ලැයිස්තුවට (Stock Object) තාවකාලිකව වර්ණ සහ ප්‍රමාණයන් ඇතුළත් කිරීම
         function addColourStockToArray() {
             const colour = document.getElementById('input-colour').value.trim();
@@ -759,13 +663,6 @@ function handleLogout() {
             document.getElementById('input-colour').value = ''; document.getElementById('input-qty').value = '';
             updateDetailViewUI();
         }
-
-
-
-
-
-
-
 
         // ☁️ සකස් කළ මුළු නිෂ්පාදන තොරතුරු පැතිකඩම Supabase එකට ස්ථිරවම Save (Sync) කිරීම
         async function syncProductToDatabase() {
@@ -784,7 +681,7 @@ function handleLogout() {
         // 📱 විස්තර වෙනස් කළ පසු UI එක ලස්සනට අප්ඩේට් කර තිරයේ පෙන්වීම
         function updateDetailViewUI() {
             const p = liveDatabaseStock[currentModelId];
-            document.getElementById('product-img').src = p.img || 'https://via.placeholder.com/300?text=No+Image';
+            document.getElementById('product-img').src = p.img || 'https://placehold.co/300x300?text=No+Image';
             document.getElementById('view-retail').innerText = (p.retail || 0).toLocaleString();
             document.getElementById('view-discount').innerText = p.discount || 0;
             document.getElementById('view-cost').innerText = (p.cost || 0).toLocaleString();
@@ -793,11 +690,6 @@ function handleLogout() {
                 sc.innerHTML += `<p class="flex justify-between border-b py-1"><span>🎨 ${c}:</span> <strong>${p.stock[c]} Pcs</strong></p>`;
             });
         }
-
-
-
-
-
 
         // 🔔 තොග 5ට වඩා අඩු (Low Stock) අයිතම පරීක්ෂා කිරීම - [FIXED: පරණ මැකූ ඒවා අයින් කර ඇත]
         function checkLowStockNotifications() {
@@ -857,14 +749,12 @@ function handleLogout() {
             }
         }
 
-
-
-
-
-
         function closeStockModal() {
             document.getElementById('custom-stock-modal').style.display = 'none';
         }
+
+
+
 
         // 🚀 WINDOW ONLOAD: ඇප් එක ස්ටාර්ට් වෙද්දීම පසුබිමෙන් සිදුවන ප්‍රධාන මෙහෙයුම්
         window.onload = async () => { 
@@ -896,11 +786,6 @@ function handleLogout() {
             // 6. ඇප් එක ක්‍රියාත්මක වී තත්පර 2කින් Low Stock ඇඟවීම් පරීක්ෂා කිරීම
             setTimeout(checkLowStockNotifications, 2000); 
         }
-
-
-
-
-        
 
         // 🔔 සාමාන්‍ය මැසේජ් පෙන්වීමට යොදාගන්නා පොදු ඇලර්ට් ෆන්ෂන් එක
         function showAlert(message, type = 'success') {
@@ -934,6 +819,19 @@ function handleLogout() {
         function closeAppAlert() {
             document.getElementById('app-custom-alert').style.display = 'none';
         }
+
+
+      // 📱 Phone/Browser Back Button Logic
+    window.onpopstate = function(event) {
+    if (event.state && event.state.pageId) {
+        // පසුපසට යන්න (history එකට add නොකර)
+        navigateTo(event.state.pageId, false);
+    } else {
+        // කිසිම history එකක් නැත්නම් කෙලින්ම home එකට
+        navigateTo('page-home', false);
+    }
+};
+
     </script>
 </body>
 </html>
