@@ -90,11 +90,16 @@
     </div>
 
     <div id="page-brand" class="hidden p-4 min-h-screen">
-    <div class="flex justify-between items-center mb-2">
+    <div class="flex items-center mb-4">
         <button onclick="navigateTo('page-home')" class="text-blue-600 font-bold">⬅ Back</button>
         <h2 class="text-xl font-bold text-center flex-1">Select Item</h2>
-        <button id="admin-add-brand" onclick="openAddModal('brand')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
     </div>
+
+    <div class="mb-4">
+        <input type="text" id="brand-search" oninput="searchBrands()" placeholder="Search Brand..." 
+               class="w-full p-4 border border-gray-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600">
+    </div>
+
     <div id="brand-container" class="grid grid-cols-2 gap-4"></div>
 </div>
 
@@ -831,6 +836,18 @@ function navigateTo(pageId, addToHistory = true) {
         navigateTo('page-home', false);
     }
 };
+
+
+function searchBrands() {
+    const searchTerm = document.getElementById('brand-search').value.toLowerCase();
+    const container = document.getElementById('brand-container');
+    const buttons = container.getElementsByTagName('button');
+
+    for (let btn of buttons) {
+        let name = btn.innerText.toLowerCase();
+        btn.style.display = name.includes(searchTerm) ? "" : "none";
+    }
+}
 
     </script>
 </body>
