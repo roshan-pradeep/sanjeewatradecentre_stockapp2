@@ -92,7 +92,10 @@
     <div id="page-brand" class="hidden p-4 min-h-screen">
     <div class="flex items-center mb-4">
         <button onclick="navigateTo('page-home')" class="text-blue-600 font-bold">⬅ Back</button>
-        <h2 class="text-xl font-bold text-center flex-1">Select Item</h2>
+        <h2 class="text-xl font-bold text-center flex-1">Select items</h2>
+        <button onclick="openAddModal('brand')" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:bg-blue-700 transition">
+            + Add
+        </button>
     </div>
 
     <div class="mb-4">
@@ -102,7 +105,6 @@
 
     <div id="brand-container" class="grid grid-cols-2 gap-4"></div>
 </div>
-
     
 
     <div id="page-item" class="hidden p-4 min-h-screen">
