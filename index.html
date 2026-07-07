@@ -385,6 +385,8 @@ function navigateTo(pageId, addToHistory = true) {
     if(pageId === 'page-model') document.getElementById('model-search').value = ''; 
 
 
+    
+
     // navigateTo ෆන්ක්ෂන් එකේ ඇතුලේ
 if (pageId === 'page-brand') {
     const searchInput = document.getElementById('brand-search');
@@ -401,6 +403,9 @@ if (pageId === 'page-brand') {
 
     const target = document.getElementById(pageId);
     if(target) target.classList.remove('hidden');
+
+
+    
 
     setupAdminUI();
 
@@ -779,6 +784,10 @@ if (pageId === 'page-brand') {
             await loadCategoriesFromCloud(); // 1. බටන් ස්ට්‍රක්චර් එක කියවීම
             await loadAllStockFromCloud();   // 2. මිල සහ තොග දත්ත කියවීම
 
+
+            selectedItemId = sessionStorage.getItem('selectedItemId') || '';
+            selectedBrandId = sessionStorage.getItem('selectedBrandId') || '';
+
             // 3. කලින් ලොග් වී සිටියේ නම් කෙළින්ම ඇතුළට ගැනීම
             if(localStorage.getItem('sanjeewa_role')) {
                 currentRole = localStorage.getItem('sanjeewa_role');
@@ -786,12 +795,19 @@ if (pageId === 'page-brand') {
                 currentRole = 'staff';
             }
             setupAdminUI();
-            navigateTo('page-login'); 
 
-            // 4. Notification යැවීමට අවසර ඉල්ලීම
-            if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-                Notification.requestPermission();
-            }
+
+
+            // 4. අන්තිමට හිටපු පේජ් එකට යන්න
+            const savedPage = sessionStorage.getItem('lastPage') || 'page-login';
+             navigateTo(savedPage);
+
+
+
+            // 5. Notification අවසර ඉල්ලීම
+           if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+        Notification.requestPermission();
+    }
 
             // 5. Android ඇප් එකක් වගේ ක්‍රියා කිරීමට Service Worker එක පණ ගැන්වීම
             if ('serviceWorker' in navigator) {
@@ -803,6 +819,13 @@ if (pageId === 'page-brand') {
             // 6. ඇප් එක ක්‍රියාත්මක වී තත්පර 2කින් Low Stock ඇඟවීම් පරීක්ෂා කිරීම
             setTimeout(checkLowStockNotifications, 2000); 
         }
+
+
+
+
+
+
+
 
         // 🔔 සාමාන්‍ය මැසේජ් පෙන්වීමට යොදාගන්නා පොදු ඇලර්ට් ෆන්ෂන් එක
         function showAlert(message, type = 'success') {
