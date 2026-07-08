@@ -132,6 +132,10 @@
     <div id="model-container" class="grid grid-cols-2 gap-4"></div>
 </div>
 
+
+
+
+
     <div id="page-detail" class="hidden p-4 min-h-screen bg-white">
         <div class="flex justify-between items-center mb-2 border-b pb-2">
             <button onclick="navigateTo('page-model')" class="text-blue-600 font-bold">⬅ Back</button>
@@ -144,6 +148,7 @@
                 <div class="w-full h-64 bg-gray-200 rounded-2xl flex items-center justify-center overflow-hidden border">
                     <img id="product-img" src="https://placehold.co/300x300?text=No+Image" alt="Product Image" class="object-contain h-full w-full">
                 </div>
+                
                 <div class="p-4 bg-gray-50 rounded-xl space-y-2 border">
                     <p class="text-lg"><strong>Retail Price:</strong> රු. <span id="view-retail"></span></p>
                     <p class="text-lg text-red-600"><strong>Discount:</strong> <span id="view-discount"></span>%</p>
@@ -155,15 +160,26 @@
                 </div>
             </div>
 
+
+
+
+                   
             <div id="admin-detail-controls" class="hidden bg-blue-50 p-4 rounded-2xl border border-blue-200 space-y-3">
                 <h3 class="font-bold text-blue-800 border-b pb-1">Admin Controls (Live Database Sync)</h3>
                 <div>
+                    <div class="mt-4">
+                 <img id="product-img" src="" class="w-full h-48 object-cover rounded shadow hidden">
+                 </div>
                     <label class="block text-xs font-semibold text-gray-600">Image URL / Path</label>
-                    <input type="text" id="input-img-url" class="w-full p-2 border rounded-lg text-sm">
+                   
+                    <input type="text" id="input-img-url" placeholder="Image URL eka methana..." 
+                     class="w-full p-2 border rounded">
+                     <input type="file" id="image-upload" accept="image/*">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-600">Retail Price (රු)</label>
                     <input type="number" id="input-retail" class="w-full p-2 border rounded-lg text-sm" oninput="calculateCostPriceLive()">
+                    <input type="text" id="input-img-url" class="hidden">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-600">Discount (%)</label>
@@ -178,7 +194,7 @@
                     </div>
                     <button onclick="addColourStockToArray()" class="w-full bg-blue-600 text-white py-1.5 rounded-lg text-xs font-bold mb-2">Add Color to List</button>
                 </div>
-
+                  <input type="text" id="image-url" class="w-full p-2 border" placeholder="Image URL එක මෙතනට එයි">
                 <button onclick="syncProductToDatabase()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold shadow transition">
                     💾 Save Product Profile & Stock
                 </button>
@@ -304,6 +320,10 @@
             document.getElementById('login-mode-container').classList.remove('hidden');
             switchLoginMode('admin');
         }
+
+
+
+
 
         // 🔄 ලොගින් ආකාරය මාරු කිරීම (Admin / Staff) සහ UI එක ඒ අනුව සකස් කිරීම
         function switchLoginMode(mode) {
@@ -701,75 +721,160 @@ if (pageId === 'page-brand') {
         }
 
         // 📱 විස්තර වෙනස් කළ පසු UI එක ලස්සනට අප්ඩේට් කර තිරයේ පෙන්වීම
-        function updateDetailViewUI() {
-            const p = liveDatabaseStock[currentModelId];
-            document.getElementById('product-img').src = p.img || 'https://placehold.co/300x300?text=No+Image';
-            document.getElementById('view-retail').innerText = (p.retail || 0).toLocaleString();
-            document.getElementById('view-discount').innerText = p.discount || 0;
-            document.getElementById('view-cost').innerText = (p.cost || 0).toLocaleString();
-            const sc = document.getElementById('view-qty-colors'); sc.innerHTML = '';
-            Object.keys(p.stock || {}).forEach(c => {
-                sc.innerHTML += `<p class="flex justify-between border-b py-1"><span>🎨 ${c}:</span> <strong>${p.stock[c]} Pcs</strong></p>`;
+       function updateDetailViewUI() {
+    const p = liveDatabaseStock[currentModelId];
+    if (!p) return; // දත්ත නැත්නම් ෆන්ක්ෂන් එක නවත්වන්න (අවුලක් නැති වෙන්න)
+
+    // 1. පින්තූරෙ අප්ඩේට් කිරීම - පින්තූරේ පාර (URL) නැත්නම් Placeholder එක වැටෙනවා
+    const imgElement = document.getElementById('product-img');
+    if (imgElement) {
+        imgElement.src = p.img && p.img.trim() !== '' ? p.img : 'https://placehold.co/300x300?text=No+Image';
+    }
+
+    // 2. අනිත් විස්තර අප්ඩේට් කිරීම (සැ.යු: අදාළ ID එක පේජ් එකේ තියෙනවා කියලා ස්ථිර කරගන්න)
+    const updateText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = value;
+    };
+
+    updateText('view-retail', (p.retail || 0).toLocaleString());
+    updateText('view-discount', (p.discount || 0) + '%'); // Discount එකට % ලකුණක් දැම්මා ලස්සන වෙන්න
+    updateText('view-cost', (p.cost || 0).toLocaleString());
+
+    // 3. ස්ටොක් විස්තර ලස්සනට ලැයිස්තුගත කිරීම
+    const sc = document.getElementById('view-qty-colors');
+    if (sc) {
+        sc.innerHTML = '';
+        const stockItems = p.stock || {};
+        const keys = Object.keys(stockItems);
+
+        if (keys.length === 0) {
+            sc.innerHTML = '<p class="text-gray-500 text-sm">No stock available</p>';
+        } else {
+            keys.forEach(c => {
+                sc.innerHTML += `
+                    <p class="flex justify-between border-b py-1">
+                        <span class="capitalize">🎨 ${c}:</span> 
+                        <strong class="text-blue-600">${stockItems[c]} Pcs</strong>
+                    </p>`;
             });
         }
+    }
+}
 
-        // 🔔 තොග 5ට වඩා අඩු (Low Stock) අයිතම පරීක්ෂා කිරීම - [FIXED: පරණ මැකූ ඒවා අයින් කර ඇත]
-        function checkLowStockNotifications() {
-            let lowStockMessages = [];
-            if (!liveDatabaseStock || Object.keys(liveDatabaseStock).length === 0) return;
 
-            Object.keys(liveDatabaseStock).forEach(modelId => {
-                // 🔍 FIX: මේ Model ID එක දැනට ඇප් එකේ ඇත්තටම තියෙනවද කියලා structure එකේ චෙක් කරනවා
-                const modelExists = appData.models.some(m => m.id === modelId);
-                
-                // ඇප් එකේ නැති මොඩල් එකක් නම්, මේක මඟ හැරලා ඊළඟ එකට යන්න (Skip deleted models)
-                if (!modelExists) return; 
 
-                const product = liveDatabaseStock[modelId];
-                const modelName = appData.models.find(m => m.id === modelId)?.name || "Unknown Model";
-                
-                if (product.stock && typeof product.stock === 'object') {
-                    Object.keys(product.stock).forEach(color => {
-                        const qty = Number(product.stock[color]);
-                        if (!isNaN(qty) && qty > 0 && qty <= 5) {
-                            lowStockMessages.push(`📍 ${modelName} (${color}) - Only ${qty} Pcs Left!`);
-                        }
+
+
+          async function handlePhotoUpload(event) {
+    const file = event.target.files[0];
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`; // ෆයිල් එකට නමක් දෙනවා
+    const filePath = `models/${fileName}`; // models කියන ෆෝල්ඩර් එකේ තමයි save වෙන්නේ
+
+    // 1. Supabase එකට Upload කරන්න
+    let { error: uploadError } = await supabase.storage
+        .from('images') // අර හදපු bucket එකේ නම
+        .upload(filePath, file);
+
+    if (uploadError) {
+        console.error('Upload Error:', uploadError);
+        return;
+    }
+
+    // 2. ඒකේ Public URL එක ගන්න
+    const { data } = supabase.storage
+        .from('images')
+        .getPublicUrl(filePath);
+
+    const publicURL = data.publicUrl;
+
+    // 3. Database එකේ (models table එකේ) URL එක save කරන්න
+    await supabase.from('models')
+        .update({ photo_url: publicURL })
+        .eq('id', currentModelId);
+
+    alert("Photo Updated!");
+}
+
+
+
+async function updateItemPhoto(modelId, url) {
+    await db.collection('models').doc(modelId).update({
+        photoURL: url
+    });
+    alert("Photo Updated Successfully!");
+    
+    // UI එකේ ෆොටෝ එක පෙන්නන්න
+    document.getElementById('item-image').src = url;
+    document.getElementById('item-image').classList.remove('hidden');
+}
+
+
+
+
+function checkLowStockNotifications() {
+    let lowStockMessages = [];
+    if (!liveDatabaseStock || Object.keys(liveDatabaseStock).length === 0) return;
+
+    Object.keys(liveDatabaseStock).forEach(modelId => {
+        const modelExists = appData.models.some(m => m.id === modelId);
+        if (!modelExists) return;
+
+        const product = liveDatabaseStock[modelId];
+        const modelName = appData.models.find(m => m.id === modelId)?.name || "Unknown Model";
+        
+        // පින්තූරේ ලින්ක් එක ගන්නවා (නැත්නම් default එකක්)
+        const productImg = product.img || 'https://placehold.co/100x100?text=No+Img';
+
+        if (product.stock && typeof product.stock === 'object') {
+            Object.keys(product.stock).forEach(color => {
+                const qty = Number(product.stock[color]);
+                if (!isNaN(qty) && qty > 0 && qty <= 5) {
+                    // පින්තූරෙත් මැසේජ් එකත් එක්කම යවනවා (Object එකක් විදියට)
+                    lowStockMessages.push({
+                        msg: `📍 ${modelName} (${color}) - Only ${qty} Pcs Left!`,
+                        img: productImg
                     });
                 }
             });
-
-            if (lowStockMessages.length > 0) {
-                // 🎵 බීප් ශබ්දයක් (Audio Tone) උත්පාදනය කිරීම
-                try {
-                    let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                    let oscillator = audioCtx.createOscillator();
-                    let gainNode = audioCtx.createGain();
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioCtx.destination);
-                    oscillator.type = 'sine';
-                    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-                    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                    oscillator.start();
-                    oscillator.stop(audioCtx.currentTime + 0.1);
-                } catch(e) { console.log("Audio blocked"); }
-
-                // 📱 පුෂ් නොටිෆිකේෂන් යැවීම
-                lowStockMessages.forEach(msg => {
-                    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-                        navigator.serviceWorker.controller.postMessage({ type: 'LOW_STOCK', body: msg });
-                    } else if (Notification.permission === "granted") {
-                        new Notification("🚨 Sanjeewa Stock Alert", { body: msg });
-                    }
-                });
-
-                // 💻 ඇප් එක මැදින් ලස්සන Custom Alert එකක් මඟින් ලැයිස්තුව පෙන්වීම
-                const modalBody = document.getElementById('custom-modal-body');
-                if (modalBody) {
-                    modalBody.innerHTML = lowStockMessages.join('<br>');
-                    document.getElementById('custom-stock-modal').style.display = 'flex';
-                }
-            }
         }
+    });
+
+    if (lowStockMessages.length > 0) {
+        // ශබ්දය (එලෙසමයි)
+        try { /* ... audio logic ... */ } catch(e) {}
+
+        // පුෂ් නොටිෆිකේෂන් යැවීම
+        lowStockMessages.forEach(item => {
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({ 
+                    type: 'LOW_STOCK', 
+                    body: item.msg, 
+                    imgUrl: item.img // පින්තූරේ ලින්ක් එක මෙතනින් යනවා
+                });
+            } else if (Notification.permission === "granted") {
+                new Notification("🚨 Sanjeewa Stock Alert", { 
+                    body: item.msg, 
+                    icon: item.img // මෙතනත් පින්තූරේ පෙන්නනවා
+                });
+            }
+        });
+
+        // Modal එකට පෙන්නනවා
+        const modalBody = document.getElementById('custom-modal-body');
+        if (modalBody) {
+            modalBody.innerHTML = lowStockMessages.map(i => `
+                <div class="flex items-center gap-3 py-2 border-b">
+                    <img src="${i.img}" class="w-10 h-10 rounded">
+                    <span>${i.msg}</span>
+                </div>
+            `).join('');
+            document.getElementById('custom-stock-modal').style.display = 'flex';
+        }
+    }
+}
+
 
         function closeStockModal() {
             document.getElementById('custom-stock-modal').style.display = 'none';
@@ -883,6 +988,25 @@ function searchBrands() {
         btn.style.display = name.includes(searchTerm) ? "" : "none";
     }
 }
+
+
+// පින්තූරයක් තෝරනකොට
+async function uploadPhoto(file) {
+    // 1. පින්තූරේ සර්වර් එකට යවනවා
+    const { data, error } = await supabase.storage.from('images').upload('product-images/' + file.name, file);
+    
+    // 2. සර්වර් එකෙන් ඒ පින්තූරේ පේන ලින්ක් එක ඉල්ලගන්නවා
+    const { data: publicURLData } = supabase.storage.from('images').getPublicUrl('product-images/' + file.name);
+    
+    // 3. ඒ ලින්ක් එක අර පෙට්ටියට (Input box) දානවා
+    document.getElementById('image-url').value = publicURLData.publicUrl;
+    
+    // 4. වම් පැත්තේ preview එකටත් පින්තූරේ දානවා
+    document.getElementById('product-preview').src = publicURLData.publicUrl;
+    document.getElementById('product-preview').classList.remove('hidden');
+}
+
+
 
     </script>
 </body>

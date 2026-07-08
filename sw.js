@@ -1,19 +1,10 @@
-// 🔄 බැක්ග්‍රවුන්ඩ් එකේ ඇප් එක රන් කරවන සර්විස් වර්කර් එක
-self.addEventListener('install', (e) => {
-    self.skipWaiting();
-});
-
-self.addEventListener('activate', (e) => {
-    e.waitUntil(self.clients.claim());
-});
-
-// කෝඩ් එකෙන් පුෂ් කරන මැසේජ් එකක් ආවොත් බැක්ග්‍රවුන්ඩ් එකේ Notification එකක් පෙන්වීම
+// Service Worker එකේ පණිවිඩය ලැබෙන තැන
 self.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'LOW_STOCK') {
         const options = {
             body: event.data.body,
-            icon: 'images/image_3.png', // උඹේ අලුත් ලෝගෝ එක
-            vibrate: [200, 100, 200], // ෆෝන් එක වයිබ්‍රේට් වෙන්න
+            icon: event.data.imgUrl || 'images/image_3.png', // මෙතනට database එකෙන් එන පින්තූරේ ලින්ක් එක දෙන්න පුළුවන්
+            vibrate: [200, 100, 200],
             badge: 'images/image_3.png',
             data: { url: self.location.origin }
         };
