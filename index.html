@@ -201,7 +201,7 @@
                     </div>
                     <button onclick="addColourStockToArray()" class="w-full bg-blue-600 text-white py-1.5 rounded-lg text-xs font-bold mb-2">Add Color to List</button>
                 </div>
-                  <input type="text" id="image-url" class="w-full p-2 border" placeholder="Image URL එක මෙතනට එයි">
+                 
                 <button onclick="syncProductToDatabase()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold shadow transition">
                     💾 Save Product Profile & Stock
                 </button>
@@ -378,6 +378,8 @@ window.onload = () => {
             }
         }
 
+
+
         // 🤫 රහස් ඇඩ්මින් ලොගින් ෆීල්ඩ් එක එලියට දමන ෆන්ෂන් එක
         function revealAdminMode() {
             document.getElementById('login-mode-container').classList.remove('hidden');
@@ -422,6 +424,10 @@ window.onload = () => {
             }
         }
 
+
+
+
+
         // 🚪 ඇප් එකෙන් සාර්ථකව පිටවීම (Logout)
         function handleLogout() {
             currentRole = 'staff'; currentLoginMode = 'staff';
@@ -432,6 +438,10 @@ window.onload = () => {
             setupAdminUI(); navigateTo('page-login');
         }
 
+
+
+
+
         // 🛡️ යූසර්ගේ බලතල (Admin / Staff) අනුව Add Buttons පෙන්වීම හෝ සැඟවීම
         function setupAdminUI() {
             const adminElements = ['admin-add-brand', 'admin-add-item', 'admin-add-model', 'admin-detail-controls', 'admin-staff-manager'];
@@ -440,6 +450,9 @@ window.onload = () => {
             });
             document.querySelectorAll('.admin-tip').forEach(el => el.classList.toggle('hidden', currentRole !== 'admin'));
         }
+
+
+
 
         async function generateStaffLink() {
     const staffPhone = document.getElementById('new-staff-phone').value.trim();
@@ -531,6 +544,14 @@ if (pageId === 'page-brand') {
         document.getElementById('breadcrumb-detail').innerHTML = `📍 Location: <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-gray-700 font-bold">${itemName}</span> / <span class="text-emerald-600 font-bold">${modelName}</span>`;
     }
 }
+
+
+
+
+
+
+
+
         // 🎛️ ලබාදෙන දත්ත ලැයිස්තුව අනුව ඩයිනමික් ලෙස බටන්ස් නිර්මාණය කර තිරයට දමන ප්‍රධාන එන්ජිම
         function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
             const container = document.getElementById(containerId); container.innerHTML = ''; 
@@ -589,6 +610,9 @@ if (pageId === 'page-brand') {
             });
         }
 
+
+
+
         // 🖥️ Right-Click මෙනුව නියමිත ස්ථානයේ පෙන්වීම
         function showCustomContextMenu(x, y, type, item) {
             activeMenuTarget = { type: type, item: item };
@@ -603,6 +627,12 @@ if (pageId === 'page-brand') {
             const menu = document.getElementById('custom-context-menu');
             if(!menu.contains(e.target)) menu.classList.add('hidden');
         });
+
+
+
+
+
+
 
        // 1. අලුතින් නම Duplicate ද බලන ෆන්ක්ෂන් එක (මේක script එකේ උඩින්ම දාන්න)
 async function isNameDuplicate(newName, type) {
@@ -689,6 +719,11 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
         });
     }
 });
+
+
+
+
+
         function closeInputModal() {
             document.getElementById('custom-input-modal').classList.add('hidden');
         }
@@ -728,6 +763,12 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
             }
         });
 
+
+
+
+
+
+
         // 🔍 සර්ච් බාර් එක ඇතුළේ මොඩල්ස් සර්ච් කරද්දී, දැනට ඉන්න Item එකට අදාළ මොඩල්ස් විතරක් ෆිල්ටර් වීම
         function searchModels() {
             const query = document.getElementById('model-search').value.toLowerCase();
@@ -748,6 +789,10 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
             }
         }
 
+
+
+
+
         // 📊 යම් නිශ්චිත මොඩල් එකක් ක්ලික් කළ විට එහි විස්තර ලයිව් ලෝඩ් කර පෙන්වීම
         async function openProductDetailLive(modelItem) {
             currentModelId = modelItem.id;
@@ -763,6 +808,11 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
             navigateTo('page-detail'); // 📍 Breadcrumb ලෝඩ් වෙන්න කලින් Navigation එකට යන්න ඕනේ
         }
 
+
+
+
+
+
         // 🧮 වට්ටම් (Discount) සහ අවසාන ශුද්ධ මිල (Net Cost Price) ලයිව් ගණනය කිරීමේ සූත්‍රය
         function calculateCostPriceLive() {
             const retail = parseFloat(document.getElementById('input-retail').value) || 0;
@@ -776,6 +826,10 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
             document.getElementById('view-cost').innerText = cost.toLocaleString();
         }
 
+
+
+
+
         // 🎨 තොග ලැයිස්තුවට (Stock Object) තාවකාලිකව වර්ණ සහ ප්‍රමාණයන් ඇතුළත් කිරීම
         function addColourStockToArray() {
             const colour = document.getElementById('input-colour').value.trim();
@@ -785,6 +839,10 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
             document.getElementById('input-colour').value = ''; document.getElementById('input-qty').value = '';
             updateDetailViewUI();
         }
+
+
+
+
 
         // ☁️ සකස් කළ මුළු නිෂ්පාදන තොරතුරු පැතිකඩම Supabase එකට ස්ථිරවම Save (Sync) කිරීම
         async function syncProductToDatabase() {
@@ -800,6 +858,10 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
             }
         }
 
+
+
+        
+
         // 📱 විස්තර වෙනස් කළ පසු UI එක ලස්සනට අප්ඩේට් කර තිරයේ පෙන්වීම
        function updateDetailViewUI() {
     const p = liveDatabaseStock[currentModelId];
@@ -808,7 +870,7 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
     // 1. පින්තූරෙ අප්ඩේට් කිරීම - පින්තූරේ පාර (URL) නැත්නම් Placeholder එක වැටෙනවා
     const imgElement = document.getElementById('product-img');
     if (imgElement) {
-        imgElement.src = p.img && p.img.trim() !== '' ? p.img : 'https://placehold.co/300x300?text=No+Image';
+        imgElement.src = p.img && p.img.trim() !== '' ? p.img : 'https://placehold.co/150x300?text=No+Image';
     }
 
     // 2. අනිත් විස්තර අප්ඩේට් කිරීම (සැ.යු: අදාළ ID එක පේජ් එකේ තියෙනවා කියලා ස්ථිර කරගන්න)
