@@ -93,7 +93,7 @@
     <div class="flex items-center mb-4">
         <button onclick="navigateTo('page-home')" class="text-blue-600 font-bold">⬅ Back</button>
         <h2 class="text-xl font-bold text-center flex-1">Select items</h2>
-        <button onclick="openAddModal('brand')" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:bg-blue-700 transition">
+        <button id="admin-add-item"onclick="openAddModal('brand')" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:bg-blue-700 transition">
             + Add
         </button>
     </div>
@@ -379,23 +379,35 @@
 
         // 🛡️ යූසර්ගේ බලතල (Admin / Staff) අනුව Add Buttons පෙන්වීම හෝ සැඟවීම
         function setupAdminUI() {
-            const adminElements = ['admin-add-company', 'admin-add-brand', 'admin-add-item', 'admin-add-model', 'admin-detail-controls', 'admin-staff-manager'];
+            const adminElements = ['admin-add-brand', 'admin-add-item', 'admin-add-model', 'admin-detail-controls', 'admin-staff-manager'];
             adminElements.forEach(id => {
                 const el = document.getElementById(id); if(el) el.classList.toggle('hidden', currentRole !== 'admin');
             });
             document.querySelectorAll('.admin-tip').forEach(el => el.classList.toggle('hidden', currentRole !== 'admin'));
         }
 
-        // ✉️ නව සේවකයින් සඳහා පද්ධතියට ලියාපදිංචි වීමට SMS එකක් යවන මොඩියුලය
         async function generateStaffLink() {
-            const staffPhone = document.getElementById('new-staff-phone').value.trim();
-            if(!staffPhonePhone) return;
-            await fetchSupabase('/allowed_staff', 'POST', { phone_number: staffPhone });
-            let currentUrl = window.location.href.split('?')[0];
-            const message = `Sanjeewa Trade Centre: ඔයාව Stock App එකට ඇතුළත් කළා. ඇප් ලින්ක් එක: ${currentUrl}`;
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            window.location.href = `sms:${staffPhone}${isIOS ? '&' : '?'}body=${encodeURIComponent(message)}`;
-        }
+    const staffPhone = document.getElementById('new-staff-phone').value.trim();
+    
+    if(!staffPhone) {
+        alert("කරුණාකර නිවැරදි දුරකථන අංකයක් ඇතුළත් කරන්න.");
+        return;
+    }
+
+    // 1. Database එකට ලියාපදිංචි කිරීම
+    await fetchSupabase('/allowed_staff', 'POST', { phone_number: staffPhone });
+
+    // 2. මැසේජ් එක හැදීම
+    let currentUrl = window.location.href.split('?')[0];
+    const message = `Sanjeewa Trade Centre: ඔයාව Stock App එකට ඇතුළත් කළා. ඇප් ලින්ක් එක: ${currentUrl}`;
+    
+    // 3. WhatsApp හරහා යැවීම (wa.me)
+    // නම්බර් එකේ + නැත්නම් එකතු කරගන්න. ලංකාවේ නම්බර් එකක් නම් 94... වලින් පටන් ගන්න
+    const waUrl = `https://wa.me/${staffPhone}?text=${encodeURIComponent(message)}`;
+    
+    // අලුත් Tab එකකින් WhatsApp ඕපන් වෙයි
+    window.open(waUrl, '_blank');
+}
 
 
 
@@ -1006,7 +1018,36 @@ async function uploadPhoto(file) {
     document.getElementById('product-preview').classList.remove('hidden');
 }
 
+// මේක තමයි පින්තූර අප්ලෝඩ් කරන සම්පූර්ණ වැඩේ
+document.getElementById('image-upload').addEventListener('change', async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
 
+    // 1. පින්තූරේ අප්ලෝඩ් කිරීම
+    const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('images')
+        .upload('products/' + file.name, file);
+
+    if (uploadError) {
+        // මේකෙන් දැනගන්න පුළුවන් අප්ලෝඩ් එකේ අවුලක් තියෙනවද කියලා
+        console.error("Upload Error:", uploadError.message);
+        return;
+    }
+
+    // 2. ලින්ක් එක ලබා ගැනීම
+    const { data: publicURLData } = supabase.storage
+        .from('images')
+        .getPublicUrl('products/' + file.name);
+
+    const publicURL = publicURLData.publicUrl;
+
+    // 3. Console එකේ ලින්ක් එක පෙන්වීම (මේකෙන් තමයි URL එක එනවද කියලා බලන්නේ)
+    console.log("Image URL:", publicURL); 
+
+    // 4. පින්තූරෙ පේජ් එකේ සහ Hidden input එකේ පෙන්වීම
+    document.getElementById('product-img').src = publicURL;
+    document.getElementById('input-img-url').value = publicURL;
+});
 
     </script>
 </body>
