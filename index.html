@@ -147,9 +147,15 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-4">
+
+                
+
                 <div class="w-full h-64 bg-gray-200 rounded-2xl flex items-center justify-center overflow-hidden border">
-                    <img id="product-img" src="https://placehold.co/300x300?text=No+Image" alt="Product Image" class="object-contain h-full w-full">
+
+                    <img id="product-img" src="https://placehold.co/150x300?text=No+Image" alt="Product Image" class="object-contain h-full w-full">
                 </div>
+                
+               </div>
                 
                 <div class="p-4 bg-gray-50 rounded-xl space-y-2 border">
                     <p class="text-lg"><strong>Retail Price:</strong> රු. <span id="view-retail"></span></p>
@@ -161,7 +167,6 @@
                     </div>
                 </div>
             </div>
-
 
 
 
@@ -223,6 +228,8 @@
     </div>
 
     <style>
+        
+   
         @keyframes alertShow { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
@@ -284,7 +291,7 @@
         document.getElementById('login-sub-title').innerText = mode === 'admin' ? "Admin Portal" : "Staff Portal";
     }
 
-
+    
 
      // home.html එකේ උඩින්ම දාන්න
 window.onload = () => {
@@ -597,78 +604,91 @@ if (pageId === 'page-brand') {
             if(!menu.contains(e.target)) menu.classList.add('hidden');
         });
 
-        // 🎨 SweetAlert2: අලුතින් බටන් එකක් සාදන ලස්සන ඩාර්ක් පොප්-අප් එක
-        function openAddModal(type) {
-            currentModalMode = 'add';
-            activeMenuTarget = { type: type, item: null };
+       // 1. අලුතින් නම Duplicate ද බලන ෆන්ක්ෂන් එක (මේක script එකේ උඩින්ම දාන්න)
+async function isNameDuplicate(newName, type) {
+    let arrayKey = `${type}s`;
+    // appData එකේ ඒ type එකට අදාළ අයිතම අතර නම තියෙනවද බලන්න
+    return appData[arrayKey].some(item => item.name.toLowerCase() === newName.toLowerCase());
+}
 
-            Swal.fire({
-                title: `➕ Add New ${type.toUpperCase()}`,
-                input: 'text',
-                inputPlaceholder: `Enter ${type} name here...`,
-                showCancelButton: true,
-                confirmButtonColor: '#2563eb',
-                cancelButtonColor: '#64748b',
-                background: '#1e293b',
-                color: '#fff',
-                inputValidator: (value) => {
-                    if (!value) return 'You need to write a name!';
-                }
-            }).then(async (result) => {
-                if (result.value) {
-                    const inputValue = result.value.trim();
-                    let arrayKey = `${type}s`;
-                    
-                    // 🛠️ FIX: අලුත් බටන් එකක් හැදෙද්දී ඒක දැනට ඉන්න Parent ID එකට ලින්ක් කිරීම
-                    let newItem = { id: 'id_' + Date.now(), name: inputValue };
-                    if (type === 'brand') newItem.companyId = selectedCompanyId;
-                    if (type === 'item') newItem.brandId = selectedBrandId;
-                    if (type === 'model') newItem.itemId = selectedItemId;
+// 2. උඹේ තිබ්බ openAddModal එක update කරා (Duplicate check එක එක්ක)
+function openAddModal(type) {
+    currentModalMode = 'add';
+    activeMenuTarget = { type: type, item: null };
 
-                    appData[arrayKey].push(newItem);
-                    await saveCategoriesToCloud(); // ක්ලවුඩ් සින්ක්
-                    navigateTo(`page-${type}`);
-                }
-            });
+    Swal.fire({
+        title: `➕ Add New ${type.toUpperCase()}`,
+        input: 'text',
+        inputPlaceholder: `Enter ${type} name here...`,
+        showCancelButton: true,
+        confirmButtonColor: '#2563eb',
+        cancelButtonColor: '#64748b',
+        background: '#1e293b',
+        color: '#fff',
+        inputValidator: (value) => {
+            if (!value) return 'You need to write a name!';
         }
-
-        // ✏️ SweetAlert2: නම වෙනස් කිරීමට (Rename) අදාළ සුපිරි ඩාර්ක් පොප්-අප් එක
-        document.getElementById('menu-rename-btn').addEventListener('click', () => {
-            currentModalMode = 'rename';
-            const target = activeMenuTarget;
-            document.getElementById('custom-context-menu').classList.add('hidden');
+    }).then(async (result) => {
+        if (result.value) {
+            const inputValue = result.value.trim();
             
-            if(target.item) {
-                Swal.fire({
-                    title: `✏️ Rename "${target.item.name}"`,
-                    input: 'text',
-                    inputValue: target.item.name,
-                    showCancelButton: true,
-                    confirmButtonColor: '#2563eb',
-                    cancelButtonColor: '#64748b',
-                    background: '#1e293b',
-                    color: '#fff',
-                    inputValidator: (value) => {
-                        if (!value) return 'Field cannot be left blank!';
-                    }
-                }).then(async (result) => {
-                    if (result.value) {
-                        target.item.name = result.value.trim();
-                        await saveCategoriesToCloud();
-                        Swal.fire({ 
-                            title: 'Updated! 🎉', 
-                            text: 'නම සාර්ථකව වෙනස් කළා!', 
-                            icon: 'success', 
-                            background: '#1e293b', 
-                            color: '#fff',
-                            confirmButtonColor: '#2563eb'
-                        });
-                        navigateTo(`page-${target.type}`);
-                    }
-                });
+            // Duplicate චෙක් කිරීම
+            const isDuplicate = await isNameDuplicate(inputValue, type);
+            if (isDuplicate) {
+                Swal.fire({ icon: 'error', title: 'Oops...', text: 'මෙම නමින් දැනටමත් අයිතමයක් ඇත!', background: '#1e293b', color: '#fff' });
+                return;
+            }
+
+            let arrayKey = `${type}s`;
+            let newItem = { id: 'id_' + Date.now(), name: inputValue };
+            if (type === 'brand') newItem.companyId = selectedCompanyId;
+            if (type === 'item') newItem.brandId = selectedBrandId;
+            if (type === 'model') newItem.itemId = selectedItemId;
+
+            appData[arrayKey].push(newItem);
+            await saveCategoriesToCloud();
+            navigateTo(`page-${type}`);
+        }
+    });
+}
+
+// 3. Rename එකටත් Duplicate චෙක් එක දාමු (නම මාරු කරද්දීත් වැරදි නමක් දෙන්න බැරි වෙන්න)
+document.getElementById('menu-rename-btn').addEventListener('click', () => {
+    currentModalMode = 'rename';
+    const target = activeMenuTarget;
+    document.getElementById('custom-context-menu').classList.add('hidden');
+    
+    if(target.item) {
+        Swal.fire({
+            title: `✏️ Rename "${target.item.name}"`,
+            input: 'text',
+            inputValue: target.item.name,
+            showCancelButton: true,
+            confirmButtonColor: '#2563eb',
+            cancelButtonColor: '#64748b',
+            background: '#1e293b',
+            color: '#fff',
+            inputValidator: (value) => {
+                if (!value) return 'Field cannot be left blank!';
+            }
+        }).then(async (result) => {
+            if (result.value) {
+                const newName = result.value.trim();
+                // Rename කරද්දීත් අලුත් නම දැනට තියෙනවද බලන්න
+                const isDuplicate = await isNameDuplicate(newName, target.type);
+                if (isDuplicate && newName !== target.item.name) {
+                    Swal.fire({ icon: 'error', title: 'Oops...', text: 'මෙම නමින් දැනටමත් අයිතමයක් ඇත!', background: '#1e293b', color: '#fff' });
+                    return;
+                }
+
+                target.item.name = newName;
+                await saveCategoriesToCloud();
+                Swal.fire({ title: 'Updated! 🎉', text: 'නම සාර්ථකව වෙනස් කළා!', icon: 'success', background: '#1e293b', color: '#fff' });
+                navigateTo(`page-${target.type}`);
             }
         });
-
+    }
+});
         function closeInputModal() {
             document.getElementById('custom-input-modal').classList.add('hidden');
         }
