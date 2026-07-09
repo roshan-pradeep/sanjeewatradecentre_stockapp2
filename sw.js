@@ -81,3 +81,38 @@ document.getElementById('menu-rename-btn').addEventListener('click', async () =>
 document.getElementById('menu-delete-btn').addEventListener('click', async () => {
     // (ඔයාගේ කලින් තිබ්බ delete logic එක මෙතන තියන්න)
 });
+
+
+// Rename බටන් එකේ logic එක ඇතුලේ
+const newName = result.value.trim();
+const isDuplicate = await isNameDuplicate(newName, currentType); // type එක මෙතන දාන්න
+
+if (isDuplicate && newName.toLowerCase() !== currentItem.name.toLowerCase()) {
+    Swal.fire({ icon: 'error', title: 'Oops...', text: 'මෙම නමින් දැනටමත් අයිතමයක් ඇත!', background: '#1e293b', color: '#fff' });
+    return;
+}
+// ඊට පස්සේ rename කරන්න...
+
+
+
+// Color එක ඇඩ් කරන තැන
+Swal.fire({
+    toast: true,
+    position: 'top-end',
+    icon: 'success',
+    title: 'Color Added!',
+    showConfirmButton: false,
+    timer: 1500,
+    background: '#1e293b',
+    color: '#fff'
+});
+
+// Save කරන තැන
+Swal.fire({
+    icon: 'success',
+    title: 'Success!',
+    text: 'Product Saving Success!',
+    background: '#1e293b',
+    color: '#fff',
+    confirmButtonColor: '#2563eb'
+});

@@ -552,64 +552,37 @@ if (pageId === 'page-brand') {
 
 
 
-        // 🎛️ ලබාදෙන දත්ත ලැයිස්තුව අනුව ඩයිනමික් ලෙස බටන්ස් නිර්මාණය කර තිරයට දමන ප්‍රධාන එන්ජිම
-        function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
-            const container = document.getElementById(containerId); container.innerHTML = ''; 
+        // 🎛️ renderButtons ෆන්ක්ෂන් එක - Company නැති නිසා පිරිසිදු කළා
+function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
+    const container = document.getElementById(containerId);
+    container.innerHTML = ''; 
+    
+    dataArray.forEach(item => {
+        const btn = document.createElement('button');
+        btn.innerText = item.name;
+        btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none transition-all shadow-md`;
+        
+        // ... (Long press logic එක ඒ විදියටම තියන්න) ...
+
+        btn.addEventListener('click', () => {
+            if (isLongPress) return;
             
-            dataArray.forEach(item => {
-                const btn = document.createElement('button');
-                btn.innerText = item.name;
-                btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none no-select transition-all shadow-md`;
-                
-                let pressTimer = null;
-                let isLongPress = false;
-
-                // PC එකේදී Right Click හසුරුවනය (Context Menu)
-                btn.addEventListener('contextmenu', (e) => {
-                    if (currentRole === 'admin') { e.preventDefault(); showCustomContextMenu(e.clientX, e.clientY, type, item); }
-                });
-
-                // Mobile වලදී බටන් එක ඔබාගෙන සිටීම (Long Press - තත්පර 0.7) හසුරුවන ක්‍රියාවලිය
-                const startPress = (e) => {
-                    if (currentRole !== 'admin') return;
-                    isLongPress = false; btn.classList.add('long-press-active');
-                    let x = e.clientX || (e.touches && e.touches[0].clientX);
-                    let y = e.clientY || (e.touches && e.touches[0].clientY);
-                    pressTimer = setTimeout(() => { isLongPress = true; showCustomContextMenu(x, y, type, item); }, 700);
-                };
-                const endPress = () => { clearTimeout(pressTimer); btn.classList.remove('long-press-active'); };
-
-                btn.addEventListener('touchstart', startPress);
-                btn.addEventListener('touchend', (e) => { endPress(); if (isLongPress) e.preventDefault(); });
-                btn.addEventListener('touchcancel', endPress);
-                btn.addEventListener('mousedown', (e) => { if(e.button === 0) startPress(e); });
-                btn.addEventListener('mouseup', endPress); btn.addEventListener('mouseleave', endPress);
-
-                // බටන් එක සාමාන්‍ය පරිදි ක්ලික් කිරීමේදී සිදුවන දේ
-                btn.addEventListener('click', () => {
-                    if (isLongPress) return;
-                    
-                    // 🛠️ FIX: ක්ලික් කරන බටන් එකේ ID එක ඊළඟ මට්ටමට යාමට පෙර ගෝලීයව සේව් කර ගැනීම
-                    if(type === 'company') {
-                        selectedCompanyId = item.id;
-                        navigateTo('page-brand');
-                    }
-                    else if(type === 'brand') {
-                        selectedBrandId = item.id;
-                        navigateTo('page-item');
-                    }
-                    else if(type === 'item') {
-                        selectedItemId = item.id;
-                        navigateTo('page-model');
-                    }
-                    else if(type === 'model') {
-                        openProductDetailLive(item);
-                    }
-                });
-                container.appendChild(btn);
-            });
-        }
-
+            // Company කොටස අයින් කරලා, කෙලින්ම Brand එකෙන් පටන් ගන්න
+            if(type === 'brand') {
+                selectedBrandId = item.id;
+                navigateTo('page-item');
+            }
+            else if(type === 'item') {
+                selectedItemId = item.id;
+                navigateTo('page-model');
+            }
+            else if(type === 'model') {
+                openProductDetailLive(item);
+            }
+        });
+        container.appendChild(btn);
+    });
+}
 
 
 
@@ -860,7 +833,7 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
 
 
 
-        
+
 
         // 📱 විස්තර වෙනස් කළ පසු UI එක ලස්සනට අප්ඩේට් කර තිරයේ පෙන්වීම
        function updateDetailViewUI() {
