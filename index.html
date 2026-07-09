@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sanjeewa Trade Centre - Stock App</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -227,15 +227,36 @@
 
 
 
-
-
-
-
     <script>
-        // ☁️ Supabase සම්බන්ධතා දත්ත (Project URL සහ Secret Anon Key)
-        const SUPABASE_URL = "https://ttviyfggsmiaemtbawvg.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz";
 
+
+       // මේක අනිවාර්යයෙන්ම බලන්න: ඉහත කී variable එක වෙන කොහේවත් නෑ නේද?
+      const SUPABASE_URL = "https://ttviyfggsmiaemtbawvg.supabase.co";
+       const SUPABASE_KEY = "sb_publishable_k-WtR_8f5-XxKqAuAQDXhw_j_3EO8cz";
+
+      // මෙතන supabase වෙනුවට window.supabase යොදාගන්න
+      const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+       document.getElementById('image-upload').addEventListener('change', async (event) => {
+       const file = event.target.files[0];
+      if (!file) return;
+
+      const { data, error } = await sb.storage
+        .from('images')
+        .upload('products/' + file.name, file);
+
+     if (error) {
+        alert("Upload error: " + error.message);
+        return;
+    }
+
+    const { data: publicURLData } = sb.storage
+        .from('images')
+        .getPublicUrl('products/' + file.name);
+
+    document.getElementById('product-img').src = publicURLData.publicUrl;
+    document.getElementById('input-img-url').value = publicURLData.publicUrl;
+});
         let currentRole = 'staff';       // පරිශීලකයාගේ වර්තමාන තත්ත්වය (staff/admin)
         let currentLoginMode = 'staff';  // දැනට තෝරාගෙන ඇති ලොගින් ආකාරය
         let currentModelId = '';         // දැනට විවෘත කර ඇති නිශ්චිත මොඩල් එකේ ID එක
@@ -250,6 +271,22 @@
         let appData = { companys: [], brands: [], items: [], models: [] };
         let activeMenuTarget = { type: null, item: null }; // Right click හෝ Long Press මඟින් සිලෙක්ට් වන බටන් එකේ දත්ත
         let currentModalMode = 'add'; // පොප්-අප් එක ක්‍රියාත්මක වන මෝඩ් එක (add / rename)
+
+
+        function switchLoginMode(mode) {
+        currentLoginMode = mode;
+        document.getElementById('btn-mode-admin').className = mode === 'admin' ? "w-1/2 py-2 text-center rounded-md font-semibold bg-blue-600 text-white" : "w-1/2 py-2 text-center rounded-md font-semibold text-gray-700";
+        document.getElementById('btn-mode-staff').className = mode === 'staff' ? "w-1/2 py-2 text-center rounded-md font-semibold bg-blue-600 text-white" : "w-1/2 py-2 text-center rounded-md font-semibold text-gray-700";
+        document.getElementById('admin-password-field').classList.toggle('hidden', mode === 'staff');
+        document.getElementById('lbl-phone').innerText = mode === 'admin' ? "Admin Phone Number" : "Enter Registered Phone Number";
+        document.getElementById('login-sub-title').innerText = mode === 'admin' ? "Admin Portal" : "Staff Portal";
+    }
+
+
+
+
+
+
 
         // 🌐 SUPABASE සන්නිවේදන කේන්ද්‍රය (Fetch API මඟින් දත්ත යැවීම සහ ලබා ගැනීම)
         async function fetchSupabase(endpoint, method = 'GET', body = null, isUpsert = false) {
@@ -325,15 +362,7 @@
 
 
 
-        // 🔄 ලොගින් ආකාරය මාරු කිරීම (Admin / Staff) සහ UI එක ඒ අනුව සකස් කිරීම
-        function switchLoginMode(mode) {
-            currentLoginMode = mode;
-            document.getElementById('btn-mode-admin').className = mode === 'admin' ? "w-1/2 py-2 text-center rounded-md font-semibold bg-blue-600 text-white" : "w-1/2 py-2 text-center rounded-md font-semibold text-gray-700";
-            document.getElementById('btn-mode-staff').className = mode === 'staff' ? "w-1/2 py-2 text-center rounded-md font-semibold bg-blue-600 text-white" : "w-1/2 py-2 text-center rounded-md font-semibold text-gray-700";
-            document.getElementById('admin-password-field').classList.toggle('hidden', mode === 'staff');
-            document.getElementById('lbl-phone').innerText = mode === 'admin' ? "Admin Phone Number" : "Enter Registered Phone Number";
-            document.getElementById('login-sub-title').innerText = mode === 'admin' ? "Admin Portal" : "Staff Portal";
-        }
+        
 
         // 🔒 සුරක්ෂිත ආරක්ෂක පද්ධතිය (Login Authentication & Verification)
         async function handleSecureLogin() {
@@ -1018,36 +1047,7 @@ async function uploadPhoto(file) {
     document.getElementById('product-preview').classList.remove('hidden');
 }
 
-// මේක තමයි පින්තූර අප්ලෝඩ් කරන සම්පූර්ණ වැඩේ
-document.getElementById('image-upload').addEventListener('change', async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
 
-    // 1. පින්තූරේ අප්ලෝඩ් කිරීම
-    const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('images')
-        .upload('products/' + file.name, file);
-
-    if (uploadError) {
-        // මේකෙන් දැනගන්න පුළුවන් අප්ලෝඩ් එකේ අවුලක් තියෙනවද කියලා
-        console.error("Upload Error:", uploadError.message);
-        return;
-    }
-
-    // 2. ලින්ක් එක ලබා ගැනීම
-    const { data: publicURLData } = supabase.storage
-        .from('images')
-        .getPublicUrl('products/' + file.name);
-
-    const publicURL = publicURLData.publicUrl;
-
-    // 3. Console එකේ ලින්ක් එක පෙන්වීම (මේකෙන් තමයි URL එක එනවද කියලා බලන්නේ)
-    console.log("Image URL:", publicURL); 
-
-    // 4. පින්තූරෙ පේජ් එකේ සහ Hidden input එකේ පෙන්වීම
-    document.getElementById('product-img').src = publicURL;
-    document.getElementById('input-img-url').value = publicURL;
-});
 
     </script>
 </body>
