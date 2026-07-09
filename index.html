@@ -551,8 +551,7 @@ if (pageId === 'page-brand') {
 
 
 
-
-        // 🎛️ renderButtons ෆන්ක්ෂන් එක - Company නැති නිසා පිරිසිදු කළා
+// 🎛️ renderButtons ෆන්ක්ෂන් එක - අලුත්ම සංස්කරණය
 function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
     const container = document.getElementById(containerId);
     container.innerHTML = ''; 
@@ -560,14 +559,43 @@ function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500
     dataArray.forEach(item => {
         const btn = document.createElement('button');
         btn.innerText = item.name;
-        btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none transition-all shadow-md`;
+        btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none transition-all shadow-md item-button`; 
         
-        // ... (Long press logic එක ඒ විදියටම තියන්න) ...
+        // Long Press සඳහා අවශ්‍ය Variables
+        let pressTimer = null;
+        let isLongPress = false;
 
-        btn.addEventListener('click', () => {
-            if (isLongPress) return;
+        // Long Press Logic
+        const startPress = (e) => {
+            if (currentRole !== 'admin') return;
+            isLongPress = false;
+            btn.classList.add('long-press-active');
+            let x = e.clientX || (e.touches && e.touches[0].clientX);
+            let y = e.clientY || (e.touches && e.touches[0].clientY);
             
-            // Company කොටස අයින් කරලා, කෙලින්ම Brand එකෙන් පටන් ගන්න
+            pressTimer = setTimeout(() => { 
+                isLongPress = true; 
+                showCustomContextMenu(x, y, type, item); 
+            }, 700);
+        };
+
+        const endPress = () => { 
+            clearTimeout(pressTimer); 
+            btn.classList.remove('long-press-active'); 
+        };
+
+        // Event Listeners
+        btn.addEventListener('touchstart', startPress);
+        btn.addEventListener('touchend', (e) => { endPress(); if (isLongPress) e.preventDefault(); });
+        btn.addEventListener('touchcancel', endPress);
+        btn.addEventListener('mousedown', (e) => { if(e.button === 0) startPress(e); });
+        btn.addEventListener('mouseup', endPress); 
+        btn.addEventListener('mouseleave', endPress);
+
+        // Click Logic
+        btn.addEventListener('click', () => {
+            if (isLongPress) return; // මේක නිසා තමයි Error එක නැති වෙන්නේ
+            
             if(type === 'brand') {
                 selectedBrandId = item.id;
                 navigateTo('page-item');
@@ -580,11 +608,10 @@ function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500
                 openProductDetailLive(item);
             }
         });
+        
         container.appendChild(btn);
     });
 }
-
-
 
         // 🖥️ Right-Click මෙනුව නියමිත ස්ථානයේ පෙන්වීම
         function showCustomContextMenu(x, y, type, item) {

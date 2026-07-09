@@ -1,118 +1,105 @@
-// Service Worker එකේ පණිවිඩය ලැබෙන තැන
-self.addEventListener('message', (event) => {
+// --- 1. Service Worker Notification Logic ---
+self.addEventListener('message', async (event) => {
     if (event.data && event.data.type === 'LOW_STOCK') {
         const options = {
             body: event.data.body,
-            icon: event.data.imgUrl || 'images/image_3.png', // මෙතනට database එකෙන් එන පින්තූරේ ලින්ක් එක දෙන්න පුළුවන්
+            icon: event.data.imgUrl || 'images/image_3.png',
             vibrate: [200, 100, 200],
             badge: 'images/image_3.png',
-            data: { url: self.location.origin }
+            data: { url: self.registration.scope }
         };
-
-        event.waitUntil(
-            self.registration.showNotification('🚨 Sanjeewa Stock Alert', options)
-        );
+        event.waitUntil(self.registration.showNotification('🚨 Sanjeewa Stock Alert', options));
     }
 });
 
-// 1. Duplicate චෙක් කිරීමේ ෆන්ක්ෂන් එක
+// --- 2. Duplicate Check Function ---
 async function isNameDuplicate(newName, type) {
     let arrayKey = `${type}s`;
     return appData[arrayKey].some(item => item.name.toLowerCase() === newName.toLowerCase());
 }
 
-// 2. අලුත් අයිතමයක් එකතු කිරීම
+// --- 3. Add New Item Logic ---
 function openAddModal(type) {
-    currentModalMode = 'add';
-    activeMenuTarget = { type: type, item: null };
-
     Swal.fire({
         title: `➕ Add New ${type.toUpperCase()}`,
         input: 'text',
-        inputPlaceholder: `Enter ${type} name here...`,
+        inputPlaceholder: `Enter ${type} name...`,
         showCancelButton: true,
-        confirmButtonColor: '#2563eb',
-        cancelButtonColor: '#64748b',
         background: '#1e293b',
         color: '#fff'
     }).then(async (result) => {
         if (result.value) {
             const inputValue = result.value.trim();
-            const isDuplicate = await isNameDuplicate(inputValue, type);
-            if (isDuplicate) {
+            if (await isNameDuplicate(inputValue, type)) {
                 Swal.fire({ icon: 'error', title: 'Oops...', text: 'මෙම නමින් දැනටමත් අයිතමයක් ඇත!', background: '#1e293b', color: '#fff' });
                 return;
             }
-            let arrayKey = `${type}s`;
-            let newItem = { id: 'id_' + Date.now(), name: inputValue };
-            appData[arrayKey].push(newItem);
+            appData[`${type}s`].push({ id: 'id_' + Date.now(), name: inputValue });
             await saveCategoriesToCloud();
             navigateTo(`page-${type}`);
         }
     });
 }
 
-// 3. Long Press / Context Menu සිදුවීම (මෙන්න මේකයි ඔයා අලුතින් ඇහුවේ)
-document.addEventListener('contextmenu', function(e) {
-    // '.item-button' කියන class එක අයිතම වලට දාන්න අමතක කරන්න එපා!
-    if (e.target.closest('.item-button')) { 
-        e.preventDefault();
-        const menu = document.getElementById('custom-context-menu');
-        menu.classList.remove('hidden');
-        menu.style.top = `${e.clientY}px`;
-        menu.style.left = `${e.clientX}px`;
-    }
-});
-
-// පිටත ක්ලික් කළාම මෙනුව වැසීම
-document.addEventListener('click', function(e) {
-    const menu = document.getElementById('custom-context-menu');
-    if (!menu.contains(e.target)) {
-        menu.classList.add('hidden');
-    }
-});
-
-// 4. Rename බොත්තම සඳහා
+// --- 4. Context Menu Logic (Rename & Delete) ---
 document.getElementById('menu-rename-btn').addEventListener('click', async () => {
-    // (ඔයාගේ කලින් තිබ්බ rename logic එක මෙතන තියන්න)
+    const target = activeMenuTarget;
+    document.getElementById('custom-context-menu').classList.add('hidden');
+    
+    Swal.fire({
+        title: `✏️ Rename "${target.item.name}"`,
+        input: 'text',
+        inputValue: target.item.name,
+        showCancelButton: true,
+        background: '#1e293b',
+        color: '#fff'
+    }).then(async (result) => {
+        if (result.value) {
+            const newName = result.value.trim();
+            if (await isNameDuplicate(newName, target.type) && newName.toLowerCase() !== target.item.name.toLowerCase()) {
+                Swal.fire({ icon: 'error', title: 'Oops...', text: 'මෙම නමින් දැනටමත් අයිතමයක් ඇත!', background: '#1e293b', color: '#fff' });
+                return;
+            }
+            target.item.name = newName;
+            await saveCategoriesToCloud();
+            Swal.fire({ icon: 'success', title: 'Updated!', text: 'නම සාර්ථකව වෙනස් කළා!', background: '#1e293b', color: '#fff' });
+            navigateTo(`page-${target.type}`);
+        }
+    });
 });
 
-// 5. Delete බොත්තම සඳහා
 document.getElementById('menu-delete-btn').addEventListener('click', async () => {
-    // (ඔයාගේ කලින් තිබ්බ delete logic එක මෙතන තියන්න)
+    const target = activeMenuTarget;
+    document.getElementById('custom-context-menu').classList.add('hidden');
+    
+    Swal.fire({
+        title: 'Are you sure?',
+        text: `"${target.item.name}" මකා දැමීමට අවශ්‍යද?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        background: '#1e293b',
+        color: '#fff'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            appData[`${target.type}s`] = appData[`${target.type}s`].filter(i => i.id !== target.item.id);
+            await saveCategoriesToCloud();
+            Swal.fire({ icon: 'success', title: 'Deleted!', text: 'සාර්ථකව මකා දැමුණා.', background: '#1e293b', color: '#fff' });
+            navigateTo(`page-${target.type}`);
+        }
+    });
 });
 
-
-// Rename බටන් එකේ logic එක ඇතුලේ
-const newName = result.value.trim();
-const isDuplicate = await isNameDuplicate(newName, currentType); // type එක මෙතන දාන්න
-
-if (isDuplicate && newName.toLowerCase() !== currentItem.name.toLowerCase()) {
-    Swal.fire({ icon: 'error', title: 'Oops...', text: 'මෙම නමින් දැනටමත් අයිතමයක් ඇත!', background: '#1e293b', color: '#fff' });
-    return;
+// --- 5. UI Helpers (Toast Notifications) ---
+function showSuccessToast(message) {
+    Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: message,
+        showConfirmButton: false,
+        timer: 2000,
+        background: '#1e293b',
+        color: '#fff'
+    });
 }
-// ඊට පස්සේ rename කරන්න...
-
-
-
-// Color එක ඇඩ් කරන තැන
-Swal.fire({
-    toast: true,
-    position: 'top-end',
-    icon: 'success',
-    title: 'Color Added!',
-    showConfirmButton: false,
-    timer: 1500,
-    background: '#1e293b',
-    color: '#fff'
-});
-
-// Save කරන තැන
-Swal.fire({
-    icon: 'success',
-    title: 'Success!',
-    text: 'Product Saving Success!',
-    background: '#1e293b',
-    color: '#fff',
-    confirmButtonColor: '#2563eb'
-});
