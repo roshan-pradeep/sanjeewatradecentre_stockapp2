@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sanjeewa Trade Centre - Stock App</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -94,7 +95,7 @@
         <button onclick="navigateTo('page-home')" class="text-blue-600 font-bold">⬅ Back</button>
         <h2 class="text-xl font-bold text-center flex-1">Select items</h2>
         <button id="admin-add-item"onclick="openAddModal('brand')" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:bg-blue-700 transition">
-            + Add
+            + Add item
         </button>
     </div>
 
@@ -111,7 +112,8 @@
     <div class="flex justify-between items-center mb-2">
         <button onclick="navigateTo('page-brand')" class="text-blue-600 font-bold">⬅ Back</button>
         <h2 class="text-xl font-bold text-center flex-1">Select Brand</h2>
-        <button id="admin-add-item" onclick="openAddModal('item')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
+        <button id="admin-add-button" onclick="openAddModal('item')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">
+    + Add Brand</button>
     </div>
     <div id="breadcrumb-item" class="text-xs bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg mb-3 font-semibold"></div>
     <div id="item-container" class="grid grid-cols-2 gap-4"></div>
@@ -123,7 +125,7 @@
     <div class="flex justify-between items-center mb-2">
         <button onclick="navigateTo('page-item')" class="text-blue-600 font-bold">⬅ Back</button>
         <h2 class="text-xl font-bold text-center flex-1">Select Model</h2>
-        <button id="admin-add-model" onclick="openAddModal('model')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add</button>
+        <button id="admin-add-model" onclick="openAddModal('model')" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">+ Add Model</button>
     </div>
     <div id="breadcrumb-model" class="text-xs bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg mb-3 font-semibold"></div>
     <div class="mb-4">
@@ -284,7 +286,20 @@
 
 
 
-
+     // home.html එකේ උඩින්ම දාන්න
+window.onload = () => {
+    // මේකෙන් වෙන්නේ History එකේ අන්තිම තැනට Home පේජ් එක දාන එක
+    window.history.pushState(null, null, window.location.href);
+    
+    // User ආයෙත් Back එබුවොත් කරන්නේ මොකක්ද කියලා මේකෙන් කියනවා
+    window.addEventListener('popstate', function () {
+        window.history.pushState(null, null, window.location.href);
+        // මෙතනදී Alert එකක් දාන්න පුළුවන් හෝ නිකම්ම අතාරින්න පුළුවන්
+        // alert("ඔයාට දැන් ආපහු යන්න බැහැ!");
+    });
+    
+    
+};
 
 
 
@@ -308,6 +323,10 @@
                 return await response.json();
             } catch (err) { return null; }
         }
+
+
+
+        
 
         // ☁️ බටන් ව්‍යුහය (Category Structure) ඩේටාබේස් එකට සේව් කරන ෆන්ෂන් එක
         async function saveCategoriesToCloud() {
@@ -1048,7 +1067,4 @@ async function uploadPhoto(file) {
 }
 
 
-
     </script>
-</body>
-</html>
