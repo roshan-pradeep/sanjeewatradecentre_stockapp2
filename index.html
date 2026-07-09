@@ -551,68 +551,68 @@ if (pageId === 'page-brand') {
 
 
 
-// 🎛️ renderButtons ෆන්ක්ෂන් එක - අලුත්ම සංස්කරණය
-function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
-    const container = document.getElementById(containerId);
-    container.innerHTML = ''; 
-    
-    dataArray.forEach(item => {
-        const btn = document.createElement('button');
-        btn.innerText = item.name;
-        btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none transition-all shadow-md item-button`; 
-        
-        // Long Press සඳහා අවශ්‍ය Variables
-        let pressTimer = null;
-        let isLongPress = false;
 
-        // Long Press Logic
-        const startPress = (e) => {
-            if (currentRole !== 'admin') return;
-            isLongPress = false;
-            btn.classList.add('long-press-active');
-            let x = e.clientX || (e.touches && e.touches[0].clientX);
-            let y = e.clientY || (e.touches && e.touches[0].clientY);
+        // 🎛️ ලබාදෙන දත්ත ලැයිස්තුව අනුව ඩයිනමික් ලෙස බටන්ස් නිර්මාණය කර තිරයට දමන ප්‍රධාන එන්ජිම
+        function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
+            const container = document.getElementById(containerId); container.innerHTML = ''; 
             
-            pressTimer = setTimeout(() => { 
-                isLongPress = true; 
-                showCustomContextMenu(x, y, type, item); 
-            }, 700);
-        };
+            dataArray.forEach(item => {
+                const btn = document.createElement('button');
+                btn.innerText = item.name;
+                btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none no-select transition-all shadow-md`;
+                
+                let pressTimer = null;
+                let isLongPress = false;
 
-        const endPress = () => { 
-            clearTimeout(pressTimer); 
-            btn.classList.remove('long-press-active'); 
-        };
+                // PC එකේදී Right Click හසුරුවනය (Context Menu)
+                btn.addEventListener('contextmenu', (e) => {
+                    if (currentRole === 'admin') { e.preventDefault(); showCustomContextMenu(e.clientX, e.clientY, type, item); }
+                });
 
-        // Event Listeners
-        btn.addEventListener('touchstart', startPress);
-        btn.addEventListener('touchend', (e) => { endPress(); if (isLongPress) e.preventDefault(); });
-        btn.addEventListener('touchcancel', endPress);
-        btn.addEventListener('mousedown', (e) => { if(e.button === 0) startPress(e); });
-        btn.addEventListener('mouseup', endPress); 
-        btn.addEventListener('mouseleave', endPress);
+                // Mobile වලදී බටන් එක ඔබාගෙන සිටීම (Long Press - තත්පර 0.7) හසුරුවන ක්‍රියාවලිය
+                const startPress = (e) => {
+                    if (currentRole !== 'admin') return;
+                    isLongPress = false; btn.classList.add('long-press-active');
+                    let x = e.clientX || (e.touches && e.touches[0].clientX);
+                    let y = e.clientY || (e.touches && e.touches[0].clientY);
+                    pressTimer = setTimeout(() => { isLongPress = true; showCustomContextMenu(x, y, type, item); }, 700);
+                };
+                const endPress = () => { clearTimeout(pressTimer); btn.classList.remove('long-press-active'); };
 
-        // Click Logic
-        btn.addEventListener('click', () => {
-            if (isLongPress) return; // මේක නිසා තමයි Error එක නැති වෙන්නේ
-            
-            if(type === 'brand') {
-                selectedBrandId = item.id;
-                navigateTo('page-item');
-            }
-            else if(type === 'item') {
-                selectedItemId = item.id;
-                navigateTo('page-model');
-            }
-            else if(type === 'model') {
-                openProductDetailLive(item);
-            }
-        });
+                btn.addEventListener('touchstart', startPress);
+                btn.addEventListener('touchend', (e) => { endPress(); if (isLongPress) e.preventDefault(); });
+                btn.addEventListener('touchcancel', endPress);
+                btn.addEventListener('mousedown', (e) => { if(e.button === 0) startPress(e); });
+                btn.addEventListener('mouseup', endPress); btn.addEventListener('mouseleave', endPress);
+
+                // බටන් එක සාමාන්‍ය පරිදි ක්ලික් කිරීමේදී සිදුවන දේ
+                btn.addEventListener('click', () => {
+                    if (isLongPress) return;
+                    
+                    // 🛠️ FIX: ක්ලික් කරන බටන් එකේ ID එක ඊළඟ මට්ටමට යාමට පෙර ගෝලීයව සේව් කර ගැනීම
+                    if(type === 'company') {
+                        selectedCompanyId = item.id;
+                        navigateTo('page-brand');
+                    }
+                    else if(type === 'brand') {
+                        selectedBrandId = item.id;
+                        navigateTo('page-item');
+                    }
+                    else if(type === 'item') {
+                        selectedItemId = item.id;
+                        navigateTo('page-model');
+                    }
+                    else if(type === 'model') {
+                        openProductDetailLive(item);
+                    }
+                });
+                container.appendChild(btn);
+            });
+        }
+
+
+
         
-        container.appendChild(btn);
-    });
-}
-
         // 🖥️ Right-Click මෙනුව නියමිත ස්ථානයේ පෙන්වීම
         function showCustomContextMenu(x, y, type, item) {
             activeMenuTarget = { type: type, item: item };
@@ -628,20 +628,9 @@ function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500
             if(!menu.contains(e.target)) menu.classList.add('hidden');
         });
 
+       
 
-
-
-
-
-
-       // 1. අලුතින් නම Duplicate ද බලන ෆන්ක්ෂන් එක (මේක script එකේ උඩින්ම දාන්න)
-async function isNameDuplicate(newName, type) {
-    let arrayKey = `${type}s`;
-    // appData එකේ ඒ type එකට අදාළ අයිතම අතර නම තියෙනවද බලන්න
-    return appData[arrayKey].some(item => item.name.toLowerCase() === newName.toLowerCase());
-}
-
-// 2. උඹේ තිබ්බ openAddModal එක update කරා (Duplicate check එක එක්ක)
+// 2. openAddModal (Duplicate check එක ඉවත් කරා)
 function openAddModal(type) {
     currentModalMode = 'add';
     activeMenuTarget = { type: type, item: null };
@@ -662,15 +651,12 @@ function openAddModal(type) {
         if (result.value) {
             const inputValue = result.value.trim();
             
-            // Duplicate චෙක් කිරීම
-            const isDuplicate = await isNameDuplicate(inputValue, type);
-            if (isDuplicate) {
-                Swal.fire({ icon: 'error', title: 'Oops...', text: 'මෙම නමින් දැනටමත් අයිතමයක් ඇත!', background: '#1e293b', color: '#fff' });
-                return;
-            }
+            // Duplicate චෙක් කිරීමේ කොටස මෙතනින් සම්පූර්ණයෙන්ම අයින් කරා.
+            // ඒ නිසා ඕනෑම නමක් දැන් දාන්න පුළුවන්.
 
             let arrayKey = `${type}s`;
             let newItem = { id: 'id_' + Date.now(), name: inputValue };
+            
             if (type === 'brand') newItem.companyId = selectedCompanyId;
             if (type === 'item') newItem.brandId = selectedBrandId;
             if (type === 'model') newItem.itemId = selectedItemId;
@@ -682,7 +668,7 @@ function openAddModal(type) {
     });
 }
 
-// 3. Rename එකටත් Duplicate චෙක් එක දාමු (නම මාරු කරද්දීත් වැරදි නමක් දෙන්න බැරි වෙන්න)
+// 3. Rename එක (Rename කරද්දීත් Duplicate චෙක් එක අයින් කරා)
 document.getElementById('menu-rename-btn').addEventListener('click', () => {
     currentModalMode = 'rename';
     const target = activeMenuTarget;
@@ -704,13 +690,9 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
         }).then(async (result) => {
             if (result.value) {
                 const newName = result.value.trim();
-                // Rename කරද්දීත් අලුත් නම දැනට තියෙනවද බලන්න
-                const isDuplicate = await isNameDuplicate(newName, target.type);
-                if (isDuplicate && newName !== target.item.name) {
-                    Swal.fire({ icon: 'error', title: 'Oops...', text: 'මෙම නමින් දැනටමත් අයිතමයක් ඇත!', background: '#1e293b', color: '#fff' });
-                    return;
-                }
-
+                
+                // Rename කරද්දීත් Duplicate check එක සම්පූර්ණයෙන්ම අයින් කරා.
+                
                 target.item.name = newName;
                 await saveCategoriesToCloud();
                 Swal.fire({ title: 'Updated! 🎉', text: 'නම සාර්ථකව වෙනස් කළා!', icon: 'success', background: '#1e293b', color: '#fff' });
@@ -719,11 +701,6 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
         });
     }
 });
-
-
-
-
-
         function closeInputModal() {
             document.getElementById('custom-input-modal').classList.add('hidden');
         }
@@ -763,12 +740,6 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
             }
         });
 
-
-
-
-
-
-
         // 🔍 සර්ච් බාර් එක ඇතුළේ මොඩල්ස් සර්ච් කරද්දී, දැනට ඉන්න Item එකට අදාළ මොඩල්ස් විතරක් ෆිල්ටර් වීම
         function searchModels() {
             const query = document.getElementById('model-search').value.toLowerCase();
@@ -789,10 +760,6 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
             }
         }
 
-
-
-
-
         // 📊 යම් නිශ්චිත මොඩල් එකක් ක්ලික් කළ විට එහි විස්තර ලයිව් ලෝඩ් කර පෙන්වීම
         async function openProductDetailLive(modelItem) {
             currentModelId = modelItem.id;
@@ -808,11 +775,6 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
             navigateTo('page-detail'); // 📍 Breadcrumb ලෝඩ් වෙන්න කලින් Navigation එකට යන්න ඕනේ
         }
 
-
-
-
-
-
         // 🧮 වට්ටම් (Discount) සහ අවසාන ශුද්ධ මිල (Net Cost Price) ලයිව් ගණනය කිරීමේ සූත්‍රය
         function calculateCostPriceLive() {
             const retail = parseFloat(document.getElementById('input-retail').value) || 0;
@@ -826,10 +788,6 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
             document.getElementById('view-cost').innerText = cost.toLocaleString();
         }
 
-
-
-
-
         // 🎨 තොග ලැයිස්තුවට (Stock Object) තාවකාලිකව වර්ණ සහ ප්‍රමාණයන් ඇතුළත් කිරීම
         function addColourStockToArray() {
             const colour = document.getElementById('input-colour').value.trim();
@@ -839,10 +797,6 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
             document.getElementById('input-colour').value = ''; document.getElementById('input-qty').value = '';
             updateDetailViewUI();
         }
-
-
-
-
 
         // ☁️ සකස් කළ මුළු නිෂ්පාදන තොරතුරු පැතිකඩම Supabase එකට ස්ථිරවම Save (Sync) කිරීම
         async function syncProductToDatabase() {
@@ -857,10 +811,6 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
                 updateDetailViewUI(); 
             }
         }
-
-
-
-
 
         // 📱 විස්තර වෙනස් කළ පසු UI එක ලස්සනට අප්ඩේට් කර තිරයේ පෙන්වීම
        function updateDetailViewUI() {
