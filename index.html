@@ -552,65 +552,68 @@ if (pageId === 'page-brand') {
 
 
 
-        // 🎛️ ලබාදෙන දත්ත ලැයිස්තුව අනුව ඩයිනමික් ලෙස බටන්ස් නිර්මාණය කර තිරයට දමන ප්‍රධාන එන්ජිම
         function renderButtons(type, dataArray, containerId, defaultColor = 'bg-blue-500') {
-            const container = document.getElementById(containerId); container.innerHTML = ''; 
+    const container = document.getElementById(containerId); 
+    container.innerHTML = ''; 
+    
+    dataArray.forEach(item => {
+        const btn = document.createElement('button');
+        btn.innerText = item.name;
+        btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none no-select transition-all shadow-md`;
+        
+        let pressTimer = null;
+        let isLongPress = false;
+
+        // මෙනුව බොත්තම උඩටම ගන්න අවශ්‍ය ලොජික් එක
+        const startPress = (e) => {
+            if (currentRole !== 'admin') return;
+            isLongPress = false; 
+            btn.classList.add('long-press-active');
             
-            dataArray.forEach(item => {
-                const btn = document.createElement('button');
-                btn.innerText = item.name;
-                btn.className = `${defaultColor} text-white py-4 px-3 rounded-xl font-bold text-center text-sm select-none no-select transition-all shadow-md`;
-                
-                let pressTimer = null;
-                let isLongPress = false;
-
-                // PC එකේදී Right Click හසුරුවනය (Context Menu)
-                btn.addEventListener('contextmenu', (e) => {
-                    if (currentRole === 'admin') { e.preventDefault(); showCustomContextMenu(e.clientX, e.clientY, type, item); }
-                });
-
-                // Mobile වලදී බටන් එක ඔබාගෙන සිටීම (Long Press - තත්පර 0.7) හසුරුවන ක්‍රියාවලිය
-                const startPress = (e) => {
-                    if (currentRole !== 'admin') return;
-                    isLongPress = false; btn.classList.add('long-press-active');
-                    let x = e.clientX || (e.touches && e.touches[0].clientX);
-                    let y = e.clientY || (e.touches && e.touches[0].clientY);
-                    pressTimer = setTimeout(() => { isLongPress = true; showCustomContextMenu(x, y, type, item); }, 700);
-                };
-                const endPress = () => { clearTimeout(pressTimer); btn.classList.remove('long-press-active'); };
-
-                btn.addEventListener('touchstart', startPress);
-                btn.addEventListener('touchend', (e) => { endPress(); if (isLongPress) e.preventDefault(); });
-                btn.addEventListener('touchcancel', endPress);
-                btn.addEventListener('mousedown', (e) => { if(e.button === 0) startPress(e); });
-                btn.addEventListener('mouseup', endPress); btn.addEventListener('mouseleave', endPress);
-
-                // බටන් එක සාමාන්‍ය පරිදි ක්ලික් කිරීමේදී සිදුවන දේ
-                btn.addEventListener('click', () => {
-                    if (isLongPress) return;
-                    
-                    // 🛠️ FIX: ක්ලික් කරන බටන් එකේ ID එක ඊළඟ මට්ටමට යාමට පෙර ගෝලීයව සේව් කර ගැනීම
-                    if(type === 'company') {
-                        selectedCompanyId = item.id;
-                        navigateTo('page-brand');
-                    }
-                    else if(type === 'brand') {
-                        selectedBrandId = item.id;
-                        navigateTo('page-item');
-                    }
-                    else if(type === 'item') {
-                        selectedItemId = item.id;
-                        navigateTo('page-model');
-                    }
-                    else if(type === 'model') {
-                        openProductDetailLive(item);
-                    }
-                });
-                container.appendChild(btn);
-            });
-        }
+            pressTimer = setTimeout(() => {
+                isLongPress = true;
+                // බොත්තමේ නිවැරදි පිහිටීම ගණනය කිරීම
+                const rect = btn.getBoundingClientRect();
 
 
+                const x = rect.left + window.scrollX;
+        const y = rect.top + window.scrollY + rect.height; // බොත්තමට ටිකක් පහළින්
+        
+        showCustomContextMenu(x, y, type, item);
+    }, 700); // 700ms (0.7s) එබීගෙන ඉන්න ඕනේ
+};
+
+        const endPress = () => { 
+            clearTimeout(pressTimer); 
+            btn.classList.remove('long-press-active'); 
+        };
+
+        btn.addEventListener('touchstart', startPress);
+        btn.addEventListener('touchend', (e) => { endPress(); if (isLongPress) e.preventDefault(); });
+        btn.addEventListener('touchcancel', endPress);
+        btn.addEventListener('mousedown', (e) => { if(e.button === 0) startPress(e); });
+        btn.addEventListener('mouseup', endPress); 
+        btn.addEventListener('mouseleave', endPress);
+
+        // සාමාන්‍ය ක්ලික් ලොජික් එක
+        btn.addEventListener('click', () => {
+            if (isLongPress) return;
+            
+            if(type === 'brand') {
+                selectedBrandId = item.id;
+                navigateTo('page-item');
+            }
+            else if(type === 'item') {
+                selectedItemId = item.id;
+                navigateTo('page-model');
+            }
+            else if(type === 'model') {
+                openProductDetailLive(item);
+            }
+        });
+        container.appendChild(btn);
+    });
+}
 
         
         // 🖥️ Right-Click මෙනුව නියමිත ස්ථානයේ පෙන්වීම
