@@ -1,0 +1,25 @@
+#header {
+    position: fixed;   /* මේකෙන් තමයි Header එක තැනක නවත්වන්නේ */
+    top: 0;
+    left: 0;
+    width: 100%;       /* සම්පූර්ණ පළලටම */
+    z-index: 1000;     /* අනිත් දේවල් උඩින් පේන්න */
+    background-color: white; /* Scroll කරනකොට පිටිපස්සේ තියෙන දේවල් නොපෙනෙන්න */
+}
+
+/* ඊට පස්සේ බටන්ස් ටික පේන Container එකේ උඩට Padding එකක් දෙන්න ඕනේ, නැත්නම් Header එක උඩ බටන්ස් ටික වැහෙනවා */
+#content-container {
+    padding-top: 80px; /* Header එකේ උසට අනුව මේක ටිකක් වැඩි කරන්න */
+}
+
+
+
+#app-header {
+    pointer-events: none; /* මේකෙන් Header එකේ පසුබිම ක්ලික් කිරීම් වලට බාධා නොකරනවා */
+}
+
+#app-header button {
+    pointer-events: auto; /* ඒත් Header එකේ තියෙන බටන් ටිකට ක්ලික් කරන්න පුළුවන් */
+}
+
+

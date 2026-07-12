@@ -7,6 +7,11 @@ self.addEventListener('message', async (event) => {
             badge: 'images/image_3.png',
             data: { url: self.registration.scope }
         };
-        event.waitUntil(self.registration.showNotification('🚨 Sanjeewa Stock Alert', options));
+        
+       if (Notification.permission === 'granted') {
+    event.waitUntil(self.registration.showNotification('🚨 Sanjeewa Stock Alert', options));
+} else {
+    console.log("Notification permission not granted, skipping notification.");
+}
     }
 });

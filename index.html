@@ -17,6 +17,12 @@
 </head>
 <body class="bg-gray-100 font-sans text-gray-800 no-select">
 
+
+      
+
+
+
+
     <div id="custom-context-menu" class="hidden absolute bg-white shadow-2xl border rounded-xl py-2 w-40 z-50 transition-all">
         <button id="menu-rename-btn" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 font-semibold flex items-center gap-2 text-blue-600">
             ✏️ Rename
@@ -90,6 +96,11 @@
         </div>
     </div>
 
+
+
+
+    
+
     <div id="page-brand" class="hidden p-4 min-h-screen">
     <div class="flex items-center mb-4">
         <button onclick="navigateTo('page-home')" class="text-blue-600 font-bold">⬅ Back</button>
@@ -139,75 +150,80 @@
 
 
     <div id="page-detail" class="hidden p-4 min-h-screen bg-white">
-        <div class="flex justify-between items-center mb-2 border-b pb-2">
-            <button onclick="navigateTo('page-model')" class="text-blue-600 font-bold">⬅ Back</button>
-            <h2 id="detail-model-title" class="text-xl font-bold text-center flex-1">Model Name</h2>
-        </div>
-        <div id="breadcrumb-detail" class="text-xs bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg mb-4 font-semibold"></div>
+    <div class="flex justify-between items-center mb-2 border-b pb-2">
+        <button onclick="navigateTo('page-model')" class="text-blue-600 font-bold">⬅ Back</button>
+        <h2 id="detail-model-title" class="text-xl font-bold text-center flex-1">Model Name</h2>
+    </div>
+    <div id="breadcrumb-detail" class="text-xs bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg mb-4 font-semibold"></div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-4">
-
-                
-
-                <div class="w-full h-64 bg-gray-200 rounded-2xl flex items-center justify-center overflow-hidden border">
-
-                    <img id="product-img" src="https://placehold.co/150x300?text=No+Image" alt="Product Image" class="object-contain h-full w-full">
-                </div>
-                
-               </div>
-                
-                <div class="p-4 bg-gray-50 rounded-xl space-y-2 border">
-                    <p class="text-lg"><strong>Retail Price:</strong> රු. <span id="view-retail"></span></p>
-                    <p class="text-lg text-red-600"><strong>Discount:</strong> <span id="view-discount"></span></p>
-                    <p class="text-lg text-green-700"><strong>Cost Price (Net):</strong> රු. <span id="view-cost"></span></p>
-                    <div class="border-t pt-2 mt-2">
-                        <strong class="text-gray-700 block mb-1">Available Qty (by Colour):</strong>
-                        <div id="view-qty-colors" class="space-y-1 text-sm text-gray-600">No stock added yet.</div>
-                    </div>
-                </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="space-y-4">
+            <div class="w-full h-64 bg-gray-200 rounded-2xl flex items-center justify-center overflow-hidden border">
+                <img id="product-img" src="https://placehold.co/150x300?text=No+Image" alt="Product Image" class="object-contain h-full w-full">
             </div>
+        </div>
+        
+        <div class="p-4 bg-gray-50 rounded-xl space-y-3 border">
+            <p class="text-lg"><strong>Retail Price:</strong> රු. <span id="view-retail"></span></p>
+            <p class="text-lg text-red-600"><strong>Discount:</strong> <span id="view-discount"></span>%</p>
+            
+            <p class="text-lg text-green-700 font-bold"><strong>Cost Price (Net):</strong> රු. <span id="view-cost"></span></p>
+            <p class="text-2xl text-blue-800 font-extrabold mt-3 p-2 bg-blue-50 rounded-lg border-2 border-blue-200">
+    Our Price: රු. <span id="view-our-price">0</span>
+</p>
+            
+            <div class="border-t pt-2 mt-2">
+                <strong class="text-gray-700 block mb-1">Available Qty (by Colour):</strong>
+                <div id="view-qty-colors" class="space-y-1 text-sm text-gray-600">No stock added yet.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 
 
                    
             <div id="admin-detail-controls" class="hidden bg-blue-50 p-4 rounded-2xl border border-blue-200 space-y-3">
-                <h3 class="font-bold text-blue-800 border-b pb-1">Admin Controls (Live Database Sync)</h3>
-                <div>
-                    <div class="mt-4">
-                 <img id="product-img" src="" class="w-full h-48 object-cover rounded shadow hidden">
-                 </div>
-                    <label class="block text-xs font-semibold text-gray-600">Image URL / Path</label>
-                   
-                    <input type="text" id="input-img-url" placeholder="Image URL eka methana..." 
-                     class="w-full p-2 border rounded">
-                     <input type="file" id="image-upload" accept="image/*">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600">Retail Price (රු)</label>
-                    <input type="number" id="input-retail" class="w-full p-2 border rounded-lg text-sm" oninput="calculateCostPriceLive()">
-                    <input type="text" id="input-img-url" class="hidden">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600">Discount %</label>
-                    <input type="number" id="input-discount" class="w-full p-2 border rounded-lg text-sm" oninput="calculateCostPriceLive()">
-                </div>
-                
-                <div class="border-t pt-2 bg-white p-3 rounded-xl border border-blue-100">
-                    <span class="block text-xs font-bold text-gray-700 mb-2">Add/Update Color Stock</span>
-                    <div class="grid grid-cols-2 gap-2 mb-2">
-                        <input type="text" id="input-colour" placeholder="e.g. Red" class="p-2 border rounded-lg text-sm">
-                        <input type="number" id="input-qty" placeholder="Qty" class="p-2 border rounded-lg text-sm">
-                    </div>
-                    <button onclick="addColourStockToArray()" class="w-full bg-blue-600 text-white py-1.5 rounded-lg text-xs font-bold mb-2">Add Color to List</button>
-                </div>
-                 
-                <button onclick="syncProductToDatabase()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold shadow transition">
-                    💾 Save Product Profile & Stock
-                </button>
-            </div>
+    <h3 class="font-bold text-blue-800 border-b pb-1">Admin Controls (Live Database Sync)</h3>
+    
+    <div>
+        <div class="mt-4">
+            <img id="product-img" src="" class="w-full h-48 object-cover rounded shadow hidden">
         </div>
+        <label class="block text-xs font-semibold text-gray-600">Image URL / Path</label>
+        <input type="text" id="input-img-url" placeholder="Image URL eka..." class="w-full p-2 border rounded">
+        <input type="file" id="image-upload" accept="image/*" class="mt-1 text-xs">
     </div>
+
+    <div>
+        <label class="block text-xs font-semibold text-gray-600">Retail Price (රු)</label>
+        <input type="number" id="input-retail" class="w-full p-2 border rounded-lg text-sm" oninput="calculateCostPriceLive()">
+    </div>
+
+    <div>
+        <label class="block text-xs font-semibold text-gray-600">Discount %</label>
+        <input type="number" id="input-discount" class="w-full p-2 border rounded-lg text-sm" oninput="calculateCostPriceLive()">
+    </div>
+
+    <div>
+        <label class="block text-xs font-semibold text-gray-600">Our Price (Input)</label>
+        <input type="number" id="input-our-price" oninput="calculateCostPriceLive()" class="w-full p-2 border rounded-lg text-sm" placeholder="Our Price">
+    </div>
+    
+    <div class="border-t pt-2 bg-white p-3 rounded-xl border border-blue-100">
+        <span class="block text-xs font-bold text-gray-700 mb-2">Add/Update Color Stock</span>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+            <input type="text" id="input-colour" placeholder="e.g. Red" class="p-2 border rounded-lg text-sm">
+            <input type="number" id="input-qty" placeholder="Qty" class="p-2 border rounded-lg text-sm">
+        </div>
+        <button onclick="addColourStockToArray()" class="w-full bg-blue-600 text-white py-1.5 rounded-lg text-xs font-bold mb-2">Add Color to List</button>
+    </div>
+        
+    <button onclick="syncProductToDatabase()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold shadow transition">
+        💾 Save Product Profile & Stock
+    </button>
+</div>
 
     <div id="custom-stock-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center; padding: 20px;">
         <div style="background: #1e293b; color: white; width: 100%; max-width: 400px; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; font-family: sans-serif; animation: popIn 0.3s ease;">
@@ -265,21 +281,17 @@
 
     document.getElementById('product-img').src = publicURLData.publicUrl;
     document.getElementById('input-img-url').value = publicURLData.publicUrl;
-});
-        let currentRole = 'staff';       // පරිශීලකයාගේ වර්තමාන තත්ත්වය (staff/admin)
-        let currentLoginMode = 'staff';  // දැනට තෝරාගෙන ඇති ලොගින් ආකාරය
-        let currentModelId = '';         // දැනට විවෘත කර ඇති නිශ්චිත මොඩල් එකේ ID එක
-        let liveDatabaseStock = {};      // ක්ලවුඩ් එකෙන් කියවා ගන්නා සම්පූර්ණ තොග දත්ත ගබඩා වන ඔබ්ජෙක්ට් එක
-        
-        // 🛠️ FIX: Deep-Linking පද්ධතිය සඳහා දැනටසිලෙක්ට් කර ඇති Parent ID මතක තබා ගන්නා Variables
-        let selectedCompanyId = '';
-        let selectedBrandId = '';
-        let selectedItemId = '';
+});// අනවශ්‍ය ඒවා අයින් කරලා පිරිසිදු කරමු
+let currentRole = 'staff'; 
+let currentModelId = ''; 
+let liveDatabaseStock = {}; 
 
-        // 🗂️ බටන් ව්‍යුහය තාවකාලිකව රඳවා ගන්නා ප්‍රධාන මව් ව්‍යුහය
-        let appData = { companys: [], brands: [], items: [], models: [] };
-        let activeMenuTarget = { type: null, item: null }; // Right click හෝ Long Press මඟින් සිලෙක්ට් වන බටන් එකේ දත්ත
-        let currentModalMode = 'add'; // පොප්-අප් එක ක්‍රියාත්මක වන මෝඩ් එක (add / rename)
+// දැන් මේ ටික ඇති:
+let selectedBrandId = '';
+let selectedItemId = '';
+
+let appData = { brands: [], items: [], models: [] }; // company අයින් කළා
+let activeMenuTarget = { type: null, item: null };
 
 
         function switchLoginMode(mode) {
@@ -377,6 +389,34 @@ window.onload = () => {
                 await saveCategoriesToCloud();
             }
         }
+
+
+
+        
+
+async function editPrice(item) {
+    const { value: price } = await Swal.fire({
+        title: `💰 Update Price: ${item.name}`,
+        input: 'number',
+        inputValue: item.price || '',
+        showCancelButton: true
+    });
+
+    if (price) {
+        // 1. තාවකාලික දත්ත ගබඩාවේ update කරන්න
+        item.price = price; 
+        
+        // 2. අනිවාර්යයෙන්ම Cloud එකට දත්ත යවන්න (ඔයාගේ කලින් හදපු save function එක)
+        await saveCategoriesToCloud(); 
+        
+        Swal.fire('Success!', 'Price Updated', 'success');
+        
+        // 3. UI එක refresh කරන්න (අලුත් price එක පෙන්නන්න)
+        renderButtons('model', appData.models, 'model-container'); 
+    }
+}
+
+
 
 
 
@@ -594,24 +634,25 @@ if (pageId === 'page-brand') {
         btn.addEventListener('mousedown', (e) => { if(e.button === 0) startPress(e); });
         btn.addEventListener('mouseup', endPress); 
         btn.addEventListener('mouseleave', endPress);
-
-        // සාමාන්‍ය ක්ලික් ලොජික් එක
-        btn.addEventListener('click', () => {
-            if (isLongPress) return;
-            
-            if(type === 'brand') {
-                selectedBrandId = item.id;
-                navigateTo('page-item');
-            }
-            else if(type === 'item') {
-                selectedItemId = item.id;
-                navigateTo('page-model');
-            }
-            else if(type === 'model') {
-                openProductDetailLive(item);
-            }
-        });
-        container.appendChild(btn);
+// සාමාන්‍ය ක්ලික් ලොජික් එක
+btn.addEventListener('click', () => {
+    if (isLongPress) return;
+    
+    if(type === 'brand') {
+        selectedBrandId = item.id;
+        navigateTo('page-item');
+    }
+    else if(type === 'item') {
+        selectedItemId = item.id;
+        navigateTo('page-model');
+    }
+    else if(type === 'model') {
+        // මෙන්න මෙතන තමයි වැඩේ වෙන්නේ. 
+        // අපි item එක කෙලින්ම openProductDetailLive එකට යවනවා.
+        openProductDetailLive(item); 
+    }
+});
+container.appendChild(btn);
     });
 }
 
@@ -743,6 +784,15 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
             }
         });
 
+
+       const editBtn = document.createElement('button');
+editBtn.innerText = '✏️ Edit Price';
+editBtn.onclick = () => editPrice(item); // මෙන්න මෙතන item කියන variable එක හරියට යන්න ඕනේ
+
+
+
+
+
         // 🔍 සර්ච් බාර් එක ඇතුළේ මොඩල්ස් සර්ච් කරද්දී, දැනට ඉන්න Item එකට අදාළ මොඩල්ස් විතරක් ෆිල්ටර් වීම
         function searchModels() {
             const query = document.getElementById('model-search').value.toLowerCase();
@@ -763,33 +813,50 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
             }
         }
 
-        // 📊 යම් නිශ්චිත මොඩල් එකක් ක්ලික් කළ විට එහි විස්තර ලයිව් ලෝඩ් කර පෙන්වීම
         async function openProductDetailLive(modelItem) {
-            currentModelId = modelItem.id;
-            document.getElementById('detail-model-title').innerText = modelItem.name;
-            await loadAllStockFromCloud(); 
-            if(!liveDatabaseStock[currentModelId]) liveDatabaseStock[currentModelId] = { img: '', retail: 0, discount: 0, cost: 0, stock: {} };
-            
-            const p = liveDatabaseStock[currentModelId];
-            document.getElementById('input-img-url').value = p.img || '';
-            document.getElementById('input-retail').value = p.retail || 0;
-            document.getElementById('input-discount').value = p.discount || 0;
-            updateDetailViewUI(); 
-            navigateTo('page-detail'); // 📍 Breadcrumb ලෝඩ් වෙන්න කලින් Navigation එකට යන්න ඕනේ
-        }
+    currentModelId = modelItem.id;
+    document.getElementById('detail-model-title').innerText = modelItem.name;
+    await loadAllStockFromCloud(); 
+    
+    // මෙතනට ourPrice එකත් අලුතින් add කරන්න
+    if(!liveDatabaseStock[currentModelId]) {
+        liveDatabaseStock[currentModelId] = { img: '', retail: 0, discount: 0, cost: 0, ourPrice: 0, stock: {} };
+    }
+    
+    const p = liveDatabaseStock[currentModelId];
+    document.getElementById('input-img-url').value = p.img || '';
+    document.getElementById('input-retail').value = p.retail || 0;
+    document.getElementById('input-discount').value = p.discount || 0;
+    document.getElementById('input-our-price').value = p.ourPrice || 0; // අලුතින් එකතු කළා
+    
+    updateDetailViewUI(); 
+    navigateTo('page-detail');
+}
 
-        // 🧮 වට්ටම් (Discount) සහ අවසාන ශුද්ධ මිල (Net Cost Price) ලයිව් ගණනය කිරීමේ සූත්‍රය
-        function calculateCostPriceLive() {
-            const retail = parseFloat(document.getElementById('input-retail').value) || 0;
-            const discount = parseFloat(document.getElementById('input-discount').value) || 0;
-            const cost = retail - (retail * (discount / 100));
-            liveDatabaseStock[currentModelId].retail = retail;
-            liveDatabaseStock[currentModelId].discount = discount;
-            liveDatabaseStock[currentModelId].cost = cost;
-            document.getElementById('view-retail').innerText = retail.toLocaleString();
-            document.getElementById('view-discount').innerText = discount;
-            document.getElementById('view-cost').innerText = cost.toLocaleString();
-        }
+
+
+       function calculateCostPriceLive() {
+    const retail = parseFloat(document.getElementById('input-retail').value) || 0;
+    const discount = parseFloat(document.getElementById('input-discount').value) || 0;
+    const ourPrice = parseFloat(document.getElementById('input-our-price').value) || 0; // input එකෙන් ගන්න
+    
+    const cost = retail - (retail * (discount / 100));
+    
+    // දත්ත ගබඩාවට යාවත්කාලීන කරන්න
+    liveDatabaseStock[currentModelId].retail = retail;
+    liveDatabaseStock[currentModelId].discount = discount;
+    liveDatabaseStock[currentModelId].ourPrice = ourPrice; // save වෙනවා
+    liveDatabaseStock[currentModelId].cost = cost;
+    
+    // UI එකේ පෙන්වන්න
+    document.getElementById('view-retail').innerText = retail.toLocaleString();
+    document.getElementById('view-discount').innerText = discount;
+    document.getElementById('view-cost').innerText = cost.toLocaleString();
+    document.getElementById('view-our-price').innerText = ourPrice.toLocaleString(); // UI එකේ පෙන්වනවා
+}
+
+
+
 
         // 🎨 තොග ලැයිස්තුවට (Stock Object) තාවකාලිකව වර්ණ සහ ප්‍රමාණයන් ඇතුළත් කිරීම
         function addColourStockToArray() {
@@ -814,6 +881,8 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
                 updateDetailViewUI(); 
             }
         }
+
+
 
         // 📱 විස්තර වෙනස් කළ පසු UI එක ලස්සනට අප්ඩේට් කර තිරයේ පෙන්වීම
        function updateDetailViewUI() {
@@ -1102,4 +1171,15 @@ async function uploadPhoto(file) {
 }
 
 
+
+if ('Notification' in window) {
+    Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+            console.log("Notification permission granted!");
+        }
+    });
+}
+
     </script>
+</body>
+</html>
