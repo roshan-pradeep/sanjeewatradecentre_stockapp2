@@ -520,72 +520,75 @@ async function editPrice(item) {
 
 
 
-       // මේ විදියට function එකේ definition එක හදන්න
-function navigateTo(pageId, addToHistory = true) {
+       function navigateTo(pageId, addToHistory = true) {
     document.getElementById('custom-context-menu').classList.add('hidden');
-    if(pageId === 'page-model') document.getElementById('model-search').value = ''; 
-
-
     
+    // 1. පේජ් එක සහ අදාළ ID ටික Session එකේ සේව් කරන්න (Refresh වුණත් අමතක වෙන්නෙ නැති වෙන්න)
+    sessionStorage.setItem('lastPage', pageId);
+    if(selectedBrandId) sessionStorage.setItem('selectedBrandId', selectedBrandId);
+    if(selectedItemId) sessionStorage.setItem('selectedItemId', selectedItemId);
+    if(typeof currentModelId !== 'undefined' && currentModelId) sessionStorage.setItem('currentModelId', currentModelId);
 
-    // navigateTo ෆන්ක්ෂන් එකේ ඇතුලේ
-if (pageId === 'page-brand') {
-    const searchInput = document.getElementById('brand-search');
-    if (searchInput) searchInput.value = ''; // Search bar එක Clear කරන්න
-    
-    let filteredBrands = appData.brands.filter(b => b.itemId === selectedItemId);
-    renderButtons('brand', filteredBrands, 'brand-container', 'bg-blue-600');
-}
+    // Search bars clear කිරීම
+    if(pageId === 'page-model') document.getElementById('model-search').value = '';
+    if(pageId === 'page-brand') {
+        const searchInput = document.getElementById('brand-search');
+        if (searchInput) searchInput.value = '';
+    }
 
+    // පේජ් එක හයිඩ් කිරීම
     ['page-login', 'page-home', 'page-brand', 'page-item', 'page-model', 'page-detail'].forEach(p => {
         const el = document.getElementById(p);
         if(el) el.classList.add('hidden');
     });
 
+    // පේජ් එක පෙන්නීම
     const target = document.getElementById(pageId);
     if(target) target.classList.remove('hidden');
 
-
-    
-
     setupAdminUI();
 
-    // Browser History එකට එකතු කිරීම
+    // History එකට දැමීම
     if (addToHistory) {
         history.pushState({ pageId: pageId }, null, "");
     }
 
-
-    // 3. මව් නාමයන් හොයාගන්න
+    // මව් නාමයන් (Breadcrumbs සඳහා) - මේ ටික අනිවාර්යයි
     let brandName = appData.brands.find(b => b.id === selectedBrandId)?.name || '';
     let itemName = appData.items.find(i => i.id === selectedItemId)?.name || '';
 
-    // 4. බ්‍රෑන්ඩ් පේජ් එක (දැන් මේක තමයි මුල්ම පියවර)
+    // පේජ් එක අනුව Render කිරීම
     if(pageId === 'page-brand') {
         renderButtons('brand', appData.brands || [], 'brand-container', 'bg-blue-600');
     }
 
-    // 5. අයිටම් පේජ් එක (ක්ලික් කළ බ්‍රෑන්ඩ් එකට අයිති අයිටම් විතරක් පෙන්වයි)
     if(pageId === 'page-item') {
         document.getElementById('breadcrumb-item').innerHTML = `📍 Location: <span class="text-blue-600 font-bold">${brandName}</span> /`;
         let filteredItems = appData.items.filter(i => i.brandId === selectedBrandId);
         renderButtons('item', filteredItems, 'item-container', 'bg-gray-700');
     }
 
-    // 6. මොඩල් පේජ් එක (ක්ලික් කළ අයිටම් එකට අයිති මොඩල් විතරක් පෙන්වයි)
     if(pageId === 'page-model') {
         document.getElementById('breadcrumb-model').innerHTML = `📍 Location: <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-gray-700 font-bold">${itemName}</span> /`;
         let filteredModels = appData.models.filter(m => m.itemId === selectedItemId);
         renderButtons('model', filteredModels, 'model-container', 'bg-emerald-600');
     }
 
-    // 7. ඩීටේල් පේජ් එක
     if(pageId === 'page-detail') {
-        let modelName = appData.models.find(m => m.id === currentModelId)?.name || '';
-        document.getElementById('breadcrumb-detail').innerHTML = `📍 Location: <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-gray-700 font-bold">${itemName}</span> / <span class="text-emerald-600 font-bold">${modelName}</span>`;
-    }
+    // රිෆ්‍රෙෂ් වුණත් ID එක අනිවාර්යයෙන්ම ගේන්න
+    if (!currentModelId) currentModelId = sessionStorage.getItem('currentModelId');
+    
+    // Model එකේ නම හොයාගන්න
+    let modelName = appData.models.find(m => m.id === currentModelId)?.name || 'Unknown';
+    
+    // Breadcrumb එකට නම ලියන්න
+    document.getElementById('breadcrumb-detail').innerHTML = `📍 Location: <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-gray-700 font-bold">${itemName}</span> / <span class="text-emerald-600 font-bold">${modelName}</span>`;
+    
+    // UI එකත් අනිවාර්යයෙන්ම Update කරන්න
+    updateDetailViewUI();
 }
 
+}
 
 
 
@@ -639,17 +642,19 @@ if (pageId === 'page-brand') {
 btn.addEventListener('click', () => {
     if (isLongPress) return;
     
-    if(type === 'brand') {
+    if (type === 'brand') {
         selectedBrandId = item.id;
+        sessionStorage.setItem('selectedBrandId', item.id); // Refresh සඳහා save කරන්න
         navigateTo('page-item');
     }
-    else if(type === 'item') {
+    else if (type === 'item') {
         selectedItemId = item.id;
+        sessionStorage.setItem('selectedItemId', item.id); // Refresh සඳහා save කරන්න
         navigateTo('page-model');
     }
-    else if(type === 'model') {
-        // මෙන්න මෙතන තමයි වැඩේ වෙන්නේ. 
-        // අපි item එක කෙලින්ම openProductDetailLive එකට යවනවා.
+    else if (type === 'model') {
+        // දැන් අපි කලින් හදාගත්ත selectModel ෆන්ක්ෂන් එක පාවිච්චි කරනවා
+        selectModel(item.id);
         openProductDetailLive(item); 
     }
 });
@@ -674,6 +679,14 @@ container.appendChild(btn);
         });
 
        
+
+
+
+
+
+
+
+
 
 
 // 1. අලුතින් Add කරන කොට Duplicate වළක්වන ෆන්ක්ෂන් එක
@@ -946,30 +959,36 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
 }
 
 
+function updateDetailViewUI() {
+    // 1. Session එකෙන් ID එක ගන්න (රිෆ්‍රෙෂ් වුණාම අත්‍යවශ්‍යයි)
+    if (!currentModelId) currentModelId = sessionStorage.getItem('currentModelId');
+    
+    // 2. liveDatabaseStock එකේ නැත්නම් appData එකෙන් හරි බලන්න (Safety check)
+    // උඹේ main database එකේ structure එක අනුව මේක වෙනස් වෙන්න පුළුවන්
+    const p = liveDatabaseStock ? liveDatabaseStock[currentModelId] : null;
 
-        // 📱 විස්තර වෙනස් කළ පසු UI එක ලස්සනට අප්ඩේට් කර තිරයේ පෙන්වීම
-       function updateDetailViewUI() {
-    const p = liveDatabaseStock[currentModelId];
-    if (!p) return; // දත්ත නැත්නම් ෆන්ක්ෂන් එක නවත්වන්න (අවුලක් නැති වෙන්න)
-
-    // 1. පින්තූරෙ අප්ඩේට් කිරීම - පින්තූරේ පාර (URL) නැත්නම් Placeholder එක වැටෙනවා
-    const imgElement = document.getElementById('product-img');
-    if (imgElement) {
-        imgElement.src = p.img && p.img.trim() !== '' ? p.img : 'https://placehold.co/150x300?text=No+Image';
+    if (!p) {
+        console.log("Data not ready or model not found yet, retrying...");
+        return; 
     }
 
-    // 2. අනිත් විස්තර අප්ඩේට් කිරීම (සැ.යු: අදාළ ID එක පේජ් එකේ තියෙනවා කියලා ස්ථිර කරගන්න)
+    // 1. පින්තූරෙ අප්ඩේට් කිරීම
+    const imgElement = document.getElementById('product-img');
+    if (imgElement) {
+        imgElement.src = (p.img && p.img.trim() !== '') ? p.img : 'https://placehold.co/150x300?text=No+Image';
+    }
+
+    // 2. අනිත් විස්තර අප්ඩේට් කිරීම
     const updateText = (id, value) => {
         const el = document.getElementById(id);
         if (el) el.innerText = value;
     };
 
     updateText('view-retail', (p.retail || 0).toLocaleString());
-    updateText('view-discount', (p.discount || 0) + '%'); // Discount එකට % ලකුණක් දැම්මා ලස්සන වෙන්න
+    updateText('view-discount', (p.discount || 0) + '%');
     updateText('view-cost', (p.cost || 0).toLocaleString());
     updateText('view-our-price', (p.ourPrice || 0).toLocaleString());
     
-
     // 3. ස්ටොක් විස්තර ලස්සනට ලැයිස්තුගත කිරීම
     const sc = document.getElementById('view-qty-colors');
     if (sc) {
@@ -990,8 +1009,6 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
         }
     }
 }
-
-
 
 
 
@@ -1112,47 +1129,55 @@ function checkLowStockNotifications() {
 
 
 
-        // 🚀 WINDOW ONLOAD: ඇප් එක ස්ටාර්ට් වෙද්දීම පසුබිමෙන් සිදුවන ප්‍රධාන මෙහෙයුම්
-        window.onload = async () => { 
-            console.log("App Starting, Fetching from Cloud...");
-            await loadCategoriesFromCloud(); // 1. බටන් ස්ට්‍රක්චර් එක කියවීම
-            await loadAllStockFromCloud();   // 2. මිල සහ තොග දත්ත කියවීම
+     window.onload = async () => { 
+    console.log("App Starting...");
 
+    // 1. මුලින්ම ලොගින් වෙලාද බලමු
+    const isLogged = localStorage.getItem('sanjeewa_role');
+    
+    if (isLogged) {
+        currentRole = isLogged;
+        
+        // දත්ත ලෝඩ් කරන්න
+        await loadCategoriesFromCloud();
+        await loadAllStockFromCloud();
 
-            selectedItemId = sessionStorage.getItem('selectedItemId') || '';
-            selectedBrandId = sessionStorage.getItem('selectedBrandId') || '';
+        // Session එකෙන් ID ටික අරගන්න
+        selectedBrandId = sessionStorage.getItem('selectedBrandId') || '';
+        selectedItemId = sessionStorage.getItem('selectedItemId') || '';
+        currentModelId = sessionStorage.getItem('currentModelId') || ''; 
+        
+        setupAdminUI();
 
-            // 3. කලින් ලොග් වී සිටියේ නම් කෙළින්ම ඇතුළට ගැනීම
-            if(localStorage.getItem('sanjeewa_role')) {
-                currentRole = localStorage.getItem('sanjeewa_role');
-            } else {
-                currentRole = 'staff';
-            }
-            setupAdminUI();
+        // 2. අන්තිමට හිටපු පේජ් එකට යන්න
+        const savedPage = sessionStorage.getItem('lastPage') || 'page-home';
+        navigateTo(savedPage);
 
+        // 3. රිෆ්‍රෙෂ් වුණාම Detail Page එකේ දත්ත නැති වෙන එක නවත්වන්න
+        if (savedPage === 'page-detail') {
+            updateDetailViewUI();
+        }
 
+        // 4. Notification අවසර ඉල්ලීම
+        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+            Notification.requestPermission();
+        }
 
-            // 4. අන්තිමට හිටපු පේජ් එකට යන්න
-            const savedPage = sessionStorage.getItem('lastPage') || 'page-login';
-             navigateTo(savedPage);
-
-
-
-            // 5. Notification අවසර ඉල්ලීම
-           if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-        Notification.requestPermission();
-    }
-
-            // 5. Android ඇප් එකක් වගේ ක්‍රියා කිරීමට Service Worker එක පණ ගැන්වීම
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('sw.js')
+        // 5. Service Worker පණ ගැන්වීම
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
                 .then(reg => console.log('Service Worker Registered!', reg))
                 .catch(err => console.log('Service Worker Failed!', err));
-            }
-
-            // 6. ඇප් එක ක්‍රියාත්මක වී තත්පර 2කින් Low Stock ඇඟවීම් පරීක්ෂා කිරීම
-            setTimeout(checkLowStockNotifications, 2000); 
         }
+        
+        // 6. Low Stock ඇඟවීම් පරීක්ෂා කිරීම
+        setTimeout(checkLowStockNotifications, 2000);
+        
+    } else {
+        // ලොග් වෙලා නැත්නම් කෙලින්ම Login පේජ් එකට
+        navigateTo('page-login');
+    }
+}
 
 
 
@@ -1260,6 +1285,26 @@ function isDuplicate(dataList, newValue) {
     );
 }
 
+
+function selectModel(mId) {
+    currentModelId = mId;
+    sessionStorage.setItem('currentModelId', mId); // මේක තමයි රිෆ්‍රෙෂ් වුණාම දත්ත ගේන්නේ
+    
+    // ඩීටේල් එක පෙන්වන ෆන්ක්ෂන් එක මෙතනින් කතා කරන්න
+    // ඔයාගේ කෝඩ් එකේ තිබ්බ openProductDetailLive එකට මාරුවෙන්න කලින් දේවල් මෙතන කරනවා
+    navigateTo('page-detail'); 
+    
+    // ඩීටේල් පේජ් එකට ගියාම දත්ත පෙන්නන්න ඕනේ නිසා:
+    updateDetailViewUI(); 
+}
+function selectModel(item) {
+    currentModelId = item.id;
+    // නමයි ID එකයි දෙකම සේව් කරමු
+    sessionStorage.setItem('currentModelId', item.id);
+    sessionStorage.setItem('currentModelName', item.name); 
+    
+    navigateTo('page-detail');
+}
     </script>
 </body>
 </html>
