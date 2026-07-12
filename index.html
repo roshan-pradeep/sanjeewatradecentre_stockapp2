@@ -283,6 +283,7 @@
     document.getElementById('input-img-url').value = publicURLData.publicUrl;
 });// අනවශ්‍ය ඒවා අයින් කරලා පිරිසිදු කරමු
 let currentRole = 'staff'; 
+let currentLoginMode = 'staff';
 let currentModelId = ''; 
 let liveDatabaseStock = {}; 
 
@@ -785,11 +786,6 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
         });
 
 
-       const editBtn = document.createElement('button');
-editBtn.innerText = '✏️ Edit Price';
-editBtn.onclick = () => editPrice(item); // මෙන්න මෙතන item කියන variable එක හරියට යන්න ඕනේ
-
-
 
 
 
@@ -802,34 +798,52 @@ editBtn.onclick = () => editPrice(item); // මෙන්න මෙතන item �
 
         // ☁️ `items_stock` ටේබල් එකෙන් තොග, මිල ගණන් සහ පින්තූර ලින්ක් කියවා ගැනීම
         async function loadAllStockFromCloud() {
-            const cloudData = await fetchSupabase('/items_stock');
-            if (cloudData) {
-                liveDatabaseStock = {};
-                cloudData.forEach(row => {
-                    liveDatabaseStock[row.model_id] = {
-                        img: row.img_url, retail: parseFloat(row.retail_price) || 0, discount: parseFloat(row.discount) || 0, cost: parseFloat(row.cost_price) || 0, stock: row.stock_data || {}
-                    };
-                });
-            }
-        }
+    const cloudData = await fetchSupabase('/items_stock');
+    if (cloudData) {
+        liveDatabaseStock = {};
+        cloudData.forEach(row => {
+            liveDatabaseStock[row.model_id] = {
+                img: row.img_url, 
+                retail: parseFloat(row.retail_price) || 0, 
+                discount: parseFloat(row.discount) || 0, 
+                cost: parseFloat(row.cost_price) || 0,
+                // මෙන්න මෙතනට database එකේ තියෙන our_price එක එකතු කරන්න
+                ourPrice: parseFloat(row.our_price) || 0, 
+                stock: row.stock_data || {}
+            };
+        });
+    }
+}
 
         async function openProductDetailLive(modelItem) {
     currentModelId = modelItem.id;
     document.getElementById('detail-model-title').innerText = modelItem.name;
+    
     await loadAllStockFromCloud(); 
     
-    // මෙතනට ourPrice එකත් අලුතින් add කරන්න
+    // Cloud එකෙන් දත්ත ආවට පස්සේ ඒ model එකට අදාළ දත්ත ටික ගන්නවා
     if(!liveDatabaseStock[currentModelId]) {
-        liveDatabaseStock[currentModelId] = { img: '', retail: 0, discount: 0, cost: 0, ourPrice: 0, stock: {} };
+        liveDatabaseStock[currentModelId] = { 
+            img: '', 
+            retail: 0, 
+            discount: 0, 
+            cost: 0, 
+            ourPrice: 0, // මෙතන 0 කරනවා
+            stock: {} 
+        };
     }
     
     const p = liveDatabaseStock[currentModelId];
+    
+    // UI එකේ inputs වලට දත්ත පුරවනවා
     document.getElementById('input-img-url').value = p.img || '';
     document.getElementById('input-retail').value = p.retail || 0;
     document.getElementById('input-discount').value = p.discount || 0;
-    document.getElementById('input-our-price').value = p.ourPrice || 0; // අලුතින් එකතු කළා
+    document.getElementById('input-our-price').value = p.ourPrice || 0; 
     
+    // වැදගත්ම දේ: UI එකේ පෙන්වන අගයන් ටික update කරන්න
     updateDetailViewUI(); 
+    
     navigateTo('page-detail');
 }
 
@@ -869,18 +883,36 @@ editBtn.onclick = () => editPrice(item); // මෙන්න මෙතන item �
         }
 
         // ☁️ සකස් කළ මුළු නිෂ්පාදන තොරතුරු පැතිකඩම Supabase එකට ස්ථිරවම Save (Sync) කිරීම
-        async function syncProductToDatabase() {
-            const p = liveDatabaseStock[currentModelId];
-            p.img = document.getElementById('input-img-url').value.trim();
-            const mName = appData.models.find(m => m.id === currentModelId)?.name || "Unknown Model";
-            const payload = { model_id: currentModelId, model_name: mName, img_url: p.img, retail_price: p.retail, discount: p.discount, cost_price: p.cost, stock_data: p.stock };
-            
-            const response = await fetchSupabase('/items_stock', 'POST', payload, true);
-            if(response) { 
-                Swal.fire({ title: 'Saved!', text: 'නිෂ්පාදන විස්තර සාර්ථකව ඩේටාබේස් එකට සේව් වුණා! 🎉', icon: 'success', background: '#1e293b', color: '#fff' });
-                updateDetailViewUI(); 
-            }
-        }
+       async function syncProductToDatabase() {
+    const p = liveDatabaseStock[currentModelId];
+    p.img = document.getElementById('input-img-url').value.trim();
+    
+    const mName = appData.models.find(m => m.id === currentModelId)?.name || "Unknown Model";
+    
+    // මෙතනට our_price එක එකතු කරන්න
+    const payload = { 
+        model_id: currentModelId, 
+        model_name: mName, 
+        img_url: p.img, 
+        retail_price: p.retail, 
+        discount: p.discount, 
+        cost_price: p.cost, 
+        our_price: p.ourPrice, // අලුතින් එකතු කළා
+        stock_data: p.stock 
+    };
+    
+    const response = await fetchSupabase('/items_stock', 'POST', payload, true);
+    if(response) { 
+        Swal.fire({ 
+            title: 'Saved!', 
+            text: 'නිෂ්පාදන විස්තර සහ Our Price සාර්ථකව සේව් වුණා! 🎉', 
+            icon: 'success', 
+            background: '#1e293b', 
+            color: '#fff' 
+        });
+        updateDetailViewUI(); 
+    }
+}
 
 
 
@@ -904,6 +936,8 @@ editBtn.onclick = () => editPrice(item); // මෙන්න මෙතන item �
     updateText('view-retail', (p.retail || 0).toLocaleString());
     updateText('view-discount', (p.discount || 0) + '%'); // Discount එකට % ලකුණක් දැම්මා ලස්සන වෙන්න
     updateText('view-cost', (p.cost || 0).toLocaleString());
+    updateText('view-our-price', (p.ourPrice || 0).toLocaleString());
+    
 
     // 3. ස්ටොක් විස්තර ලස්සනට ලැයිස්තුගත කිරීම
     const sc = document.getElementById('view-qty-colors');
