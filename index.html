@@ -675,7 +675,8 @@ container.appendChild(btn);
 
        
 
-// 2. openAddModal (Duplicate check එක ඉවත් කරා)
+
+// 1. අලුතින් Add කරන කොට Duplicate වළක්වන ෆන්ක්ෂන් එක
 function openAddModal(type) {
     currentModalMode = 'add';
     activeMenuTarget = { type: type, item: null };
@@ -695,13 +696,24 @@ function openAddModal(type) {
     }).then(async (result) => {
         if (result.value) {
             const inputValue = result.value.trim();
-            
-            // Duplicate චෙක් කිරීමේ කොටස මෙතනින් සම්පූර්ණයෙන්ම අයින් කරා.
-            // ඒ නිසා ඕනෑම නමක් දැන් දාන්න පුළුවන්.
-
             let arrayKey = `${type}s`;
+
+            // Duplicate Check Logic
+            const isExists = appData[arrayKey].some(item => {
+                const nameMatch = item.name.trim().toLowerCase() === inputValue.toLowerCase();
+                if (type === 'brand') return nameMatch;
+                if (type === 'item') return nameMatch && item.brandId === selectedBrandId;
+                if (type === 'model') return nameMatch && item.itemId === selectedItemId;
+                return nameMatch;
+            });
+
+            if (isExists) {
+                Swal.fire({ icon: 'error', title: 'Oops!', text: 'මෙම නම දැනටමත් පවතී!', background: '#1e293b', color: '#fff' });
+                return;
+            }
+
+            // සාර්ථක නම් සේව් කරන්න
             let newItem = { id: 'id_' + Date.now(), name: inputValue };
-            
             if (type === 'brand') newItem.companyId = selectedCompanyId;
             if (type === 'item') newItem.brandId = selectedBrandId;
             if (type === 'model') newItem.itemId = selectedItemId;
@@ -713,13 +725,13 @@ function openAddModal(type) {
     });
 }
 
-// 3. Rename එක (Rename කරද්දීත් Duplicate චෙක් එක අයින් කරා)
+// 2. Rename කරන කොට Duplicate වළක්වන ෆන්ක්ෂන් එක
 document.getElementById('menu-rename-btn').addEventListener('click', () => {
     currentModalMode = 'rename';
     const target = activeMenuTarget;
     document.getElementById('custom-context-menu').classList.add('hidden');
-    
-    if(target.item) {
+
+    if (target.item) {
         Swal.fire({
             title: `✏️ Rename "${target.item.name}"`,
             input: 'text',
@@ -735,9 +747,25 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
         }).then(async (result) => {
             if (result.value) {
                 const newName = result.value.trim();
-                
-                // Rename කරද්දීත් Duplicate check එක සම්පූර්ණයෙන්ම අයින් කරා.
-                
+                let arrayKey = `${target.type}s`;
+
+                // තමන්ගේ නමම වෙනස් කරන්නේ නැත්නම් චෙක් කරන්න
+                if (newName.toLowerCase() === target.item.name.toLowerCase()) return;
+
+                // Duplicate Check Logic
+                const isExists = appData[arrayKey].some(item => {
+                    const nameMatch = item.name.trim().toLowerCase() === newName.toLowerCase();
+                    if (target.type === 'brand') return nameMatch;
+                    if (target.type === 'item') return nameMatch && item.brandId === selectedBrandId;
+                    if (target.type === 'model') return nameMatch && item.itemId === selectedItemId;
+                    return nameMatch;
+                });
+
+                if (isExists) {
+                    Swal.fire({ icon: 'error', title: 'Oops!', text: 'මෙම නම දැනටමත් වෙනත් එකකට භාවිත කර ඇත!', background: '#1e293b', color: '#fff' });
+                    return;
+                }
+
                 target.item.name = newName;
                 await saveCategoriesToCloud();
                 Swal.fire({ title: 'Updated! 🎉', text: 'නම සාර්ථකව වෙනස් කළා!', icon: 'success', background: '#1e293b', color: '#fff' });
@@ -746,6 +774,9 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
         });
     }
 });
+
+
+
         function closeInputModal() {
             document.getElementById('custom-input-modal').classList.add('hidden');
         }
@@ -1212,6 +1243,21 @@ if ('Notification' in window) {
             console.log("Notification permission granted!");
         }
     });
+}
+
+
+
+/**
+ * @param {Array} dataList - පරීක්ෂා කළ යුතු දත්ත ලැයිස්තුව (උදා: appData.brands)
+ * @param {string} newValue - යූසර් අලුතින් ගහපු නම
+ * @returns {boolean} - නම තියෙනවා නම් true, නැත්නම් false
+ */
+function isDuplicate(dataList, newValue) {
+    if (!dataList || !newValue) return false;
+    const normalizedNewName = newValue.trim().toLowerCase();
+    return dataList.some(item => 
+        item.name.trim().toLowerCase() === normalizedNewName
+    );
 }
 
     </script>
