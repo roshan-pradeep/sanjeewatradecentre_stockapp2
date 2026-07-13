@@ -243,6 +243,11 @@
         </div>
     </div>
 
+
+    <div id="image-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4" onclick="closeImageModal()">
+    <img id="full-image" src="" class="max-w-full max-h-full rounded-lg shadow-2xl">
+   </div>
+
     <style>
         
    
@@ -1129,7 +1134,7 @@ function checkLowStockNotifications() {
 
 
 
-     window.onload = async () => { 
+    window.onload = async () => { 
     console.log("App Starting...");
 
     // 1. මුලින්ම ලොගින් වෙලාද බලමු
@@ -1172,6 +1177,19 @@ function checkLowStockNotifications() {
         
         // 6. Low Stock ඇඟවීම් පරීක්ෂා කිරීම
         setTimeout(checkLowStockNotifications, 2000);
+
+        // 7. පින්තූරේ ලොකු කරන Logic එක (Image Modal)
+        const prodImg = document.getElementById('product-img');
+        if (prodImg) {
+            prodImg.addEventListener('click', function() {
+                const modal = document.getElementById('image-modal');
+                const fullImg = document.getElementById('full-image');
+                if(modal && fullImg) {
+                    fullImg.src = this.src; // පින්තූරේ source එක modal එකට දෙනවා
+                    modal.classList.remove('hidden');
+                }
+            });
+        }
         
     } else {
         // ලොග් වෙලා නැත්නම් කෙලින්ම Login පේජ් එකට
@@ -1179,6 +1197,10 @@ function checkLowStockNotifications() {
     }
 }
 
+// මේ ෆන්ක්ෂන් එක window.onload එකෙන් එළියේ තියන්න
+function closeImageModal() {
+    document.getElementById('image-modal').classList.add('hidden');
+}
 
 
 

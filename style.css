@@ -23,3 +23,14 @@
 }
 
 
+
+/* පින්තූරේ උඩ මවුස් එක තිබ්බම click කරන්න පුළුවන් බව පෙන්වන්න */
+#product-img {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+#product-img:hover {
+    transform: scale(1.02);
+}
+
+
