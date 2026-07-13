@@ -202,7 +202,7 @@
     </div>
 
     <div>
-        <label class="block text-xs font-semibold text-gray-600">Discount </label>
+        <label class="block text-xs font-semibold text-gray-600">Discount %</label>
         <input type="number" id="input-discount" class="w-full p-2 border rounded-lg text-sm" oninput="calculateCostPriceLive()">
     </div>
 
@@ -243,14 +243,19 @@
         </div>
     </div>
 
-
-    <div id="image-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4" onclick="closeImageModal()">
-    <img id="full-image" src="" class="max-w-full max-h-full rounded-lg shadow-2xl">
-   </div>
-
     <style>
         
-   
+   .hidden {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+    }
+
+
+
+
         @keyframes alertShow { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
@@ -295,6 +300,10 @@ let liveDatabaseStock = {};
 // දැන් මේ ටික ඇති:
 let selectedBrandId = '';
 let selectedItemId = '';
+let selectedCompanyId = '';
+
+
+
 
 let appData = { brands: [], items: [], models: [] }; // company අයින් කළා
 let activeMenuTarget = { type: null, item: null };
@@ -310,6 +319,21 @@ let activeMenuTarget = { type: null, item: null };
     }
 
     
+
+     // home.html එකේ උඩින්ම දාන්න
+window.onload = () => {
+    // මේකෙන් වෙන්නේ History එකේ අන්තිම තැනට Home පේජ් එක දාන එක
+    window.history.pushState(null, null, window.location.href);
+    
+    // User ආයෙත් Back එබුවොත් කරන්නේ මොකක්ද කියලා මේකෙන් කියනවා
+    window.addEventListener('popstate', function () {
+        window.history.pushState(null, null, window.location.href);
+        // මෙතනදී Alert එකක් දාන්න පුළුවන් හෝ නිකම්ම අතාරින්න පුළුවන්
+        // alert("ඔයාට දැන් ආපහු යන්න බැහැ!");
+    });
+    
+    
+};
 
 
 
@@ -509,66 +533,77 @@ async function editPrice(item) {
 }
 
 
-async function navigateTo(pageId, addToHistory = true) {
+
+       // මේ විදියට function එකේ definition එක හදන්න
+function navigateTo(pageId, addToHistory = true) {
     document.getElementById('custom-context-menu').classList.add('hidden');
-    sessionStorage.setItem('lastPage', pageId);
+    if(pageId === 'page-model') document.getElementById('model-search').value = ''; 
 
-    // 1. දත්ත නැත්නම් පොඩ්ඩක් ඉන්න (Safety check)
-    if (!appData || !appData.brands) {
-        console.log("දත්ත එනකම් ඉන්නවා...");
-        return; 
-    }
 
-    // ID ටික refresh කරගන්න
-    selectedBrandId = selectedBrandId || sessionStorage.getItem('selectedBrandId') || '';
-    selectedItemId = selectedItemId || sessionStorage.getItem('selectedItemId') || '';
-    currentModelId = currentModelId || sessionStorage.getItem('currentModelId') || '';
+    
 
-    // 2. පේජ් එක හයිඩ් කිරීම
+    // navigateTo ෆන්ක්ෂන් එකේ ඇතුලේ
+if (pageId === 'page-brand') {
+    const searchInput = document.getElementById('brand-search');
+    if (searchInput) searchInput.value = ''; // Search bar එක Clear කරන්න
+    
+    let filteredBrands = appData.brands.filter(b => b.itemId === selectedItemId);
+    renderButtons('brand', filteredBrands, 'brand-container', 'bg-blue-600');
+}
+
     ['page-login', 'page-home', 'page-brand', 'page-item', 'page-model', 'page-detail'].forEach(p => {
         const el = document.getElementById(p);
         if(el) el.classList.add('hidden');
     });
 
-    // පේජ් එක පෙන්නීම
     const target = document.getElementById(pageId);
     if(target) target.classList.remove('hidden');
 
+
+    
+
     setupAdminUI();
 
-    if (addToHistory) history.pushState({ pageId: pageId }, null, "");
-
-    // 3. නම සහ ID එක හොයාගන්නා තැන (Validation එකක් එක්ක)
-    let brand = appData.brands.find(b => b.id === selectedBrandId);
-    let item = appData.items.find(i => i.id === selectedItemId);
-    let model = appData.models.find(m => m.id === currentModelId);
-
-    let brandName = brand ? brand.name : 'Unknown';
-    let itemName = item ? item.name : 'Unknown';
-    let modelName = model ? model.name : 'Unknown';
-
-    // 4. Render කිරීම
-    if(pageId === 'page-brand') {
-        renderButtons('brand', appData.brands, 'brand-container', 'bg-blue-600');
+    // Browser History එකට එකතු කිරීම
+    if (addToHistory) {
+        history.pushState({ pageId: pageId }, null, "");
     }
 
+
+    // 3. මව් නාමයන් හොයාගන්න
+    let brandName = appData.brands.find(b => b.id === selectedBrandId)?.name || '';
+    let itemName = appData.items.find(i => i.id === selectedItemId)?.name || '';
+
+    // 4. බ්‍රෑන්ඩ් පේජ් එක (දැන් මේක තමයි මුල්ම පියවර)
+    if(pageId === 'page-brand') {
+        renderButtons('brand', appData.brands || [], 'brand-container', 'bg-blue-600');
+    }
+
+    // 5. අයිටම් පේජ් එක (ක්ලික් කළ බ්‍රෑන්ඩ් එකට අයිති අයිටම් විතරක් පෙන්වයි)
     if(pageId === 'page-item') {
         document.getElementById('breadcrumb-item').innerHTML = `📍 Location: <span class="text-blue-600 font-bold">${brandName}</span> /`;
         let filteredItems = appData.items.filter(i => i.brandId === selectedBrandId);
         renderButtons('item', filteredItems, 'item-container', 'bg-gray-700');
     }
 
+    // 6. මොඩල් පේජ් එක (ක්ලික් කළ අයිටම් එකට අයිති මොඩල් විතරක් පෙන්වයි)
     if(pageId === 'page-model') {
         document.getElementById('breadcrumb-model').innerHTML = `📍 Location: <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-gray-700 font-bold">${itemName}</span> /`;
         let filteredModels = appData.models.filter(m => m.itemId === selectedItemId);
         renderButtons('model', filteredModels, 'model-container', 'bg-emerald-600');
     }
 
+    // 7. ඩීටේල් පේජ් එක
     if(pageId === 'page-detail') {
+        let modelName = appData.models.find(m => m.id === currentModelId)?.name || '';
         document.getElementById('breadcrumb-detail').innerHTML = `📍 Location: <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-gray-700 font-bold">${itemName}</span> / <span class="text-emerald-600 font-bold">${modelName}</span>`;
-        updateDetailViewUI();
     }
 }
+
+
+
+
+
 
 
 
@@ -618,19 +653,17 @@ async function navigateTo(pageId, addToHistory = true) {
 btn.addEventListener('click', () => {
     if (isLongPress) return;
     
-    if (type === 'brand') {
+    if(type === 'brand') {
         selectedBrandId = item.id;
-        sessionStorage.setItem('selectedBrandId', item.id); // Refresh සඳහා save කරන්න
         navigateTo('page-item');
     }
-    else if (type === 'item') {
+    else if(type === 'item') {
         selectedItemId = item.id;
-        sessionStorage.setItem('selectedItemId', item.id); // Refresh සඳහා save කරන්න
         navigateTo('page-model');
     }
-    else if (type === 'model') {
-        // දැන් අපි කලින් හදාගත්ත selectModel ෆන්ක්ෂන් එක පාවිච්චි කරනවා
-        selectModel(item.id);
+    else if(type === 'model') {
+        // මෙන්න මෙතන තමයි වැඩේ වෙන්නේ. 
+        // අපි item එක කෙලින්ම openProductDetailLive එකට යවනවා.
         openProductDetailLive(item); 
     }
 });
@@ -655,14 +688,6 @@ container.appendChild(btn);
         });
 
        
-
-
-
-
-
-
-
-
 
 
 // 1. අලුතින් Add කරන කොට Duplicate වළක්වන ෆන්ක්ෂන් එක
@@ -935,28 +960,29 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
 }
 
 
-function updateDetailViewUI() {
-    // 1. Session එකෙන් ID එක ගන්න (රිෆ්‍රෙෂ් වුණාම අත්‍යවශ්‍යයි)
-    if (!currentModelId) currentModelId = sessionStorage.getItem('currentModelId');
-    
-    // 2. liveDatabaseStock එකේ නැත්නම් appData එකෙන් හරි බලන්න (Safety check)
-    // උඹේ main database එකේ structure එක අනුව මේක වෙනස් වෙන්න පුළුවන්
-    const p = liveDatabaseStock ? liveDatabaseStock[currentModelId] : null;
 
+      // 📱 විස්තර වෙනස් කළ පසු UI එක ලස්සනට අප්ඩේට් කර තිරයේ පෙන්වීම
+function updateDetailViewUI() {
+    // 1. පේජ් එකේ detail කොටස පමණක් ලබාගන්න (ID Conflict එක වළක්වන්න)
+    const detailPage = document.getElementById('page-detail');
+    if (!detailPage) return;
+
+    // 2. දත්ත පරීක්ෂාව
+    const p = liveDatabaseStock ? liveDatabaseStock[currentModelId] : null;
     if (!p) {
-        console.log("Data not ready or model not found yet, retrying...");
+        console.warn("Model data not found in liveDatabaseStock!");
         return; 
     }
 
-    // 1. පින්තූරෙ අප්ඩේට් කිරීම
-    const imgElement = document.getElementById('product-img');
+    // 3. පින්තූරෙ අප්ඩේට් කිරීම
+    const imgElement = detailPage.querySelector('#product-img');
     if (imgElement) {
         imgElement.src = (p.img && p.img.trim() !== '') ? p.img : 'https://placehold.co/150x300?text=No+Image';
     }
 
-    // 2. අනිත් විස්තර අප්ඩේට් කිරීම
+    // 4. විස්තර අප්ඩේට් කිරීම (Helper function)
     const updateText = (id, value) => {
-        const el = document.getElementById(id);
+        const el = detailPage.querySelector(`#${id}`);
         if (el) el.innerText = value;
     };
 
@@ -965,20 +991,20 @@ function updateDetailViewUI() {
     updateText('view-cost', (p.cost || 0).toLocaleString());
     updateText('view-our-price', (p.ourPrice || 0).toLocaleString());
     
-    // 3. ස්ටොක් විස්තර ලස්සනට ලැයිස්තුගත කිරීම
-    const sc = document.getElementById('view-qty-colors');
+    // 5. ස්ටොක් විස්තර ලස්සනට ලැයිස්තුගත කිරීම
+    const sc = detailPage.querySelector('#view-qty-colors');
     if (sc) {
         sc.innerHTML = '';
         const stockItems = p.stock || {};
         const keys = Object.keys(stockItems);
 
         if (keys.length === 0) {
-            sc.innerHTML = '<p class="text-gray-500 text-sm">No stock available</p>';
+            sc.innerHTML = '<p class="text-gray-400 text-sm italic">No stock added yet.</p>';
         } else {
             keys.forEach(c => {
                 sc.innerHTML += `
-                    <p class="flex justify-between border-b py-1">
-                        <span class="capitalize">🎨 ${c}:</span> 
+                    <p class="flex justify-between border-b border-gray-100 py-1">
+                        <span class="capitalize text-gray-700">🎨 ${c}:</span> 
                         <strong class="text-blue-600">${stockItems[c]} Pcs</strong>
                     </p>`;
             });
@@ -1105,67 +1131,48 @@ function checkLowStockNotifications() {
 
 
 
-   window.onload = async () => { 
-    console.log("App Starting...");
+        // 🚀 WINDOW ONLOAD: ඇප් එක ස්ටාර්ට් වෙද්දීම පසුබිමෙන් සිදුවන ප්‍රධාන මෙහෙයුම්
+        window.onload = async () => { 
+            console.log("App Starting, Fetching from Cloud...");
+            await loadCategoriesFromCloud(); // 1. බටන් ස්ට්‍රක්චර් එක කියවීම
+            await loadAllStockFromCloud();   // 2. මිල සහ තොග දත්ත කියවීම
 
-    const isLogged = localStorage.getItem('sanjeewa_role');
-    
-    if (isLogged) {
-        currentRole = isLogged;
-        
-        // දත්ත ලෝඩ් වනතුරු ඉන්න
-        await loadCategoriesFromCloud();
-        await loadAllStockFromCloud();
 
-        selectedBrandId = sessionStorage.getItem('selectedBrandId') || '';
-        selectedItemId = sessionStorage.getItem('selectedItemId') || '';
-        currentModelId = sessionStorage.getItem('currentModelId') || ''; 
-        
-        setupAdminUI();
+            selectedItemId = sessionStorage.getItem('selectedItemId') || '';
+            selectedBrandId = sessionStorage.getItem('selectedBrandId') || '';
 
-        const savedPage = sessionStorage.getItem('lastPage') || 'page-home';
-
-        // 2 & 3 එකටම මෙන්න මේ විදියට හදන්න (පිරිසිදුයි)
-        setTimeout(() => {
-            navigateTo(savedPage);
-            // පේජ් එක මාරු වුණාට පස්සේ දත්ත ලෝඩ් කරන්න
-            if (savedPage === 'page-detail') {
-                updateDetailViewUI();
+            // 3. කලින් ලොග් වී සිටියේ නම් කෙළින්ම ඇතුළට ගැනීම
+            if(localStorage.getItem('sanjeewa_role')) {
+                currentRole = localStorage.getItem('sanjeewa_role');
+            } else {
+                currentRole = 'staff';
             }
-        }, 100);
+            setupAdminUI();
 
-        // 4, 5, 6, 7 කොටස් එහෙමම තියන්න (මම ඒ ටික මෙතනට දැම්මා)
-        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-            Notification.requestPermission();
-        }
 
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').catch(err => console.log(err));
-        }
-        
-        setTimeout(checkLowStockNotifications, 2000);
 
-        const prodImg = document.getElementById('product-img');
-        if (prodImg) {
-            prodImg.addEventListener('click', function() {
-                const modal = document.getElementById('image-modal');
-                const fullImg = document.getElementById('full-image');
-                if(modal && fullImg) {
-                    fullImg.src = this.src;
-                    modal.classList.remove('hidden');
-                }
-            });
-        }
-        
-    } else {
-        navigateTo('page-login');
+            // 4. අන්තිමට හිටපු පේජ් එකට යන්න
+            const savedPage = sessionStorage.getItem('lastPage') || 'page-login';
+             navigateTo(savedPage);
+
+
+
+            // 5. Notification අවසර ඉල්ලීම
+           if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+        Notification.requestPermission();
     }
-}
 
-// මේ ෆන්ක්ෂන් එක window.onload එකෙන් එළියේ තියන්න
-function closeImageModal() {
-    document.getElementById('image-modal').classList.add('hidden');
-}
+            // 5. Android ඇප් එකක් වගේ ක්‍රියා කිරීමට Service Worker එක පණ ගැන්වීම
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker Registered!', reg))
+                .catch(err => console.log('Service Worker Failed!', err));
+            }
+
+            // 6. ඇප් එක ක්‍රියාත්මක වී තත්පර 2කින් Low Stock ඇඟවීම් පරීක්ෂා කිරීම
+            setTimeout(checkLowStockNotifications, 2000); 
+        }
+
 
 
 
@@ -1272,26 +1279,6 @@ function isDuplicate(dataList, newValue) {
     );
 }
 
-
-function selectModel(mId) {
-    currentModelId = mId;
-    sessionStorage.setItem('currentModelId', mId); // මේක තමයි රිෆ්‍රෙෂ් වුණාම දත්ත ගේන්නේ
-    
-    // ඩීටේල් එක පෙන්වන ෆන්ක්ෂන් එක මෙතනින් කතා කරන්න
-    // ඔයාගේ කෝඩ් එකේ තිබ්බ openProductDetailLive එකට මාරුවෙන්න කලින් දේවල් මෙතන කරනවා
-    navigateTo('page-detail'); 
-    
-    // ඩීටේල් පේජ් එකට ගියාම දත්ත පෙන්නන්න ඕනේ නිසා:
-    updateDetailViewUI(); 
-}
-function selectModel(item) {
-    currentModelId = item.id;
-    // නමයි ID එකයි දෙකම සේව් කරමු
-    sessionStorage.setItem('currentModelId', item.id);
-    sessionStorage.setItem('currentModelName', item.name); 
-    
-    navigateTo('page-detail');
-}
     </script>
 </body>
 </html>
