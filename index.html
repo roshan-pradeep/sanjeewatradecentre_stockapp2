@@ -202,7 +202,7 @@
     </div>
 
     <div>
-        <label class="block text-xs font-semibold text-gray-600">Discount %</label>
+        <label class="block text-xs font-semibold text-gray-600">Discount </label>
         <input type="number" id="input-discount" class="w-full p-2 border rounded-lg text-sm" oninput="calculateCostPriceLive()">
     </div>
 
@@ -310,21 +310,6 @@ let activeMenuTarget = { type: null, item: null };
     }
 
     
-
-     // home.html එකේ උඩින්ම දාන්න
-window.onload = () => {
-    // මේකෙන් වෙන්නේ History එකේ අන්තිම තැනට Home පේජ් එක දාන එක
-    window.history.pushState(null, null, window.location.href);
-    
-    // User ආයෙත් Back එබුවොත් කරන්නේ මොකක්ද කියලා මේකෙන් කියනවා
-    window.addEventListener('popstate', function () {
-        window.history.pushState(null, null, window.location.href);
-        // මෙතනදී Alert එකක් දාන්න පුළුවන් හෝ නිකම්ම අතාරින්න පුළුවන්
-        // alert("ඔයාට දැන් ආපහු යන්න බැහැ!");
-    });
-    
-    
-};
 
 
 
@@ -524,24 +509,22 @@ async function editPrice(item) {
 }
 
 
-
-       function navigateTo(pageId, addToHistory = true) {
+async function navigateTo(pageId, addToHistory = true) {
     document.getElementById('custom-context-menu').classList.add('hidden');
-    
-    // 1. පේජ් එක සහ අදාළ ID ටික Session එකේ සේව් කරන්න (Refresh වුණත් අමතක වෙන්නෙ නැති වෙන්න)
     sessionStorage.setItem('lastPage', pageId);
-    if(selectedBrandId) sessionStorage.setItem('selectedBrandId', selectedBrandId);
-    if(selectedItemId) sessionStorage.setItem('selectedItemId', selectedItemId);
-    if(typeof currentModelId !== 'undefined' && currentModelId) sessionStorage.setItem('currentModelId', currentModelId);
 
-    // Search bars clear කිරීම
-    if(pageId === 'page-model') document.getElementById('model-search').value = '';
-    if(pageId === 'page-brand') {
-        const searchInput = document.getElementById('brand-search');
-        if (searchInput) searchInput.value = '';
+    // 1. දත්ත නැත්නම් පොඩ්ඩක් ඉන්න (Safety check)
+    if (!appData || !appData.brands) {
+        console.log("දත්ත එනකම් ඉන්නවා...");
+        return; 
     }
 
-    // පේජ් එක හයිඩ් කිරීම
+    // ID ටික refresh කරගන්න
+    selectedBrandId = selectedBrandId || sessionStorage.getItem('selectedBrandId') || '';
+    selectedItemId = selectedItemId || sessionStorage.getItem('selectedItemId') || '';
+    currentModelId = currentModelId || sessionStorage.getItem('currentModelId') || '';
+
+    // 2. පේජ් එක හයිඩ් කිරීම
     ['page-login', 'page-home', 'page-brand', 'page-item', 'page-model', 'page-detail'].forEach(p => {
         const el = document.getElementById(p);
         if(el) el.classList.add('hidden');
@@ -553,18 +536,20 @@ async function editPrice(item) {
 
     setupAdminUI();
 
-    // History එකට දැමීම
-    if (addToHistory) {
-        history.pushState({ pageId: pageId }, null, "");
-    }
+    if (addToHistory) history.pushState({ pageId: pageId }, null, "");
 
-    // මව් නාමයන් (Breadcrumbs සඳහා) - මේ ටික අනිවාර්යයි
-    let brandName = appData.brands.find(b => b.id === selectedBrandId)?.name || '';
-    let itemName = appData.items.find(i => i.id === selectedItemId)?.name || '';
+    // 3. නම සහ ID එක හොයාගන්නා තැන (Validation එකක් එක්ක)
+    let brand = appData.brands.find(b => b.id === selectedBrandId);
+    let item = appData.items.find(i => i.id === selectedItemId);
+    let model = appData.models.find(m => m.id === currentModelId);
 
-    // පේජ් එක අනුව Render කිරීම
+    let brandName = brand ? brand.name : 'Unknown';
+    let itemName = item ? item.name : 'Unknown';
+    let modelName = model ? model.name : 'Unknown';
+
+    // 4. Render කිරීම
     if(pageId === 'page-brand') {
-        renderButtons('brand', appData.brands || [], 'brand-container', 'bg-blue-600');
+        renderButtons('brand', appData.brands, 'brand-container', 'bg-blue-600');
     }
 
     if(pageId === 'page-item') {
@@ -580,24 +565,10 @@ async function editPrice(item) {
     }
 
     if(pageId === 'page-detail') {
-    // රිෆ්‍රෙෂ් වුණත් ID එක අනිවාර්යයෙන්ම ගේන්න
-    if (!currentModelId) currentModelId = sessionStorage.getItem('currentModelId');
-    
-    // Model එකේ නම හොයාගන්න
-    let modelName = appData.models.find(m => m.id === currentModelId)?.name || 'Unknown';
-    
-    // Breadcrumb එකට නම ලියන්න
-    document.getElementById('breadcrumb-detail').innerHTML = `📍 Location: <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-gray-700 font-bold">${itemName}</span> / <span class="text-emerald-600 font-bold">${modelName}</span>`;
-    
-    // UI එකත් අනිවාර්යයෙන්ම Update කරන්න
-    updateDetailViewUI();
+        document.getElementById('breadcrumb-detail').innerHTML = `📍 Location: <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-gray-700 font-bold">${itemName}</span> / <span class="text-emerald-600 font-bold">${modelName}</span>`;
+        updateDetailViewUI();
+    }
 }
-
-}
-
-
-
-
 
 
 
@@ -1134,65 +1105,59 @@ function checkLowStockNotifications() {
 
 
 
-    window.onload = async () => { 
+   window.onload = async () => { 
     console.log("App Starting...");
 
-    // 1. මුලින්ම ලොගින් වෙලාද බලමු
     const isLogged = localStorage.getItem('sanjeewa_role');
     
     if (isLogged) {
         currentRole = isLogged;
         
-        // දත්ත ලෝඩ් කරන්න
+        // දත්ත ලෝඩ් වනතුරු ඉන්න
         await loadCategoriesFromCloud();
         await loadAllStockFromCloud();
 
-        // Session එකෙන් ID ටික අරගන්න
         selectedBrandId = sessionStorage.getItem('selectedBrandId') || '';
         selectedItemId = sessionStorage.getItem('selectedItemId') || '';
         currentModelId = sessionStorage.getItem('currentModelId') || ''; 
         
         setupAdminUI();
 
-        // 2. අන්තිමට හිටපු පේජ් එකට යන්න
         const savedPage = sessionStorage.getItem('lastPage') || 'page-home';
-        navigateTo(savedPage);
 
-        // 3. රිෆ්‍රෙෂ් වුණාම Detail Page එකේ දත්ත නැති වෙන එක නවත්වන්න
-        if (savedPage === 'page-detail') {
-            updateDetailViewUI();
-        }
+        // 2 & 3 එකටම මෙන්න මේ විදියට හදන්න (පිරිසිදුයි)
+        setTimeout(() => {
+            navigateTo(savedPage);
+            // පේජ් එක මාරු වුණාට පස්සේ දත්ත ලෝඩ් කරන්න
+            if (savedPage === 'page-detail') {
+                updateDetailViewUI();
+            }
+        }, 100);
 
-        // 4. Notification අවසර ඉල්ලීම
+        // 4, 5, 6, 7 කොටස් එහෙමම තියන්න (මම ඒ ටික මෙතනට දැම්මා)
         if (Notification.permission !== "granted" && Notification.permission !== "denied") {
             Notification.requestPermission();
         }
 
-        // 5. Service Worker පණ ගැන්වීම
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Service Worker Registered!', reg))
-                .catch(err => console.log('Service Worker Failed!', err));
+            navigator.serviceWorker.register('sw.js').catch(err => console.log(err));
         }
         
-        // 6. Low Stock ඇඟවීම් පරීක්ෂා කිරීම
         setTimeout(checkLowStockNotifications, 2000);
 
-        // 7. පින්තූරේ ලොකු කරන Logic එක (Image Modal)
         const prodImg = document.getElementById('product-img');
         if (prodImg) {
             prodImg.addEventListener('click', function() {
                 const modal = document.getElementById('image-modal');
                 const fullImg = document.getElementById('full-image');
                 if(modal && fullImg) {
-                    fullImg.src = this.src; // පින්තූරේ source එක modal එකට දෙනවා
+                    fullImg.src = this.src;
                     modal.classList.remove('hidden');
                 }
             });
         }
         
     } else {
-        // ලොග් වෙලා නැත්නම් කෙලින්ම Login පේජ් එකට
         navigateTo('page-login');
     }
 }
