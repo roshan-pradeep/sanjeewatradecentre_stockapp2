@@ -243,6 +243,12 @@
         </div>
     </div>
 
+
+
+    <div id="image-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4" onclick="closeImageModal()">
+    <img id="full-image" src="" class="max-w-full max-h-full rounded-lg shadow-2xl">
+</div>
+
     <style>
         
    .hidden {
@@ -1171,7 +1177,25 @@ function checkLowStockNotifications() {
 
             // 6. ඇප් එක ක්‍රියාත්මක වී තත්පර 2කින් Low Stock ඇඟවීම් පරීක්ෂා කිරීම
             setTimeout(checkLowStockNotifications, 2000); 
-        }
+            // පින්තූරේ ලොකු කරන Logic එක මෙතන දාන්න
+    const prodImg = document.getElementById('product-img');
+    if (prodImg) {
+        prodImg.addEventListener('click', function() {
+            const modal = document.getElementById('image-modal');
+            const fullImg = document.getElementById('full-image');
+            if(modal && fullImg) {
+                fullImg.src = this.src;
+                modal.classList.remove('hidden');
+            }
+        });
+    }
+};
+        
+
+
+function closeImageModal() {
+    document.getElementById('image-modal').classList.add('hidden');
+}
 
 
 
