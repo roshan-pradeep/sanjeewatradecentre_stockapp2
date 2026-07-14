@@ -325,21 +325,8 @@ let activeMenuTarget = { type: null, item: null };
     }
 
     
+    
 
-     // home.html එකේ උඩින්ම දාන්න
-window.onload = () => {
-    // මේකෙන් වෙන්නේ History එකේ අන්තිම තැනට Home පේජ් එක දාන එක
-    window.history.pushState(null, null, window.location.href);
-    
-    // User ආයෙත් Back එබුවොත් කරන්නේ මොකක්ද කියලා මේකෙන් කියනවා
-    window.addEventListener('popstate', function () {
-        window.history.pushState(null, null, window.location.href);
-        // මෙතනදී Alert එකක් දාන්න පුළුවන් හෝ නිකම්ම අතාරින්න පුළුවන්
-        // alert("ඔයාට දැන් ආපහු යන්න බැහැ!");
-    });
-    
-    
-};
 
 
 
@@ -366,54 +353,61 @@ window.onload = () => {
 
 
 
-        
+async function saveCategoriesToCloud() {
+    console.log("Saving data to Cloud...");
 
-        // ☁️ බටන් ව්‍යුහය (Category Structure) ඩේටාබේස් එකට සේව් කරන ෆන්ෂන් එක
-        async function saveCategoriesToCloud() {
-            const payload = { id: "main_structure", structure_data: appData };
-            await fetchSupabase('/app_categories', 'POST', payload, true);
+    // 1. පරණ දත්ත ටික ගන්න (මොකද PATCH වලදී මේ ටික අපිට පරිස්සම් කරන්න ඕනේ)
+    const res = await fetchSupabase('/app_categories?id=eq.main_structure');
+    let existingData = (res && res.length > 0) ? res[0].structure_data : { companys: [], brands: [], items: [], models: [] };
+
+    // 2. අලුත් දත්ත පරණ ඒවා එක්ක Merge කරලා, අලුත් එක හදන්න
+    // මේකෙන් වෙන්නේ පරණ දත්තත් අරන් ඒවට අලුත් ටික එකතු කරන එක
+    const updatedPayload = {
+        structure_data: {
+            companys: appData.companys || existingData.companys || [],
+            brands: appData.brands || existingData.brands || [],
+            items: appData.items || existingData.items || [],
+            models: appData.models || existingData.models || []
         }
+    };
 
-        // ☁️ ඇප් එක ස්ටාර්ට් වෙද්දීම ඩේටාබේස් එකෙන් බටන් ව්‍යුහය කියවා ගන්නා ලොජික් එක
-        async function loadCategoriesFromCloud() {
-            const res = await fetchSupabase('/app_categories?id=eq.main_structure&order=id.desc');
-            if (res && res.length > 0 && res[0].structure_data) {
-                let rawData = res[0].structure_data;
-                
-                // පරණ 'companies' සහ අලුත් 'companys' කී දෙකම එකට එකතු කර ආරක්ෂා කරගන්නා ලොජික් එක
-                let clearCompanys = [];
-                if (rawData.companies && Array.isArray(rawData.companies)) clearCompanys = [...rawData.companies];
-                if (rawData.companys && Array.isArray(rawData.companys)) clearCompanys = [...rawData.companys];
-
-                // ඩුප්ලිකේට් සමාගම් අයින් කිරීම (Data Cleaning)
-                let uniqueCompanys = [];
-                let map = new Map();
-                for (const item of clearCompanys) {
-                    if(!map.has(item.id)){
-                        map.set(item.id, true);
-                        uniqueCompanys.push(item);
-                    }
-                }
-
-                appData.companys = uniqueCompanys.length > 0 ? uniqueCompanys : [{ id: 'c1', name: 'Damro' }, { id: 'c2', name: 'Singer' }];
-                appData.brands = rawData.brands || [];
-                appData.items = rawData.items || [];
-                appData.models = rawData.models || [];
-            } else {
-                // ඩේටාබේස් එක මුළුමනින්ම හිස් නම් ඩිෆෝල්ට් සමාගම් දෙකක් දමා ඇප් එක ආරම්භ කිරීම
-                appData = {
-                    companys: [{ id: 'c1', name: 'Damro' }, { id: 'c2', name: 'Singer' }],
-                    brands: [],
-                    items: [],
-                    models: []
-                };
-                await saveCategoriesToCloud();
-            }
-        }
+    // 3. PATCH කමාන්ඩ් එක පාවිච්චි කරන්න (මතක තියාගන්න: Supabase PATCH වලට filter එකක් ඕනේ)
+    // ඒ නිසා අපි URL එකට id=eq.main_structure එක දාන්න ඕනේ
+    await fetchSupabase('/app_categories?id=eq.main_structure', 'PATCH', updatedPayload, true);
+    
+    console.log("දත්ත සාර්ථකව සේව් වුණා!");
+}
 
 
 
+
+
+
+   async function loadCategoriesFromCloud() {
+    const res = await fetchSupabase('/app_categories?id=eq.main_structure&order=id.desc');
+    
+    if (res && res.length > 0 && res[0].structure_data) {
+        let rawData = res[0].structure_data;
         
+        // පරණ දත්ත සහ දැනට පවතින දත්ත එකතු කිරීමට Helper Function එකක්
+        const mergeArraysById = (arr1, arr2) => {
+            const map = new Map();
+            [...(arr1 || []), ...(arr2 || [])].forEach(item => map.set(item.id, item));
+            return Array.from(map.values());
+        };
+
+        // දැන් නිවැරදිව Merge කරන්න
+        appData.companys = mergeArraysById(appData.companys, rawData.companys);
+        appData.brands = mergeArraysById(appData.brands, rawData.brands);
+        appData.items = mergeArraysById(appData.items, rawData.items);
+        appData.models = mergeArraysById(appData.models, rawData.models);
+        
+        console.log("දත්ත සාර්ථකව Merge කරා:", appData);
+    } else {
+        console.log("Database එකේ දත්ත හමු වුණේ නැත. නව ව්‍යුහයක් සකසයි...");
+        await saveCategoriesToCloud();
+    }
+}
 
 async function editPrice(item) {
     const { value: price } = await Swal.fire({
@@ -539,73 +533,72 @@ async function editPrice(item) {
 }
 
 
+async function navigateTo(pageId, addToHistory = true) {
+    // 1. UI පිරිසිදු කිරීම්
+    const contextMenu = document.getElementById('custom-context-menu');
+    if (contextMenu) contextMenu.classList.add('hidden');
 
-       // මේ විදියට function එකේ definition එක හදන්න
-function navigateTo(pageId, addToHistory = true) {
-    document.getElementById('custom-context-menu').classList.add('hidden');
-    if(pageId === 'page-model') document.getElementById('model-search').value = ''; 
+    // Search bars clear කිරීම
+    const modelSearch = document.getElementById('model-search');
+    if (modelSearch) modelSearch.value = '';
+    const brandSearch = document.getElementById('brand-search');
+    if (brandSearch) brandSearch.value = '';
 
-
-    
-
-    // navigateTo ෆන්ක්ෂන් එකේ ඇතුලේ
-if (pageId === 'page-brand') {
-    const searchInput = document.getElementById('brand-search');
-    if (searchInput) searchInput.value = ''; // Search bar එක Clear කරන්න
-    
-    let filteredBrands = appData.brands.filter(b => b.itemId === selectedItemId);
-    renderButtons('brand', filteredBrands, 'brand-container', 'bg-blue-600');
-}
-
+    // 2. පේජ් එක මාරු කිරීම (Hidden class එක හරහා)
     ['page-login', 'page-home', 'page-brand', 'page-item', 'page-model', 'page-detail'].forEach(p => {
         const el = document.getElementById(p);
-        if(el) el.classList.add('hidden');
+        if (el) {
+            el.classList.add('hidden');
+            el.style.display = 'none'; // අනිවාර්යයෙන්ම display none දාන්න
+        }
     });
 
     const target = document.getElementById(pageId);
-    if(target) target.classList.remove('hidden');
+    if (target) {
+        target.classList.remove('hidden');
+        target.style.display = 'block';
+    }
 
-
-    
-
+    // 3. Admin UI සහ History
     setupAdminUI();
-
-    // Browser History එකට එකතු කිරීම
     if (addToHistory) {
         history.pushState({ pageId: pageId }, null, "");
     }
 
+    // 4. දත්ත පිරිසිදු කරගැනීම (Safety Checks)
+    if (!appData) return;
+    
+    let brandName = appData.brands?.find(b => b.id === selectedBrandId)?.name || '';
+    let itemName = appData.items?.find(i => i.id === selectedItemId)?.name || '';
+    let modelName = appData.models?.find(m => m.id === currentModelId)?.name || '';
 
-    // 3. මව් නාමයන් හොයාගන්න
-    let brandName = appData.brands.find(b => b.id === selectedBrandId)?.name || '';
-    let itemName = appData.items.find(i => i.id === selectedItemId)?.name || '';
-
-    // 4. බ්‍රෑන්ඩ් පේජ් එක (දැන් මේක තමයි මුල්ම පියවර)
-    if(pageId === 'page-brand') {
+    // 5. පේජ් එක අනුව Render කිරීම
+    if (pageId === 'page-brand') {
         renderButtons('brand', appData.brands || [], 'brand-container', 'bg-blue-600');
-    }
-
-    // 5. අයිටම් පේජ් එක (ක්ලික් කළ බ්‍රෑන්ඩ් එකට අයිති අයිටම් විතරක් පෙන්වයි)
-    if(pageId === 'page-item') {
-        document.getElementById('breadcrumb-item').innerHTML = `📍 Location: <span class="text-blue-600 font-bold">${brandName}</span> /`;
-        let filteredItems = appData.items.filter(i => i.brandId === selectedBrandId);
+    } 
+    else if (pageId === 'page-item') {
+        const bc = document.getElementById('breadcrumb-item');
+        if (bc) bc.innerHTML = `📍 Location: <span class="text-blue-600 font-bold">${brandName}</span> /`;
+        
+        let filteredItems = (appData.items || []).filter(i => i.brandId === selectedBrandId);
         renderButtons('item', filteredItems, 'item-container', 'bg-gray-700');
-    }
-
-    // 6. මොඩල් පේජ් එක (ක්ලික් කළ අයිටම් එකට අයිති මොඩල් විතරක් පෙන්වයි)
-    if(pageId === 'page-model') {
-        document.getElementById('breadcrumb-model').innerHTML = `📍 Location: <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-gray-700 font-bold">${itemName}</span> /`;
-        let filteredModels = appData.models.filter(m => m.itemId === selectedItemId);
+    } 
+    else if (pageId === 'page-model') {
+        const bc = document.getElementById('breadcrumb-model');
+        if (bc) bc.innerHTML = `📍 Location: <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-gray-700 font-bold">${itemName}</span> /`;
+        
+        let filteredModels = (appData.models || []).filter(m => m.itemId === selectedItemId);
         renderButtons('model', filteredModels, 'model-container', 'bg-emerald-600');
-    }
-
-    // 7. ඩීටේල් පේජ් එක
-    if(pageId === 'page-detail') {
-        let modelName = appData.models.find(m => m.id === currentModelId)?.name || '';
-        document.getElementById('breadcrumb-detail').innerHTML = `📍 Location: <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-gray-700 font-bold">${itemName}</span> / <span class="text-emerald-600 font-bold">${modelName}</span>`;
+    } 
+    else if (pageId === 'page-detail') {
+        const bc = document.getElementById('breadcrumb-detail');
+        if (bc) {
+            bc.innerHTML = `📍 Location: <span class="text-blue-600 font-bold">${brandName}</span> / <span class="text-gray-700 font-bold">${itemName}</span> / <span class="text-emerald-600 font-bold">${modelName}</span>`;
+        }
+        // අදාළ detail පේජ් එකේ UI එක update කරන function එක මෙතන දාන්න
+        if (typeof updateDetailViewUI === 'function') updateDetailViewUI();
     }
 }
-
 
 
 
@@ -1136,48 +1129,43 @@ function checkLowStockNotifications() {
 
 
 
+window.onload = async () => { 
+    console.log("App Starting, Fetching from Cloud...");
 
-        // 🚀 WINDOW ONLOAD: ඇප් එක ස්ටාර්ට් වෙද්දීම පසුබිමෙන් සිදුවන ප්‍රධාන මෙහෙයුම්
-        window.onload = async () => { 
-            console.log("App Starting, Fetching from Cloud...");
-            await loadCategoriesFromCloud(); // 1. බටන් ස්ට්‍රක්චර් එක කියවීම
-            await loadAllStockFromCloud();   // 2. මිල සහ තොග දත්ත කියවීම
+    // 1. දත්ත ලෝඩ් කිරීම (මුලින්ම මේ ටික වෙන්න ඕනේ)
+    await loadCategoriesFromCloud();
+    await loadAllStockFromCloud();
 
+    selectedItemId = sessionStorage.getItem('selectedItemId') || '';
+    selectedBrandId = sessionStorage.getItem('selectedBrandId') || '';
 
-            selectedItemId = sessionStorage.getItem('selectedItemId') || '';
-            selectedBrandId = sessionStorage.getItem('selectedBrandId') || '';
+    // 2. Role එක සෙට් කිරීම
+    currentRole = localStorage.getItem('sanjeewa_role') || 'staff';
+    setupAdminUI();
 
-            // 3. කලින් ලොග් වී සිටියේ නම් කෙළින්ම ඇතුළට ගැනීම
-            if(localStorage.getItem('sanjeewa_role')) {
-                currentRole = localStorage.getItem('sanjeewa_role');
-            } else {
-                currentRole = 'staff';
-            }
-            setupAdminUI();
+    // 3. Navigation (අන්තිමට හිටපු පේජ් එකට යාම)
+    const savedPage = sessionStorage.getItem('lastPage') || 'page-login';
+    navigateTo(savedPage);
 
+    // 4. Back button පාලනය කිරීම (අර උඹ අලුතින් දැම්ම ලොජික් එක)
+    window.history.pushState(null, null, window.location.href);
+    window.addEventListener('popstate', function () {
+        window.history.pushState(null, null, window.location.href);
+    });
 
-
-            // 4. අන්තිමට හිටපු පේජ් එකට යන්න
-            const savedPage = sessionStorage.getItem('lastPage') || 'page-login';
-             navigateTo(savedPage);
-
-
-
-            // 5. Notification අවසර ඉල්ලීම
-           if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+    // 5. අනෙක් වැඩ (Notifications, Service Worker, Images)
+    if (Notification.permission !== "granted" && Notification.permission !== "denied") {
         Notification.requestPermission();
     }
 
-            // 5. Android ඇප් එකක් වගේ ක්‍රියා කිරීමට Service Worker එක පණ ගැන්වීම
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Service Worker Registered!', reg))
-                .catch(err => console.log('Service Worker Failed!', err));
-            }
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('Service Worker Registered!'))
+        .catch(err => console.log('Service Worker Failed!'));
+    }
 
-            // 6. ඇප් එක ක්‍රියාත්මක වී තත්පර 2කින් Low Stock ඇඟවීම් පරීක්ෂා කිරීම
-            setTimeout(checkLowStockNotifications, 2000); 
-            // පින්තූරේ ලොකු කරන Logic එක මෙතන දාන්න
+    setTimeout(checkLowStockNotifications, 2000);
+
     const prodImg = document.getElementById('product-img');
     if (prodImg) {
         prodImg.addEventListener('click', function() {
@@ -1190,8 +1178,6 @@ function checkLowStockNotifications() {
         });
     }
 };
-        
-
 
 function closeImageModal() {
     document.getElementById('image-modal').classList.add('hidden');
@@ -1302,6 +1288,10 @@ function isDuplicate(dataList, newValue) {
         item.name.trim().toLowerCase() === normalizedNewName
     );
 }
+
+
+
+
 
     </script>
 </body>
