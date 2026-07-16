@@ -835,56 +835,59 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
             renderButtons('model', filtered, 'model-container', 'bg-emerald-600');
         }
 
+
+
+
         // ☁️ `items_stock` ටේබල් එකෙන් තොග, මිල ගණන් සහ පින්තූර ලින්ක් කියවා ගැනීම
-        async function loadAllStockFromCloud() {
+      async function loadAllStockFromCloud() {
     const cloudData = await fetchSupabase('/items_stock');
     if (cloudData) {
         liveDatabaseStock = {};
         cloudData.forEach(row => {
             liveDatabaseStock[row.model_id] = {
-                img: row.img_url, 
+                img: row.image_url, 
                 retail: parseFloat(row.retail_price) || 0, 
                 discount: parseFloat(row.discount) || 0, 
                 cost: parseFloat(row.cost_price) || 0,
-                // මෙන්න මෙතනට database එකේ තියෙන our_price එක එකතු කරන්න
-                ourPrice: parseFloat(row.our_price) || 0, 
+                our_price: parseFloat(row.our_price) || 0,       // Database නම
+                selling_price: parseFloat(row.selling_price) || 0, // Database නම
                 stock: row.stock_data || {}
             };
         });
     }
 }
 
-        async function openProductDetailLive(modelItem) {
+
+
+
+     async function openProductDetailLive(modelItem) {
     currentModelId = modelItem.id;
     document.getElementById('detail-model-title').innerText = modelItem.name;
     
     await loadAllStockFromCloud(); 
     
-    // Cloud එකෙන් දත්ත ආවට පස්සේ ඒ model එකට අදාළ දත්ත ටික ගන්නවා
     if(!liveDatabaseStock[currentModelId]) {
         liveDatabaseStock[currentModelId] = { 
-            img: '', 
-            retail: 0, 
-            discount: 0, 
-            cost: 0, 
-            ourPrice: 0, // මෙතන 0 කරනවා
-            stock: {} 
+            img: '', retail: 0, discount: 0, cost: 0, 
+            our_price: 0, selling_price: 0, stock: {} 
         };
     }
     
     const p = liveDatabaseStock[currentModelId];
     
-    // UI එකේ inputs වලට දත්ත පුරවනවා
+    // UI Inputs වලට දත්ත යැවීම
     document.getElementById('input-img-url').value = p.img || '';
     document.getElementById('input-retail').value = p.retail || 0;
     document.getElementById('input-discount').value = p.discount || 0;
-    document.getElementById('input-our-price').value = p.ourPrice || 0; 
+    document.getElementById('input-our-price').value = p.our_price || 0; 
+    document.getElementById('input-selling-price').value = p.selling_price || 0; 
     
-    // වැදගත්ම දේ: UI එකේ පෙන්වන අගයන් ටික update කරන්න
     updateDetailViewUI(); 
-    
     navigateTo('page-detail');
 }
+
+
+
 
 
 
@@ -920,6 +923,10 @@ document.getElementById('menu-rename-btn').addEventListener('click', () => {
             document.getElementById('input-colour').value = ''; document.getElementById('input-qty').value = '';
             updateDetailViewUI();
         }
+
+
+
+
 
 async function syncProductToDatabase() {
     const p = liveDatabaseStock[currentModelId];
@@ -977,13 +984,13 @@ function updateDetailViewUI() {
     // Our Price එකේ Label එක සහ අගය (දෙපාරක් නොඑන්න)
     const ourPriceEl = document.getElementById('view-our-price');
     if (ourPriceEl) {
-        ourPriceEl.innerText = 'Our Price: රු. ' + (p.ourPrice || 0).toLocaleString();
+        ourPriceEl.innerText = 'Our Price: රු. ' + (p.our_price || 0).toLocaleString();
     }
 
     // Selling Price එක (Our Price එකට යටින් Red Color)
     const spEl = document.getElementById('view-selling-price');
     if (spEl) {
-        spEl.innerText = 'Selling Price: රු. ' + (p.sellingPrice || 0).toLocaleString();
+        spEl.innerText = 'Selling Price: රු. ' + (p.selling_price || 0).toLocaleString();
         spEl.style.color = 'red';
         spEl.style.fontSize = '1.25rem'; // text-xl සමාන සයිස් එක
         spEl.style.fontWeight = 'bold';
