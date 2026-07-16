@@ -1300,6 +1300,19 @@ function isDuplicate(dataList, newValue) {
     );
 }
 
+
+document.addEventListener('DOMContentLoaded', () => {
+    const imgElement = document.getElementById('product-img');
+    
+    if (imgElement) {
+        imgElement.classList.add('product-image'); // CSS එක වැඩ කරන්න class එක දානවා
+        
+        imgElement.addEventListener('click', function() {
+            this.classList.toggle('full-screen-img');
+        });
+    }
+});
+
     </script>
 </body>
 </html>
