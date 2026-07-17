@@ -158,9 +158,10 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="space-y-4">
-            <div class="w-full h-64 bg-gray-200 rounded-2xl flex items-center justify-center overflow-hidden border">
-                <img id="product-img" src="https://placehold.co/150x300?text=No+Image" alt="Product Image" class="object-contain h-full w-full">
-            </div>
+          <div id="img-container" class="w-full h-64 bg-gray-200 rounded-2xl flex items-center justify-center overflow-hidden border cursor-pointer" 
+     onclick="toggleFullScreen(this)">
+    <img id="product-img" src="https://placehold.co/150x300?text=No+Image" alt="Product Image" class="object-contain h-full w-full">
+</div>
         </div>
         
         <div class="p-4 bg-gray-50 rounded-xl space-y-3 border">
@@ -187,6 +188,10 @@
         <input type="file" id="image-upload" accept="image/*" class="mt-1 text-xs">
         <input type="text" id="input-img-url" placeholder="Image URL eka..." class="w-full p-2 border rounded">
     </div>
+      
+
+
+    
 
     <div>
         <label class="block text-xs font-semibold text-gray-600">Retail Price (රු)</label>
@@ -245,7 +250,23 @@
         @keyframes alertShow { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
+      
 
+      <style>
+    /* Fullscreen වෙද්දී පින්තූරෙට ඉඩ තියන්න */
+    :fullscreen {
+        background-color: rgba(0, 0, 0, 0.9);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    :fullscreen img {
+        max-width: 80% !important; /* Screen එකේ 80% කට වඩා ලොකු වෙන්නේ නැහැ */
+        max-height: 80% !important; /* Screen එකේ උසින් 80% කට වඩා ලොකු වෙන්නේ නැහැ */
+        object-fit: contain;
+    }
+</style>
 
 
     <script>
@@ -296,6 +317,7 @@ let currentModelId = '';
 let liveDatabaseStock = {}; 
 
 // දැන් මේ ටික ඇති:
+let selectedCompanyId ='';
 let selectedBrandId = '';
 let selectedItemId = '';
 
@@ -1019,16 +1041,13 @@ function updateDetailViewUI() {
 }
 
 
-
 function updateSellingPriceLive() {
     const val = document.getElementById('input-selling-price').value;
     const displayEl = document.getElementById('view-selling-price');
+
     if (displayEl) {
-        // රතු පාට සහ bold බව තහවුරු කරන්න
         displayEl.innerText = 'Selling Price: රු. ' + (parseFloat(val) || 0).toLocaleString();
-        displayEl.style.color = 'red';
-        displayEl.style.fontSize = '1.25rem';
-        displayEl.style.fontWeight = 'bold';
+        displayEl.className = 'selling-price-text'; // එක පාරටම style ටික ලෝඩ් වෙනවා
     }
 }
 
@@ -1301,18 +1320,31 @@ function isDuplicate(dataList, newValue) {
 }
 
 
+
+
 document.addEventListener('DOMContentLoaded', () => {
-    const imgElement = document.getElementById('product-img');
+    const img = document.getElementById('product-img');
     
-    if (imgElement) {
-        imgElement.classList.add('product-image'); // CSS එක වැඩ කරන්න class එක දානවා
-        
-        imgElement.addEventListener('click', function() {
-            this.classList.toggle('full-screen-img');
+    if (img) {
+        img.addEventListener('click', function() {
+            this.classList.toggle('img-fullscreen');
         });
     }
 });
 
+function toggleFullScreen(element) {
+    if (!document.fullscreenElement) {
+        // ලොකු කරන්න
+        if (element.requestFullscreen) {
+            element.requestFullscreen();
+        }
+    } else {
+        // ආයේ පොඩි කරන්න
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
+}
     </script>
 </body>
 </html>

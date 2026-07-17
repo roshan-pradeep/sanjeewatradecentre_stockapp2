@@ -23,15 +23,28 @@
 }
 
 
-
-/* පින්තූරේ උඩ මවුස් එක තිබ්බම click කරන්න පුළුවන් බව පෙන්වන්න */
-#product-img {
+/* පින්තූරේ සාමාන්‍ය පෙනුම */
+.clickable-img {
     cursor: pointer;
-    transition: transform 0.2s;
-}
-#product-img:hover {
-    transform: scale(1.02);
+    transition: transform 0.3s ease;
 }
 
+/* පින්තූරේ ලොකු වෙච්ච පෙනුම */
+.img-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: contain;
+    background: rgba(0, 0, 0, 0.9); /* කළු පාට background එක */
+    z-index: 99999;
+    cursor: zoom-out;
+}
 
-
+.selling-price-text {
+    color: red;
+    font-size: 30px;
+    font-weight: bold;
+    margin-top: 8px;
+}
